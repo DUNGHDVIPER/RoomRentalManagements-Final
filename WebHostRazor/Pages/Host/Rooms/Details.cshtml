@@ -1,0 +1,44 @@
+﻿@page
+@model WebHostRazor.Pages.Host.Rooms.DetailsModel
+@{
+    ViewData["Title"] = "Room Details";
+}
+
+@if (Model.Room == null)
+{
+    <div class="card p-18"><b>Room not found.</b></div>
+}
+else
+{
+    <div class="card p-18">
+        <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div>
+                <h2 class="h2">@Model.Room.Name</h2>
+                <div class="muted">@Model.Room.District, @Model.Room.City • @Model.Room.Area m²</div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <a class="btn-ghost" href="/Host/Rooms/Edit?id=@Model.Room.Id">Edit</a>
+                <a class="btn-ghost" href="/Host/Rooms/Images?id=@Model.Room.Id">Images</a>
+                <a class="btn-ghost" href="/Host/Rooms/Amenities?id=@Model.Room.Id">Amenities</a>
+                <a class="btn-ghost" href="/Host/Rooms/PricingHistory?id=@Model.Room.Id">Pricing</a>
+            </div>
+        </div>
+
+        <hr class="hr" />
+        <div class="muted">Price</div>
+        <div style="font-weight:950;font-size:24px;margin-top:6px;">
+            @Model.Room.Price.ToString("N0") ₫ / month
+        </div>
+        <div style="margin-top:12px;">
+            <span class="badge info">@Model.Room.Status</span>
+        </div>
+
+        <hr class="hr" />
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+            @foreach (var img in Model.Room.Images.Take(3))
+            {
+                <img src="@img" style="width:100%;height:160px;object-fit:cover;border-radius:18px;border:1px solid var(--border);" />
+            }
+        </div>
+    </div>
+}

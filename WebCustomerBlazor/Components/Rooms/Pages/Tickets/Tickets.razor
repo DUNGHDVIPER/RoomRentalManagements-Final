@@ -1,0 +1,100 @@
+﻿@page "/tickets"
+@using DAL.Data
+@using DAL.Entities.Maintenance
+@inject AppDbContext _context
+@inject NavigationManager Nav
+@using DAL.Entities.Common
+@using Microsoft.EntityFrameworkCore
+
+<div class="bg-grad">
+    <div class="container section">
+        <div class="td-header card glass p-22" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div class="brand-badge" style="width: 48px; height: 48px; font-size: 20px;">✓</div>
+                <div>
+                    <div class="h2" style="font-size: 24px;">TicketDesk</div>
+                    <div class="muted small">Support Management System</div>
+                </div>
+            </div>
+            <a class="btn-grad" href="/tickets/create" style="text-decoration: none;">+ New Ticket</a>
+        </div>
+
+        <div class="td-stats-grid">
+            <div class="card glass p-16 td-stat">
+                <div class="muted small">OPEN</div>
+                <div class="h2" style="color: var(--blue)">@OpenCount</div>
+            </div>
+            <div class="card glass p-16 td-stat">
+                <div class="muted small">IN PROGRESS</div>
+                <div class="h2" style="color: #f59e0b">@ProcessingCount</div>
+            </div>
+            <div class="card glass p-16 td-stat">
+                <div class="muted small">RESOLVED</div>
+                <div class="h2" style="color: var(--green)">@ResolvedCount</div>
+            </div>
+            <div class="card glass p-16 td-stat">
+                <div class="muted small">CLOSED</div>
+                <div class="h2" style="color: var(--muted)">@ClosedCount</div>
+            </div>
+        </div>
+
+        <div class="ticket-list" style="margin-top: 24px; display: grid; gap: 16px;">
+            @foreach (var ticket in ticketList)
+            {
+                // Fix màu sắc: Nếu status = 0 hoặc Open thì dùng màu "info" (xanh)
+                var statusColor = ticket.Status switch
+                {
+                    TicketStatus.Open => "info",
+                    TicketStatus.InProgress => "danger",
+                    TicketStatus.Resolved => "success",
+                    TicketStatus.Closed => "muted",
+                    _ => "info"
+                };
+
+                <div class="card glass p-16 td-ticket-card" style="margin-bottom:12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div style="display: flex; gap: 16px;">
+                            <div class="status-dot @statusColor"></div>
+                            <div>
+                                <div class="muted small">#@ticket.Id.ToString("0000")</div>
+                                <div class="room-title" style="margin: 4px 0;">@ticket.Title</div>
+                                <div class="muted small" style="font-weight: 500; margin-bottom: 8px;">@ticket.Description</div>
+
+                                @* FIX Ở ĐÂY: Nếu là 0 thì hiện chữ "Open", còn lại hiện đúng tên Enum *@
+                                <span class="badge @statusColor">
+                                    @(ticket.Status == 0 ? "Open" : ticket.Status.ToString())
+                                </span>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 8px;">
+                            <a href="/tickets/edit/@ticket.Id" class="btn-ghost" style="padding: 8px; width: 36px; height: 36px; display: grid; place-items: center; text-decoration: none;">✏️</a>
+                            <button class="btn-ghost" @onclick="() => OpenDelete(ticket)" style="padding: 8px; width: 36px; height: 36px; display: grid; place-items: center;">🗑</button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    List<Ticket> ticketList = new();
+
+    // Cập nhật logic đếm để bao gồm cả những ticket mang giá trị 0 (coi như Open)
+    int OpenCount => ticketList.Count(x => x.Status == TicketStatus.Open || (int)x.Status == 0);
+    int ProcessingCount => ticketList.Count(x => x.Status == TicketStatus.InProgress);
+    int ResolvedCount => ticketList.Count(x => x.Status == TicketStatus.Resolved);
+    int ClosedCount => ticketList.Count(x => x.Status == TicketStatus.Closed);
+
+    protected override async Task OnInitializedAsync() => await LoadTickets();
+
+    async Task LoadTickets() => ticketList = await _context.Tickets.OrderByDescending(t => t.CreatedAt).ToListAsync();
+
+    async Task OpenDelete(Ticket ticket)
+    {
+        _context.Tickets.Remove(ticket);
+        await _context.SaveChangesAsync();
+        await LoadTickets();
+    }
+}

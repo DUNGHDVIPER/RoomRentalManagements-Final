@@ -1,0 +1,64 @@
+﻿@model WebAdmin.MVC.Models.Billing.BillCreateVm
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Create Bill";
+    var rooms = ViewBag.RoomOptions as List<SelectListItem> ?? new();
+}
+
+<div class="container">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">Create Bill</div>
+            <a class="link" href="/Bills">Back</a>
+        </div>
+
+        <form method="post" asp-action="Create" asp-controller="Bills">
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="All" class="err mt12" style="margin:18px; display:block;"></div>
+
+            <div class="form-grid">
+                <div class="fg">
+                    <label class="lbl">ROOM</label>
+                    <select class="inp" asp-for="RoomName" asp-items="rooms">
+                        <option value="">-- Select room --</option>
+                    </select>
+                    <span class="text-danger" asp-validation-for="RoomName"></span>
+                </div>
+
+                <div class="fg">
+                    <label class="lbl">MONTH (yyyy-MM)</label>
+                    <input class="inp" asp-for="Month" placeholder="2026-02" />
+                    <span class="text-danger" asp-validation-for="Month"></span>
+                </div>
+
+                <div class="fg">
+                    <label class="lbl">TOTAL</label>
+                    <input class="inp" asp-for="Total" type="number" step="0.01" placeholder="1000000" />
+                    <span class="text-danger" asp-validation-for="Total"></span>
+                </div>
+
+                <div class="fg">
+                    <label class="lbl">STATUS</label>
+                    <select class="inp" asp-for="Status">
+                        <option value="Unpaid">Unpaid</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Overdue">Overdue</option>
+                    </select>
+                    <span class="text-danger" asp-validation-for="Status"></span>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn-gradient" type="submit">Save</button>
+                <a class="link" href="/Bills">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

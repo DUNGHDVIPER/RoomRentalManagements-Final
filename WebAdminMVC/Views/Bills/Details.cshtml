@@ -1,0 +1,162 @@
+﻿@model WebAdmin.MVC.Models.Billing.BillDetailsVm
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Bill Details";
+
+    var chipClass = Model.Status == "Paid"
+        ? "success"
+        : (Model.Status == "Overdue" ? "danger" : "info");
+}
+
+<div class="container">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">Bill Details</div>
+            <div>
+                <a class="link" href="/Bills/Edit/@Model.Id">Edit</a>
+                <a class="link danger" href="/Bills/Delete/@Model.Id">Delete</a>
+                <a class="link" href="/Bills">Back</a>
+                <a class="btn-gradient" href="/Bills/RecordPayment/@Model.Id">
+                    + Record Payment
+                </a>
+            </div>
+        </div>
+
+        <div class="detail-grid">
+            <div class="detail-item">
+                <div class="lbl">ROOM</div>
+                <div style="font-weight:950; margin-top:6px;">@Model.RoomName</div>
+            </div>
+
+            <div class="detail-item">
+                <div class="lbl">MONTH</div>
+                <div style="font-weight:950; margin-top:6px;">@Model.Month</div>
+            </div>
+
+            <div class="detail-item">
+                <div class="lbl">TOTAL</div>
+                <div style="font-weight:950; margin-top:6px;">@Model.Total.ToString("N0")</div>
+            </div>
+
+            <div class="detail-item">
+                <div class="lbl">STATUS</div>
+                <div style="margin-top:8px;">
+                    <span class="chip @chipClass">@Model.Status</span>
+                </div>
+            </div>
+
+            <div class="detail-item">
+                <div class="lbl">CREATED (UTC)</div>
+                <div style="font-weight:950; margin-top:6px;">@Model.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm")</div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a class="btn-gradient" href="/Bills/Edit/@Model.Id">Edit</a>
+            <a class="link danger" href="/Bills/Delete/@Model.Id">Delete</a>
+            <a class="link" href="/Bills">Back</a>
+        </div>
+    </div>
+
+    <!-- ✅ NEW: BILL BREAKDOWN -->
+    <div class="card mt-24">
+        <div class="card-head">
+            <div class="card-title">Bill Breakdown</div>
+            <div class="hint">Chi tiết các khoản: Rent / Electric / Water / Extra fees</div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ITEM</th>
+                        <th class="th-right num">AMOUNT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Items == null || !Model.Items.Any())
+                    {
+                        <tr>
+                            <td colspan="2" style="color:#64748b; font-weight:700; padding:18px;">
+                                Chưa có bill items.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var it in Model.Items)
+                        {
+                            <tr>
+                                <td>
+                                    <div style="font-weight:800;">@it.Name</div>
+                                    @if (it.ExtraFeeId.HasValue)
+                                    {
+                                        <div class="hint">Extra fee</div>
+                                    }
+                                </td>
+                                <td class="td-right num">@it.Amount.ToString("N0")</td>
+                            </tr>
+                        }
+                        <tr>
+                            <td style="font-weight:950;">TOTAL</td>
+                            <td class="td-right num" style="font-weight:950;">@Model.Total.ToString("N0")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- PAYMENT HISTORY -->
+    <div class="card mt-24">
+        <div class="card-head">
+            <div class="card-title">Payment History</div>
+            <a class="btn-gradient" href="/Bills/RecordPayment/@Model.Id">
+                + Record Payment
+            </a>
+        </div>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>AMOUNT</th>
+                        <th>METHOD</th>
+                        <th>STATUS</th>
+                        <th>PAID AT (UTC)</th>
+                        <th>REF</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Payments == null || !Model.Payments.Any())
+                    {
+                        <tr>
+                            <td colspan="5" style="color:#64748b; font-weight:700; padding:18px;">
+                                Chưa có thanh toán nào.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var p in Model.Payments)
+                        {
+                            var chip = p.Status == "Completed"
+                            ? "success"
+                            : (p.Status == "Failed" ? "danger" : "info");
+
+                            <tr>
+                                <td class="user-email">@p.Amount.ToString("N0")</td>
+                                <td>@p.Method</td>
+                                <td>
+                                    <span class="chip @chip">@p.Status</span>
+                                </td>
+                                <td>@(p.PaidAtUtc?.ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
+                                <td>@(string.IsNullOrWhiteSpace(p.TransactionRef) ? "-" : p.TransactionRef)</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

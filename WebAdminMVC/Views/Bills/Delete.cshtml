@@ -1,0 +1,60 @@
+﻿@model WebAdmin.MVC.Models.Billing.BillDetailsVm
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Delete Bill";
+
+    var chipClass = Model.Status == "Paid"
+        ? "success"
+        : (Model.Status == "Overdue" ? "danger" : "info");
+}
+
+<div class="container">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">Delete Bill</div>
+            <a class="link" href="/Bills">Back</a>
+        </div>
+
+        <div class="pad-20">
+            <div class="err">
+                Bạn chắc chắn muốn xóa bill này chứ? Hành động này không hoàn tác được.
+            </div>
+        </div>
+
+        <div class="detail-grid">
+            <div class="detail-item">
+                <div class="lbl">ROOM</div>
+                <div style="font-weight:950; margin-top:6px;">@Model.RoomName</div>
+            </div>
+
+            <div class="detail-item">
+                <div class="lbl">MONTH</div>
+                <div style="font-weight:950; margin-top:6px;">@Model.Month</div>
+            </div>
+                
+            <div class="detail-item">
+                <div class="lbl">TOTAL</div>
+                <div style="font-weight:950; margin-top:6px;">@Model.Total.ToString("N0")</div>
+            </div>
+
+            <div class="detail-item">
+                <div class="lbl">STATUS</div>
+                <div style="margin-top:8px;">
+                    <span class="chip @chipClass">@Model.Status</span>
+                </div>
+            </div>
+        </div>
+
+        <form method="post" asp-action="Delete" asp-controller="Bills">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+
+            <div class="form-actions">
+                <button type="submit" class="btn-gradient" style="background: linear-gradient(135deg, #ef4444, #f97316);">
+                    Yes, delete
+                </button>
+                <a class="link" href="/Bills">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

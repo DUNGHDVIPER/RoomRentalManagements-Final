@@ -1,0 +1,35 @@
+﻿@model BLL.DTOs.Room.AmenityDto
+
+@{
+    ViewData["Title"] = "Edit Amenity";
+}
+
+<div class="container mt-4">
+
+    <h3>Edit Amenity</h3>
+
+    <form asp-action="Edit" method="post">
+
+        <input type="hidden" asp-for="AmenityId" />
+
+        <div class="mb-3">
+            <label class="form-label">Amenity Name</label>
+
+            <input asp-for="AmenityName"
+                   class="form-control" />
+
+            <span asp-validation-for="AmenityName"
+                  class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            Update
+        </button>
+
+        <a asp-action="Index" class="btn btn-secondary">
+            Back
+        </a>
+
+    </form>
+
+</div>

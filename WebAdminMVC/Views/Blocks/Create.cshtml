@@ -1,0 +1,45 @@
+﻿@model BLL.DTOs.Property.BlockDto
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Create Block";
+}
+
+<div class="container">
+
+    <div class="card pad-20">
+
+        <div class="card-head">
+            <div class="card-title">Create Block</div>
+            <a class="link" asp-action="Index">Back</a>
+        </div>
+
+        <form method="post" class="form-grid">
+
+            @Html.AntiForgeryToken()
+
+            <div class="fg">
+                <label class="lbl">Block Name</label>
+                <input class="inp" asp-for="BlockName" />
+                <span asp-validation-for="BlockName" class="err"></span>
+            </div>
+
+            <div class="fg">
+                <label class="lbl">Address</label>
+                <input class="inp" asp-for="Address" />
+            </div>
+
+            <div class="fg">
+                <label class="lbl">Note</label>
+                <input class="inp" asp-for="Note" />
+            </div>
+
+            <div class="form-actions">
+                <a class="link" asp-action="Index">Cancel</a>
+                <button class="btn-gradient" type="submit">Create</button>
+            </div>
+
+        </form>
+
+    </div>
+</div>

@@ -1,0 +1,231 @@
+﻿@model WebAdmin.MVC.Models.Dashboard.DashboardVm
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<<<<<<< HEAD
+<div class="container">
+    <div style="text-align:right; margin-bottom:20px;">
+        <a class="btn-gradient" href="/Notifications">
+            🔔 Manage Notifications
+        </a>
+    </div>
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-label">Total Revenue</div>
+            <div class="kpi-row">
+                <div class="kpi-value">@Model.TotalRevenue</div>
+                <span class="pill success">+12.5%</span>
+=======
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewData["Title"]</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+            .header h1 {
+                margin: 0 0 10px 0;
+                font-size: 2.5em;
+                font-weight: 300;
+            }
+
+            .header p {
+                margin: 0;
+                opacity: 0.9;
+                font-size: 1.1em;
+            }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border-left: 4px solid #007bff;
+            transition: transform 0.2s ease;
+        }
+
+            .stat-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+            }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 1.1em;
+            font-weight: 500;
+        }
+
+        .nav-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+            .nav-section h3 {
+                margin: 0 0 20px 0;
+                color: #333;
+                font-size: 1.5em;
+            }
+
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .nav-card {
+            display: block;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+            .nav-card:hover {
+                background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+                color: white;
+                text-decoration: none;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+            }
+
+        .nav-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .nav-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .nav-desc {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .logout-section {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .btn-logout {
+            background: #dc3545;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.2s ease;
+        }
+
+            .btn-logout:hover {
+                background: #c82333;
+                color: white;
+                text-decoration: none;
+            }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎛️ Admin Dashboard</h1>
+            <p>Welcome back, <strong>@User.Identity?.Name</strong>! You're successfully logged in as Administrator.</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">@(Model?.TotalUsers ?? 245)</div>
+                <div class="stat-label">👥 Total Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">@(Model?.ActiveUsers ?? 198)</div>
+                <div class="stat-label">✅ Active Users</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">@(Model?.TotalRevenue ?? "$45,230")</div>
+                <div class="stat-label">💰 Total Revenue</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">@(Model?.PendingTasks ?? 12)</div>
+                <div class="stat-label">📋 Pending Tasks</div>
+>>>>>>> 600f8e0e5ea5cddd3d355e4e0373beb5ad375574
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <h3>🚀 Quick Actions</h3>
+            <div class="nav-grid">
+                <a href="/Users/Index" class="nav-card">
+                    <span class="nav-icon">👥</span>
+                    <div class="nav-title">Manage Users</div>
+                    <div class="nav-desc">View, create, edit and manage user accounts</div>
+                </a>
+
+                <a href="/Users/Create" class="nav-card">
+                    <span class="nav-icon">➕</span>
+                    <div class="nav-title">Add New User</div>
+                    <div class="nav-desc">Create new user accounts with roles</div>
+                </a>
+
+                <a href="/Dashboard/Reports" class="nav-card">
+                    <span class="nav-icon">📊</span>
+                    <div class="nav-title">View Reports</div>
+                    <div class="nav-desc">Analytics and system reports</div>
+                </a>
+
+                <a href="/Dashboard/Settings" class="nav-card">
+                    <span class="nav-icon">⚙️</span>
+                    <div class="nav-title">System Settings</div>
+                    <div class="nav-desc">Configure application settings</div>
+                </a>
+            </div>
+
+            <div class="logout-section">
+                <a href="/Auth/Logout" class="btn-logout">🚪 Logout</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

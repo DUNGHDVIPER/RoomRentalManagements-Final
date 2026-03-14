@@ -1,0 +1,48 @@
+﻿@{
+    var items = new (string Text, string Controller, string Action, string Key)[]
+    {
+        ("Dashboard", "Dashboard", "Index", "Dashboard"),
+        ("Users", "Users", "Index", "Users"),
+        ("Roles", "Roles", "Index", "Roles"),
+        ("Audit Logs", "Audit", "Index", "Audit"),
+         ("Amenities", "Amenities", "Index", "Amenities"),
+        ("Floors", "Floors", "Index", "Floors"),
+        ("Blocks", "Blocks", "Index", "Blocks"),
+        ("Rooms", "Rooms", "Index", "Rooms"),
+        ("Contracts", "Contracts", "Index", "Contracts"),
+        ("Bills", "Bills", "Index", "Bills"),
+        ("Reports", "Reports", "Index", "Reports"),
+    };
+
+    var active = (string)(ViewData["Title"] ?? "");
+}
+
+<div class="brand-row">
+    <div class="brand-logo">R</div>
+
+    <div class="brand-text">
+        <div class="brand-title">
+            Admin<span class="brand-accent">MVC</span>
+        </div>
+    </div>
+</div>
+
+
+<nav class="nav">
+
+    @foreach (var it in items)
+    {
+        var isActive = active.Contains(it.Key, StringComparison.OrdinalIgnoreCase);
+
+        <a class="nav-item @(isActive ? "active" : "")"
+           asp-controller="@it.Controller"
+           asp-action="@it.Action">
+
+            <span class="nav-icon">⠿</span>
+
+            <span>@it.Text</span>
+
+        </a>
+    }
+
+</nav>

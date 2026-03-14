@@ -1,0 +1,49 @@
+﻿@model List<BLL.DTOs.Utility.UtilityChargeResultDto>
+@using DAL.Entities.Property
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "UtilityCharges";
+    var rooms = ViewBag.Rooms as List<Room>;
+    var period = (int)ViewBag.Period;
+}
+
+<div class="container">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">Utility Charges Preview (@period)</div>
+            <a class="link" href="/UtilityReadings/Bulk?period=@period">Back</a>
+        </div>
+
+        <div class="pad-20">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Room</th>
+                        <th>Electric (kWh)</th>
+                        <th>Water (m³)</th>
+                        <th>Electric Amount</th>
+                        <th>Water Amount</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        var room = rooms?.FirstOrDefault(r => r.RoomId == item.RoomId);
+
+                        <tr>
+                            <td><strong>Room @(room?.RoomCode)</strong></td>
+                            <td>@item.ElectricKwh</td>
+                            <td>@item.WaterM3</td>
+                            <td>@item.ElectricAmount.ToString("N0")</td>
+                            <td>@item.WaterAmount.ToString("N0")</td>
+                            <td style="font-weight:900;">
+                                @item.Total.ToString("N0")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

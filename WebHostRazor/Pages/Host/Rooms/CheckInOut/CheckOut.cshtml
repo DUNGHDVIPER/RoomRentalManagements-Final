@@ -1,0 +1,37 @@
+﻿@page
+@model WebHostRazor.Pages.Host.Rooms.CheckInOut.CheckOutModel
+@{
+    ViewData["Title"] = "Check Out";
+}
+
+<div class="modal-overlay">
+    <div class="modal-card">
+
+        <div class="modal-header">
+            <h3 class="modal-title">
+                Check-out
+                <span class="room-badge">Room @Model.RoomId</span>
+            </h3>
+            <a asp-page="../Index" class="modal-close">✕</a>
+        </div>
+
+        <form method="post" class="modal-body">
+            <input type="hidden" asp-for="RoomId" />
+
+            <p class="confirm-text">
+                Are you sure you want to check out this tenant?
+            </p>
+
+            <div class="modal-footer">
+                <a asp-page="../Index" class="btn btn-secondary">
+                    Cancel
+                </a>
+
+                <button type="submit" class="btn btn-danger">
+                    🏠 Confirm Check-out
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>

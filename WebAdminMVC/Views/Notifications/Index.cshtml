@@ -1,0 +1,44 @@
+﻿@model List<WebAdminMVC.Models.Notifications.AdminNotificationViewModel>
+
+<h4>📋 Danh sách thông báo</h4>
+
+<div style="margin-bottom:20px;">
+    <a class="btn btn-success"
+       asp-action="Create">
+        + Tạo thông báo
+    </a>
+</div>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Tiêu đề</th>
+            <th>Ngày gửi</th>
+            <th>Số người nhận</th>
+            <th>Đã đọc</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Title</td>
+                <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                <td>@item.TotalReceivers</td>
+                <td>@item.TotalRead</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">
+                        Xem chi tiết
+                    </a>
+
+                    <form asp-action="Delete" method="post" style="display:inline;">
+                        <input type="hidden" name="id" value="@item.Id" />
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            Delete
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

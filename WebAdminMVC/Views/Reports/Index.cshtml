@@ -1,0 +1,474 @@
+﻿@model WebAdmin.MVC.Models.Reports.RevenueDashboardVm
+@using System.Text.Json
+@using BLL.DTOs.Report;
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Reports";
+
+    var occRate = Model.TotalRooms <= 0 ? 0 : (double)Model.OccupiedRooms / Model.TotalRooms;
+    var occPct = occRate.ToString("P0");
+
+    string mode = (Model.Mode ?? "month").ToLowerInvariant(); // month | quarter | year
+    int? selectedMonth = (mode == "month") ? Model.Month : null;
+
+    FeeBreakdownDto GetBreakdown(int m)
+       => (Model.IssuedBreakdownByMonth != null && Model.IssuedBreakdownByMonth.ContainsKey(m))
+           ? Model.IssuedBreakdownByMonth[m]
+           : new FeeBreakdownDto();
+
+    FeeBreakdownDto SumBreakdown(params int[] months)
+    {
+        var r = new FeeBreakdownDto();
+        foreach (var mm in months)
+        {
+            var b = GetBreakdown(mm);
+            r.Rent += b.Rent;
+            r.Electric += b.Electric;
+            r.Water += b.Water;
+            r.Other += b.Other;
+        }
+        return r;
+    }
+
+    FeeBreakdownDto breakdownScope;
+
+    if (mode == "year")
+        breakdownScope = SumBreakdown(Enumerable.Range(1, 12).ToArray());
+    else if (mode == "quarter")
+    {
+        // tạm chọn breakdown tổng năm (view sẽ show theo từng quarter bằng table nếu muốn)
+        breakdownScope = SumBreakdown(Enumerable.Range(1, 12).ToArray());
+    }
+    else // month
+    {
+        breakdownScope = (selectedMonth is >= 1 and <= 12)
+            ? GetBreakdown(selectedMonth.Value)
+            : SumBreakdown(Enumerable.Range(1, 12).ToArray());
+    }
+
+    decimal GetIssued(int m) => (Model.IssuedByMonth != null && Model.IssuedByMonth.ContainsKey(m)) ? Model.IssuedByMonth[m] : 0;
+    decimal GetCollected(int m) => (Model.RevenueByMonth != null && Model.RevenueByMonth.ContainsKey(m)) ? Model.RevenueByMonth[m] : 0;
+
+    decimal issuedTotal = Model.TotalIssued;
+    decimal collectedTotal = Model.TotalRevenue;
+    decimal debtTotal = Model.TotalDebt;
+    double rate = Model.CollectionRate;
+
+    if (mode == "month" && selectedMonth is >= 1 and <= 12)
+    {
+        var m = selectedMonth.Value;
+        var issued = GetIssued(m);
+        var collected = GetCollected(m);
+
+        issuedTotal = issued;
+        collectedTotal = collected;
+        debtTotal = issued - collected;
+        rate = issued <= 0 ? 0 : (double)collected / (double)issued;
+    }
+
+    // ===== chart data
+    List<string> labels = new();
+    List<decimal> issuedSeries = new();
+    List<decimal> collectedSeries = new();
+    List<decimal> debtSeries = new();
+
+    if (mode == "year")
+    {
+        labels.Add(Model.Year.ToString());
+        issuedSeries.Add(Model.TotalIssued);
+        collectedSeries.Add(Model.TotalRevenue);
+        debtSeries.Add(Model.TotalDebt);
+    }
+    else if (mode == "quarter")
+    {
+        for (int q = 1; q <= 4; q++)
+        {
+            int s = (q - 1) * 3 + 1;
+            var issued = GetIssued(s) + GetIssued(s + 1) + GetIssued(s + 2);
+            var collected = GetCollected(s) + GetCollected(s + 1) + GetCollected(s + 2);
+
+            labels.Add($"Q{q}");
+            issuedSeries.Add(issued);
+            collectedSeries.Add(collected);
+            debtSeries.Add(issued - collected);
+        }
+    }
+    else
+    {
+        if (selectedMonth is >= 1 and <= 12)
+        {
+            var m = selectedMonth.Value;
+            var issued = GetIssued(m);
+            var collected = GetCollected(m);
+
+            labels.Add($"T.{m}");
+            issuedSeries.Add(issued);
+            collectedSeries.Add(collected);
+            debtSeries.Add(issued - collected);
+        }
+        else
+        {
+            for (int m = 1; m <= 12; m++)
+            {
+                var issued = GetIssued(m);
+                var collected = GetCollected(m);
+
+                labels.Add($"T.{m}");
+                issuedSeries.Add(issued);
+                collectedSeries.Add(collected);
+                debtSeries.Add(issued - collected);
+            }
+        }
+    }
+
+    var labelsJson = JsonSerializer.Serialize(labels);
+    var issuedJson = JsonSerializer.Serialize(issuedSeries);
+    var collectedJson = JsonSerializer.Serialize(collectedSeries);
+    var debtJson = JsonSerializer.Serialize(debtSeries);
+
+    var debtChip = debtTotal <= 0 ? "success" : "danger";
+    var occChip = occRate >= 0.8 ? "success" : (occRate > 0 ? "info" : "danger");
+}
+
+<div class="container">
+    <div class="card">
+        <!-- Header: title + filter + export -->
+        <div class="card-head" style="gap:12px; flex-wrap:wrap;">
+            <div class="card-title">Reports</div>
+
+            <form method="get" action="/Reports/Index"
+                  style="margin-left:auto; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <span class="chip info">Year</span>
+                <input name="year" class="inp" style="width:110px; height:44px;" value="@Model.Year" />
+
+                <span class="chip info">View by</span>
+                <select name="mode" class="inp" style="width:160px; height:44px;">
+                    <option value="month" selected="@(mode == "month")">Month</option>
+                    <option value="quarter" selected="@(mode == "quarter")">Quarter</option>
+                    <option value="year" selected="@(mode == "year")">Year</option>
+                </select>
+
+                <button class="btn-gradient" type="submit">View</button>
+            </form>
+
+            <a class="btn-gradient" href="/Reports/ExportExcel?year=@Model.Year&mode=@mode&month=@(selectedMonth ?? 0)">Export Excel</a>
+            <a class="btn-gradient" href="/Reports/ExportPdf?year=@Model.Year&mode=@mode&month=@(selectedMonth ?? 0)">Export PDF</a>
+        </div>
+
+        <!-- Month tabs -->
+        @if (mode == "month")
+        {
+            <div style="padding: 12px 18px; display:flex; gap:8px; flex-wrap:wrap; border-bottom:1px solid #f1f5ff;">
+                <a class="chip @(selectedMonth == null ? "success" : "info")"
+                   href="/Reports/Index?year=@Model.Year&mode=month">All</a>
+
+                @for (int m = 1; m <= 12; m++)
+                {
+                    var cls = (selectedMonth == m) ? "success" : "info";
+                    <a class="chip @cls" href="/Reports/Index?year=@Model.Year&mode=month&month=@m">T.@m</a>
+                }
+            </div>
+        }
+
+        <div class="pad-20">
+            <!-- KPI dùng kpi-grid / kpi-card có sẵn -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Total issued</div>
+                    <div class="kpi-row">
+                        <div class="kpi-value">@issuedTotal.ToString("N0")</div>
+                        <span class="pill danger">Issued</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-label">Total collected</div>
+                    <div class="kpi-row">
+                        <div class="kpi-value">@collectedTotal.ToString("N0")</div>
+                        <span class="pill success">Collected</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-label">Outstanding debt</div>
+                    <div class="kpi-row">
+                        <div class="kpi-value">@debtTotal.ToString("N0")</div>
+                        <span class="pill @debtChip">Debt</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card">
+                    <div class="kpi-label">Occupied / Rate</div>
+                    <div class="kpi-row" style="align-items:center;">
+                        <div>
+                            <div style="font-weight:950; font-size:18px;">@Model.OccupiedRooms/@Model.TotalRooms</div>
+                            <div style="color:var(--muted); font-weight:800; font-size:12px;">
+                                @occPct • @((rate * 100).ToString("0.#"))%
+                            </div>
+                        </div>
+                        <span class="pill @occChip">Occ</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Breakdown -->
+            <div class="mt-24" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px;">
+                <div class="card" style="padding:18px;">
+                    <div style="font-weight:900; margin-bottom:10px;">Revenue Breakdown (Issued)</div>
+
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>TYPE</th>
+                                    <th style="text-align:right; font-variant-numeric:tabular-nums;">AMOUNT</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Rent</td><td style="text-align:right; font-variant-numeric:tabular-nums;">@breakdownScope.Rent.ToString("N0")</td></tr>
+                                <tr><td>Electric</td><td style="text-align:right; font-variant-numeric:tabular-nums;">@breakdownScope.Electric.ToString("N0")</td></tr>
+                                <tr><td>Water</td><td style="text-align:right; font-variant-numeric:tabular-nums;">@breakdownScope.Water.ToString("N0")</td></tr>
+                                <tr><td>Other (Extra fees)</td><td style="text-align:right; font-variant-numeric:tabular-nums;">@breakdownScope.Other.ToString("N0")</td></tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th>TOTAL</th>
+                                    <th style="text-align:right; font-variant-numeric:tabular-nums;">
+                                        @((breakdownScope.Rent + breakdownScope.Electric + breakdownScope.Water + breakdownScope.Other).ToString("N0"))
+                                    </th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <div class="mt12" style="opacity:.75; font-size:12px;">
+                        * Breakdown tính theo BillItems (Issued). Payments hiện tại không tách theo loại phí.
+                    </div>
+                </div>
+
+                <div class="card" style="padding:18px;">
+                    <div style="font-weight:900; margin-bottom:10px;">Notes</div>
+                    <div class="hint">
+                        Rent/Electric/Water lấy theo BillItems Name. Các khoản có ExtraFeeId hoặc tên khác sẽ được gom vào Other.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="mt-24" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:16px;">
+                <div class="card" style="padding:18px;">
+                    <div style="font-weight:900; margin-bottom:10px;">Issued vs Collected</div>
+                    <canvas id="chartIssuedCollected" height="140"></canvas>
+                </div>
+
+                <div class="card" style="padding:18px;">
+                    <div style="font-weight:900; margin-bottom:10px;">Debt</div>
+                    <canvas id="chartDebt" height="140"></canvas>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-wrap rp-table">
+                <table class="table table-fixed">
+                    <colgroup>
+                        <col style="width:140px" />
+                        <col style="width:220px" />
+                        <col style="width:220px" />
+                        <col style="width:180px" />
+                    </colgroup>
+
+                    <thead>
+                        <tr>
+                            <th>@(mode == "quarter" ? "QUARTER" : (mode == "year" ? "YEAR" : "MONTH"))</th>
+                            <th style="text-align:right; font-variant-numeric:tabular-nums;">ISSUED</th>
+                            <th style="text-align:right; font-variant-numeric:tabular-nums;">COLLECTED</th>
+                            <th style="text-align:right; font-variant-numeric:tabular-nums;">DEBT</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @if (mode == "year")
+                        {
+                            <tr>
+                                <td>@Model.Year</td>
+                                <td style="text-align:right; font-variant-numeric:tabular-nums;">@Model.TotalIssued.ToString("N0")</td>
+                                <td style="text-align:right; font-variant-numeric:tabular-nums;">@Model.TotalRevenue.ToString("N0")</td>
+                                <td style="text-align:right; font-variant-numeric:tabular-nums;">@Model.TotalDebt.ToString("N0")</td>
+                            </tr>
+                        }
+                        else if (mode == "quarter")
+                        {
+                            decimal QIssued(int q)
+                            {
+                                int s = (q - 1) * 3 + 1;
+                                return GetIssued(s) + GetIssued(s + 1) + GetIssued(s + 2);
+                            }
+                            decimal QCollected(int q)
+                            {
+                                int s = (q - 1) * 3 + 1;
+                                return GetCollected(s) + GetCollected(s + 1) + GetCollected(s + 2);
+                            }
+
+                            for (int q = 1; q <= 4; q++)
+                            {
+                                var issued = QIssued(q);
+                                var collected = QCollected(q);
+                                var debt = issued - collected;
+
+                                <tr>
+                                    <td>Q@(q)</td>
+                                    <td style="text-align:right; font-variant-numeric:tabular-nums;">@issued.ToString("N0")</td>
+                                    <td style="text-align:right; font-variant-numeric:tabular-nums;">@collected.ToString("N0")</td>
+                                    <td style="text-align:right; font-variant-numeric:tabular-nums;">@debt.ToString("N0")</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            if (selectedMonth is >= 1 and <= 12)
+                            {
+                                var m = selectedMonth.Value;
+                                var issued = GetIssued(m);
+                                var collected = GetCollected(m);
+                                var debt = issued - collected;
+
+                                <tr>
+                                    <td>@m</td>
+                                    <td style="text-align:right; font-variant-numeric:tabular-nums;">@issued.ToString("N0")</td>
+                                    <td style="text-align:right; font-variant-numeric:tabular-nums;">@collected.ToString("N0")</td>
+                                    <td style="text-align:right; font-variant-numeric:tabular-nums;">@debt.ToString("N0")</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                for (int m = 1; m <= 12; m++)
+                                {
+                                    var issued = GetIssued(m);
+                                    var collected = GetCollected(m);
+                                    var debt = issued - collected;
+
+                                    <tr>
+                                        <td>@m</td>
+                                        <td style="text-align:right; font-variant-numeric:tabular-nums;">@issued.ToString("N0")</td>
+                                        <td style="text-align:right; font-variant-numeric:tabular-nums;">@collected.ToString("N0")</td>
+                                        <td style="text-align:right; font-variant-numeric:tabular-nums;">@debt.ToString("N0")</td>
+                                    </tr>
+                                }
+                            }
+                        }
+                    </tbody>
+
+                    <tfoot>
+                        @if (mode == "year" || mode == "quarter")
+                        {
+                            <tr>
+                                <th>TOTAL</th>
+                                <th style="text-align:right; font-variant-numeric:tabular-nums;">@Model.TotalIssued.ToString("N0")</th>
+                                <th style="text-align:right; font-variant-numeric:tabular-nums;">@Model.TotalRevenue.ToString("N0")</th>
+                                <th style="text-align:right; font-variant-numeric:tabular-nums;">@Model.TotalDebt.ToString("N0")</th>
+                            </tr>
+                        }
+                        else
+                        {
+                            if (selectedMonth is >= 1 and <= 12)
+                            {
+                                <tr>
+                                    <th>TOTAL</th>
+                                    <th style="text-align:right; font-variant-numeric:tabular-nums;">@issuedTotal.ToString("N0")</th>
+                                    <th style="text-align:right; font-variant-numeric:tabular-nums;">@collectedTotal.ToString("N0")</th>
+                                    <th style="text-align:right; font-variant-numeric:tabular-nums;">@debtTotal.ToString("N0")</th>
+                                </tr>
+                            }
+                            else
+                            {
+                                <tr>
+                                    <th>TOTAL</th>
+                                    <th style="text-align:right; font-variant-numeric:tabular-nums;">@Model.TotalIssued.ToString("N0")</th>
+                                    <th style="text-align:right; font-variant-numeric:tabular-nums;">@Model.TotalRevenue.ToString("N0")</th>
+                                    <th style="text-align:right; font-variant-numeric:tabular-nums;">@Model.TotalDebt.ToString("N0")</th>
+                                </tr>
+                            }
+                        }
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="mt12" style="opacity:.75; font-size:12px;">
+                * Issued = sum(Bill.TotalAmount) by Bill.Period (YYYYMM).
+                Collected = sum(Payment.Amount) where Status = <b>Completed</b> grouped by Bill.Period.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script>
+    (() => {
+      const labels = @Html.Raw(labelsJson);
+      const issued = @Html.Raw(issuedJson);
+      const collected = @Html.Raw(collectedJson);
+      const debt = @Html.Raw(debtJson);
+
+      const c1 = document.getElementById('chartIssuedCollected');
+      if (c1) {
+        new Chart(c1, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [
+              { label: 'Issued', data: issued },
+              { label: 'Collected', data: collected }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: 'top' },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => {
+                    const v = ctx.parsed.y ?? 0;
+                    return `${ctx.dataset.label}: ${Number(v).toLocaleString('vi-VN')}`;
+                  }
+                }
+              }
+            },
+            scales: {
+              y: { ticks: { callback: (value) => Number(value).toLocaleString('vi-VN') } }
+            }
+          }
+        });
+      }
+
+      const c2 = document.getElementById('chartDebt');
+      if (c2) {
+        new Chart(c2, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{ label: 'Debt', data: debt, tension: 0.25 }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: 'top' },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) => {
+                    const v = ctx.parsed.y ?? 0;
+                    return `Debt: ${Number(v).toLocaleString('vi-VN')}`;
+                  }
+                }
+              }
+            },
+            scales: {
+              y: { ticks: { callback: (value) => Number(value).toLocaleString('vi-VN') } }
+            }
+          }
+        });
+      }
+    })();
+</script>

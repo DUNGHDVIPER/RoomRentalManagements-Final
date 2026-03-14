@@ -1,0 +1,55 @@
+﻿@model BLL.DTOs.Utility.UtilityPriceDto
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Utility Prices";
+
+    var warn = (Model.ElectricPerKwh == 0 || Model.WaterPerM3 == 0);
+}
+
+<div class="container">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">Utility Prices</div>
+            <a class="link" href="/Dashboard">Back</a>
+        </div>
+
+        @if (TempData["success"] != null)
+        {
+            <div class="pad-20">
+                <div class="ok">@TempData["success"]</div>
+            </div>
+        }
+
+        @if (warn)
+        {
+            <div class="pad-20">
+                <div class="err">
+                    Bảng giá đang bằng 0. Hãy cập nhật để tính điện/nước chính xác.
+                </div>
+            </div>
+        }
+
+        <div class="detail-grid">
+            <div class="detail-item">
+                <div class="lbl">ELECTRIC (đ/kWh)</div>
+                <div style="font-weight:950; margin-top:6px;">@Model.ElectricPerKwh.ToString("N0")</div>
+            </div>
+
+            <div class="detail-item">
+                <div class="lbl">WATER (đ/m³)</div>
+                <div style="font-weight:950; margin-top:6px;">@Model.WaterPerM3.ToString("N0")</div>
+            </div>
+
+            <div class="detail-item">
+                <div class="lbl">EFFECTIVE FROM</div>
+                <div style="font-weight:950; margin-top:6px;">@Model.EffectiveFrom.ToString("dd/MM/yyyy")</div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a class="btn-gradient" href="/UtilityPrices/Set">
+                Update price
+            </a>
+        </div>
+    </div>
+</div>

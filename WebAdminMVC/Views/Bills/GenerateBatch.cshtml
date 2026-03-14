@@ -1,0 +1,108 @@
+﻿@model WebAdmin.MVC.Models.Billing.BillGenerateBatchVm
+@using DAL.Entities.Billing
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Generate Bills";
+    var extraFees = ViewBag.ExtraFees as List<ExtraFee> ?? new List<ExtraFee>();
+}
+
+<div class="container">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">Generate Bills (Batch)</div>
+            <a class="link" href="/Bills/Index">Back</a>
+        </div>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="pad-20">
+                <div class="err">Vui lòng kiểm tra lại dữ liệu.</div>
+            </div>
+        }
+
+        <form method="post" asp-action="GenerateBatch" asp-controller="Bills">
+            @Html.AntiForgeryToken()
+
+            <div class="pad-20">
+                <div class="form-grid">
+                    <div class="form-item">
+                        <label class="form-label">Month (yyyy-MM)</label>
+                        <input class="form-control" asp-for="Month" placeholder="2026-02" />
+                        <span class="text-danger" asp-validation-for="Month"></span>
+                        <div class="hint">Ví dụ: 2026-02</div>
+                    </div>
+
+                    <div class="form-item">
+                        <label class="form-label">Due Date</label>
+                        <input class="form-control" asp-for="DueDate" type="date" />
+                        <span class="text-danger" asp-validation-for="DueDate"></span>
+                    </div>
+
+                    <div class="form-item">
+                        <label class="form-label">Options</label>
+                        <div style="display:flex; gap:14px; align-items:center; margin-top:8px;">
+                            <label style="display:flex; gap:8px; align-items:center;">
+                                <input asp-for="IncludeRent" type="checkbox" />
+                                <span>Include rent</span>
+                            </label>
+                            <label style="display:flex; gap:8px; align-items:center;">
+                                <input asp-for="IncludeUtilities" type="checkbox" />
+                                <span>Include utilities</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-item" style="grid-column: 1 / -1;">
+                        <label class="form-label">Extra Fees (apply to all bills)</label>
+
+                        <div class="hint" style="margin-bottom:8px;">
+                            Chọn các phí sẽ được thêm vào mọi hóa đơn trong tháng này (dựa trên Default Amount).
+                        </div>
+
+                        <div style="border:1px solid rgba(15,23,42,.12); border-radius:12px; padding:12px;">
+                            @if (!extraFees.Any())
+                            {
+                                <div class="hint">Chưa có Extra Fee nào đang Active. Vào <b>Extra Fees</b> để tạo.</div>
+                            }
+                            else
+                            {
+                                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:10px;">
+                                    @foreach (var fee in extraFees)
+                                    {
+                                        var checkedAttr = Model.ExtraFeeIds != null && Model.ExtraFeeIds.Contains(fee.Id);
+                                        <label style="display:flex; gap:10px; align-items:flex-start; padding:10px; border:1px solid rgba(15,23,42,.08); border-radius:10px;">
+                                            <input type="checkbox"
+                                                   name="ExtraFeeIds"
+                                                   value="@fee.Id"
+                                                   @(checkedAttr ? "checked" : "") />
+                                            <span>
+                                                <div style="font-weight:600; line-height:1.2;">@fee.Name</div>
+                                                <div class="hint" style="margin-top:2px;">@fee.DefaultAmount.ToString("N0")</div>
+                                            </span>
+                                        </label>
+                                    }
+                                </div>
+                            }
+                        </div>
+
+                        @* Nếu bạn muốn báo lỗi validate cho ExtraFeeIds thì mở cái này *@
+                        @* <span class="text-danger" asp-validation-for="ExtraFeeIds"></span> *@
+                    </div>
+                </div>
+
+                <div class="hint" style="margin-top:10px;">
+                    Tip: Hãy chắc chắn bạn đã nhập Utility Prices + Utility Readings cho tháng này trước khi generate.
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-gradient">Generate</button>
+                <a class="link" href="/Bills/Index">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

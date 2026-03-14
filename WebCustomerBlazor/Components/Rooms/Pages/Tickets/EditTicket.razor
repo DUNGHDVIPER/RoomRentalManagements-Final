@@ -1,0 +1,75 @@
+﻿@page "/tickets/edit/{Id:int}"
+@using DAL.Data
+@using DAL.Entities.Maintenance
+@inject AppDbContext _context
+@inject NavigationManager Nav
+@using Microsoft.EntityFrameworkCore
+@using DAL.Entities.Common
+@using Microsoft.AspNetCore.Components.Forms
+<div class="bg-grad">
+    <div class="container section">
+        <div class="login-wrap">
+            <div class="card glass p-22 login-card">
+                <div class="h2" style="margin-bottom: 8px;">Chỉnh sửa Ticket</div>
+                <div class="muted small" style="margin-bottom: 24px;">Cập nhật thông tin hỗ trợ cho mã #@Id.ToString("0000")</div>
+
+                @if (ticket == null)
+                {
+                    <p>Đang tải dữ liệu...</p>
+                }
+                else
+                {
+                    <EditForm Model="ticket" OnValidSubmit="HandleSave">
+                        <div class="form">
+                            <div>
+                                <label class="label">Tiêu đề</label>
+                                <InputText @bind-Value="ticket.Title" class="input" style="width: 100%;" placeholder="Nhập tiêu đề..." />
+                            </div>
+
+                            <div>
+                                <label class="label">Mô tả chi tiết</label>
+                                <InputTextArea @bind-Value="ticket.Description" class="input" style="width: 100%; height: 120px; padding: 12px;" placeholder="Mô tả vấn đề..." />
+                            </div>
+
+                            <div>
+                                <label class="label">Trạng thái</label>
+                                <InputSelect @bind-Value="ticket.Status" class="select" style="width: 100%;">
+                                    @foreach (var status in Enum.GetValues<TicketStatus>())
+                                    {
+                                        <option value="@status">@status.ToString()</option>
+                                    }
+                                </InputSelect>
+                            </div>
+
+                            <div style="margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                <button type="submit" class="btn-grad">Lưu thay đổi</button>
+                                <button type="button" class="btn-ghost" @onclick='() => Nav.NavigateTo("/tickets")'>Hủy</button>
+                            </div>
+                        </div>
+                    </EditForm>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Ticket? ticket;
+
+    protected override async Task OnInitializedAsync()
+    {
+        ticket = await _context.Tickets.FindAsync(Id);
+        if (ticket == null) Nav.NavigateTo("/tickets");
+    }
+
+    private async Task HandleSave()
+    {
+        if (ticket != null)
+        {
+            _context.Tickets.Update(ticket);
+            await _context.SaveChangesAsync();
+            Nav.NavigateTo("/tickets");
+        }
+    }
+}

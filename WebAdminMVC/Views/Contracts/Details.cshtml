@@ -1,0 +1,236 @@
+﻿@using BLL.Common
+@using DAL.Entities.Common
+@model WebAdmin.MVC.Models.Contracts.ContractDetailsVm
+@{
+    ViewData["Title"] = "Contract Details";
+    Layout = "_Layout";
+    var c = Model.Contract;
+
+    var statusText = c.Status;
+}
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <h2 class="m-0">Contract Details</h2>
+    <span class="badge bg-danger">ADMIN MODE – System-wide</span>
+</div>
+
+@if (TempData["Error"] is string err && !string.IsNullOrWhiteSpace(err))
+{
+    <div class="alert alert-danger">@err</div>
+}
+@if (TempData["Success"] is string ok && !string.IsNullOrWhiteSpace(ok))
+{
+    <div class="alert alert-success">@ok</div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <a class="btn btn-outline-secondary" asp-action="Index">← Back</a>
+
+    <div class="d-flex gap-2 flex-wrap justify-content-end">
+        <a class="btn btn-outline-info" asp-action="Versions" asp-route-id="@c.Id">Versions</a>
+        <a class="btn btn-outline-dark" asp-action="ExportPdf" asp-route-id="@c.Id">Export PDF</a>
+        <a class="btn btn-outline-primary" asp-action="UploadAttachment" asp-route-id="@c.Id">Upload Attachment</a>
+
+        <a class="btn btn-warning" asp-action="Renew" asp-route-id="@c.Id">Renew</a>
+        <a class="btn btn-danger" asp-action="Terminate" asp-route-id="@c.Id">Terminate</a>
+        <a class="btn btn-outline-primary" asp-action="ReminderScan">Reminder Scan</a>
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header fw-semibold">G1) Update Deposit Amount</div>
+                    <div class="card-body">
+                        <form asp-action="UpdateDepositAmount" asp-route-id="@c.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            <div class="mb-2">
+                                <label class="form-label">New Deposit Amount</label>
+                                <input class="form-control" type="number" step="0.01" name="newDeposit" value="@c.Deposit" />
+                            </div>
+                            <button class="btn btn-primary" type="submit">Update Amount</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header fw-semibold">G2) Update Deposit Status</div>
+                    <div class="card-body">
+                        <form asp-action="UpdateDepositStatus" asp-route-id="@c.Id" method="post">
+                            @Html.AntiForgeryToken()
+
+                            <div class="mb-2">
+                                <label class="form-label">Deposit Amount</label>
+                                <input class="form-control" type="number" step="0.01" name="depositAmount" value="@c.Deposit" />
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label">Deposit Status</label>
+                                <select class="form-select" name="depositStatus">
+                                    <option value="Unpaid" selected="@(string.Equals(c.DepositStatus, "Unpaid", StringComparison.OrdinalIgnoreCase))">Unpaid</option>
+                                    <option value="Paid" selected="@(string.Equals(c.DepositStatus, "Paid", StringComparison.OrdinalIgnoreCase))">Paid</option>
+                                    <option value="Refunded" selected="@(string.Equals(c.DepositStatus, "Refunded", StringComparison.OrdinalIgnoreCase))">Refunded</option>
+                                    <option value="Forfeit" selected="@(string.Equals(c.DepositStatus, "Forfeit", StringComparison.OrdinalIgnoreCase))">Forfeit</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label">Paid Amount (required if Paid)</label>
+                                <input class="form-control" type="number" step="0.01" name="paidAmount"
+                                       value="@(c.DepositPaidAmount.HasValue? c.DepositPaidAmount.Value.ToString("0.##") : "")" />
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label">Paid At (required if Paid)</label>
+                                <input class="form-control" type="datetime-local" name="paidAt"
+                                       value="@(c.DepositPaidAt.HasValue? c.DepositPaidAt.Value.ToString("yyyy-MM-ddTHH:mm") : "")" />
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label">Note</label>
+                                <input class="form-control" name="note" />
+                            </div>
+
+                            <button class="btn btn-primary" type="submit">Update Status</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @if (c.Status == "Draft")
+        {
+            <form asp-action="Activate" asp-route-id="@c.Id" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-success">Activate</button>
+            </form>
+        }
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="text-muted">Contract Id</div>
+                <div class="fw-semibold">@c.Id</div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-muted">Contract Code</div>
+                <div class="fw-semibold">@(!string.IsNullOrWhiteSpace(c.ContractCode) ? c.ContractCode : "-")</div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-muted">Room Id</div>
+                <div class="fw-semibold">@c.RoomId</div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-muted">Tenant Id</div>
+                <div class="fw-semibold">@c.TenantId</div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="text-muted">Status</div>
+                <div class="fw-semibold">
+                    @if (c.IsActive || c.Status == "Active")
+                    {
+                        <span class="badge bg-success">Active</span>
+                    }
+                    else if (c.Status == "Draft")
+                    {
+                        <span class="badge bg-warning text-dark">Draft</span>
+                    }
+                    else if (c.Status == "Expired")
+                    {
+                        <span class="badge bg-secondary">Expired</span>
+                    }   
+                    else if (c.Status == "Terminated")
+                    {
+                        <span class="badge bg-danger">Terminated</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-light text-dark">@statusText</span>
+                    }
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="text-muted">Start Date</div>
+                <div class="fw-semibold">@c.StartDate.ToString("yyyy-MM-dd")</div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-muted">End Date</div>
+                <div class="fw-semibold">@c.EndDate.ToString("yyyy-MM-dd")</div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="text-muted">Rent</div>
+                <div class="fw-semibold">@c.Rent.ToString("N0")</div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-muted">Deposit</div>
+                <div class="fw-semibold">@c.Deposit.ToString("N0")</div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="text-muted">Deposit Status</div>
+                <div class="fw-semibold">@c.DepositStatus</div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-muted">Deposit Paid At</div>
+                <div class="fw-semibold">@((c.DepositPaidAt.HasValue) ? c.DepositPaidAt.Value.ToString("yyyy-MM-dd HH:mm") : "-")</div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-muted">Deposit Paid Amount</div>
+                <div class="fw-semibold">@((c.DepositPaidAmount.HasValue) ? c.DepositPaidAmount.Value.ToString("N0") : "-")</div>
+            </div>
+            @if (c.Status == "Active" && c.EndDate.Date < DateTime.Today)
+            {
+                <form asp-action="ForceExpire" asp-route-id="@c.Id" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-danger"
+                            onclick="return confirm('Force expire this contract?');">
+                        Force Expire
+                    </button>
+                </form>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">Attachments</span>
+        <a class="btn btn-sm btn-outline-primary" asp-action="UploadAttachment" asp-route-id="@c.Id">Upload</a>
+    </div>
+    <div class="card-body">
+        @if (Model.Attachments == null || Model.Attachments.Count == 0)
+        {
+            <div class="text-muted">No attachments yet.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th style="width: 180px;">Uploaded At</th>
+                            <th style="width: 80px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in Model.Attachments)
+                        {
+                            <tr>
+                                <td>@a.FileName</td>
+                                <td>@a.UploadedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td class="text-end">
+                                    <a class="btn btn-sm btn-outline-secondary" href="@a.Url" target="_blank">Open</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

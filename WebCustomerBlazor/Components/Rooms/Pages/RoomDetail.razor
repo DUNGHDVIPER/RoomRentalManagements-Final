@@ -1,0 +1,61 @@
+﻿@page "/rooms/{Id:int}"
+@using BLL.DTOs.Room.Public
+@using WebCustomerBlazor.Services
+@inject ICustomerRoomCatalog Catalog
+
+@if (room is null)
+{
+    <div class="muted">Loading...</div>
+}
+else
+{
+    <div style="display:grid;grid-template-columns:1.2fr .8fr;gap:16px;">
+        <div>
+            <RoomGallery Images="@room.Images" />
+
+            <div class="card" style="padding:16px;margin-top:16px;">
+                <h2 class="h2">@room.Name</h2>
+                <p class="muted">@room.District, @room.City • @room.Area m² • @room.PostedAgo</p>
+
+                <hr class="hr" />
+                <div class="badges">
+                    @foreach (var b in room.Badges)
+                    {
+                        <span class="badge info">@b</span>
+                    }
+                </div>
+
+                <hr class="hr" />
+                <div class="h2" style="font-size:20px;">Amenities</div>
+                <div class="chips" style="margin-top:10px;">
+                    @foreach (var a in room.Amenities)
+                    {
+                        <span class="chip">@a.Name</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="card" style="padding:16px;position:sticky;top:16px;">
+                <div class="muted">Price</div>
+                <div class="h2" style="margin-top:6px;">@room.Price.ToString("N0") ₫ / tháng</div>
+
+                <hr class="hr" />
+                <button class="btn-grad" style="width:100%;">Đặt phòng</button>
+                <div style="height:10px"></div>
+                <button class="btn-ghost" style="width:100%;">Liên hệ</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    RoomPublicDto? room;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        room = await Catalog.GetByIdAsync(Id);
+    }
+}

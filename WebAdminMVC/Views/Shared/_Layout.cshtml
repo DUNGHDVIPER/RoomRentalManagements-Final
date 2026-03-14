@@ -1,0 +1,133 @@
+﻿@{
+    var title = (string)(ViewData["Title"] ?? "Admin");
+}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>@title - AdminMVC</title>
+
+    <!-- GOOGLE FONT -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- ICON -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <!-- THEME -->
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
+
+</head>
+
+<body>
+
+    <div class="app-shell">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            @await Html.PartialAsync("_Sidebar")
+        </aside>
+
+
+        <!-- MAIN -->
+        <main class="main">
+
+            <!-- TOPBAR -->
+            <header class="topbar">
+
+                <div class="topbar-left">
+                    <h3 class="page-title">@title</h3>
+                </div>
+
+                <div class="topbar-right">
+
+                    @if (User?.Identity?.IsAuthenticated ?? false)
+                    {
+                        <div class="user-box">
+
+                            <span class="user-name">
+                                <i class="fa-solid fa-user"></i>
+                                @User.Identity!.Name
+                            </span>
+
+                            <form asp-controller="Account"
+                                  asp-action="Logout"
+                                  method="post">
+
+                                @Html.AntiForgeryToken()
+
+                                <button class="btn-logout"
+                                        type="submit">
+                                    <i class="fa-solid fa-right-from-bracket"></i>
+                                    Logout
+                                </button>
+
+                            </form>
+
+                        </div>
+                    }
+                    else
+                    {
+                        <a class="btn-login"
+                           asp-controller="Account"
+                           asp-action="Login">
+
+                            <i class="fa-solid fa-right-to-bracket"></i>
+                            Login
+
+                        </a>
+                    }
+
+                </div>
+
+            </header>
+
+
+            <!-- PAGE BODY -->
+            <section class="page">
+
+                <div class="page-container">
+                    @RenderBody()
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+    <script src="~/js/admin.js" asp-append-version="true"></script>
+
+    @RenderSection("Scripts", required: false)
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/notificationHub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("ReceiveNotification", function (title, content) {
+
+            const toast = document.createElement("div");
+            toast.className = "notification-toast";
+            toast.innerHTML = `<strong>${title}</strong><br/>${content}`;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        });
+
+        connection.start()
+            .catch(err => console.error(err));
+    </script>
+</body>
+</html>

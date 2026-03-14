@@ -1,0 +1,40 @@
+<<<<<<< HEAD
+# Build folders
+**/bin/
+**/obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Nuget / Cache
+*.cache
+*.log
+project.nuget.cache
+*.csproj.nuget.*
+
+# VSIX
+*.vsix
+
+ 
+=======
+
+
+# Visual Studio
+.vs/
+bin/
+obj/
+
+# User specific
+*.user
+*.suo
+
+# Logs
+*.log
+
+# Rider / VSCode
+.idea/
+.vscode/
+
+>>>>>>> origin/main

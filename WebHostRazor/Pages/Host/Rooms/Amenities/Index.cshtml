@@ -1,0 +1,49 @@
+﻿@page "/Host/Rooms/{id:int}/Amenities"
+@model WebHostRazor.Pages.Host.Rooms.Amenities.IndexModel
+@{
+    ViewData["Title"] = "Room Amenities";
+}
+
+@if (Model.Room == null)
+{
+    <div class="card p-18"><b>Room not found.</b></div>
+}
+else
+{
+    <div class="card p-18">
+        <h2 class="h2">Amenities — @Model.Room.Name</h2>
+        <div class="muted">Add / remove amenities</div>
+        <hr class="hr" />
+
+        <form method="post" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            <input type="hidden" name="id" value="@Model.Room.Id" />
+            <input class="input" name="name" style="min-width:280px;flex:1" placeholder="Amenity name (Wifi, AC...)" />
+            <button class="btn-grad" type="submit">Add</button>
+            <a class="btn-ghost" href="/Host/Rooms/Details?id=@Model.Room.Id">Back</a>
+        </form>
+
+        <hr class="hr" />
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            @foreach (var a in Model.Room.Amenities)
+            {
+                <div class="badge info" style="display:flex;gap:8px;align-items:center;">
+                    @a
+                    <form method="post" asp-page-handler="Remove" style="display:inline;">
+                        <input type="hidden" name="id" value="@Model.Room.Id" />
+                        <input type="hidden" name="name" value="@a" />
+                        <button class="btn-ghost" type="submit" style="padding:6px 10px;" onclick="return confirm('Remove @a?');">×</button>
+                    </form>
+                </div>
+            }
+        </div>
+
+        @if (Model.Room.Amenities.Count == 0)
+        {
+            <div class="text-center muted" style="padding:40px;">
+                <p>No amenities added yet.</p>
+                <p>Use the form above to add your first amenity.</p>
+            </div>
+        }
+    </div>
+}

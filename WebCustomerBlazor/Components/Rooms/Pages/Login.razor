@@ -1,0 +1,122 @@
+﻿@page "/login"
+@using BLL.Services
+@using BLL.Services.Interfaces
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Identity
+@inject ITokenService TokenService
+@inject UserManager<IdentityUser> UserManager
+@inject TokenAuthenticationStateProvider AuthProvider
+@inject NavigationManager Nav
+
+<div class="login-wrap">
+    <div class="login-card card">
+        <div class="brand">
+            <div class="logo">R</div>
+            <div>
+                <div class="brand-title">Roomy<span class="brand-accent">Customer</span></div>
+                <div class="muted">Sign in to continue</div>
+            </div>
+        </div>
+
+        <div class="hint">
+            Demo: <b>customer@demo.com</b> / <b>Customer@123!</b><br />
+            Demo: <b>tenant@demo.com</b> / <b>Tenant@123!</b>
+        </div>
+
+        <div class="form">
+            <label class="label">Email</label>
+            <input class="input" placeholder="customer@demo.com" @bind="email" />
+
+            <label class="label">Password</label>
+            <input class="input" placeholder="Customer@123!" type="password" @bind="password" />
+
+            <div class="row">
+                <label class="muted" style="display:flex;align-items:center;gap:8px;">
+                    <input type="checkbox" @bind="remember" />
+                    Remember me
+                </label>
+                <a class="link" href="/forgot">Forgot?</a>
+            </div>
+
+            <button type="button" class="btn-grad" style="width:100%;" @onclick="DoLogin" disabled="@isLoading">
+                @(isLoading ? "Logging in..." : "Login")
+            </button>
+
+            @if (!string.IsNullOrWhiteSpace(error))
+            {
+                <div class="alert">
+                    @error
+                </div>
+            }
+        </div>
+
+        <div class="muted" style="text-align:center;margin-top:10px;">
+            By continuing you agree to our <span class="link">Terms</span>.
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "ReturnUrl")]
+    public string? ReturnUrl { get; set; }
+
+    private string email = "customer@demo.com";
+    private string password = "Customer@123!";
+    private bool remember = true;
+    private string? error;
+    private bool isLoading = false;
+
+    private async Task DoLogin()
+    {
+        error = null;
+        isLoading = true;
+
+        try
+        {
+            var normalizedEmail = email.Trim();
+
+            var user = await UserManager.FindByEmailAsync(normalizedEmail);
+            if (user == null)
+            {
+                error = "Email hoặc mật khẩu không đúng.";
+                return;
+            }
+
+            var validPassword = await UserManager.CheckPasswordAsync(user, password);
+            if (!validPassword)
+            {
+                error = "Email hoặc mật khẩu không đúng.";
+                return;
+            }
+
+            if (!user.EmailConfirmed)
+            {
+                error = "Tài khoản chưa xác nhận email.";
+                return;
+            }
+
+            var roles = await UserManager.GetRolesAsync(user);
+
+            if (!(roles.Contains("Customer") || roles.Contains("Tenant") || roles.Contains("User")))
+            {
+                error = "Tài khoản này không thuộc Customer Portal.";
+                return;
+            }
+
+            var jwtToken = await TokenService.GenerateJwtTokenAsync(user, roles);
+            await AuthProvider.NotifyUserAuthenticationAsync(jwtToken);
+
+            var target = string.IsNullOrWhiteSpace(ReturnUrl) ? "/profile" : ReturnUrl!;
+            Nav.NavigateTo(target, replace: true);
+        }
+        catch (Exception ex)
+        {
+            error = $"Login error: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+}

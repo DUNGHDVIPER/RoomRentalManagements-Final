@@ -1,0 +1,44 @@
+﻿@page
+@model WebHostRazor.Pages.Host.Contracts.Wizard.Step3Model
+@{
+    ViewData["Title"] = "Contract Wizard - Step 3";
+}
+
+<h2>Wizard Step 3: Confirm</h2>
+
+<dl class="row">
+    <dt class="col-sm-3">RoomId</dt>
+    <dd class="col-sm-9">@Model.Preview.RoomId</dd>
+
+    <dt class="col-sm-3">TenantId</dt>
+    <dd class="col-sm-9">@Model.Preview.TenantId</dd>
+
+    <dt class="col-sm-3">Start</dt>
+    <dd class="col-sm-9">@Model.Preview.StartDate.ToString("yyyy-MM-dd")</dd>
+
+    <dt class="col-sm-3">End</dt>
+    <dd class="col-sm-9">@Model.Preview.EndDate.ToString("yyyy-MM-dd")</dd>
+
+    <dt class="col-sm-3">Rent</dt>
+    <dd class="col-sm-9">@Model.Preview.Rent.ToString("n0")</dd>
+
+    <dt class="col-sm-3">Deposit</dt>
+    <dd class="col-sm-9">@Model.Preview.Deposit.ToString("n0")</dd>
+
+    <dt class="col-sm-3">Activate</dt>
+    <dd class="col-sm-9">@Model.Preview.ActivateNow</dd>
+</dl>
+
+<form method="post" asp-page-handler="Confirm">
+    <input type="hidden" asp-for="RoomId" />
+    <input type="hidden" asp-for="TenantId" />
+    <input type="hidden" asp-for="StartDate" />
+    <input type="hidden" asp-for="EndDate" />
+    <input type="hidden" asp-for="Rent" />
+    <input type="hidden" asp-for="Deposit" />
+    <input type="hidden" asp-for="ActivateNow" />
+
+    <button class="btn btn-success" type="submit">Create Contract</button>
+
+    <a class="btn btn-secondary" asp-page="./Step2">Back</a>
+</form>

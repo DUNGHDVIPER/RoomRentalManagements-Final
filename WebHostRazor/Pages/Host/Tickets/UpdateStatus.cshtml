@@ -1,0 +1,21 @@
+﻿@page "{id:int}"
+@model UpdateStatusModel
+@Html.AntiForgeryToken()
+
+<h3>Update Ticket Status</h3>
+
+<form method="post">
+    <input type="hidden" asp-for="Ticket.Id" />
+
+    <div class="mb-3">
+        <label>Status</label>
+        <select asp-for="Ticket.Status" class="form-select">
+            <option value="Pending">Pending</option>
+            <option value="InProgress">InProgress</option>
+            <option value="Done">Done</option>
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-success">Save</button>
+    <a asp-page="Index" class="btn btn-secondary">Back</a>
+</form>

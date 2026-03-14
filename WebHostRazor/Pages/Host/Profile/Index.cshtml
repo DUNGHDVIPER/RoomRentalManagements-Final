@@ -1,0 +1,748 @@
+﻿@page "/Host/Profile"
+@model WebHostRazor.Pages.Host.Profile.IndexModel
+@{
+    ViewData["Title"] = "Manage Profile";
+    Layout = "/Pages/Host/Shared/_HostLayout.cshtml";
+}
+
+<div class="profile-page">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="breadcrumb-nav">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="/Host"><i class="fas fa-home"></i> Host</a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">Profile</li>
+                    </ol>
+                </nav>
+            </div>
+            <h1 class="page-title">
+                <i class="fas fa-user-circle"></i>
+                Manage Personal Profile
+            </h1>
+            <p class="page-subtitle">Update your personal information and security settings</p>
+        </div>
+        <div class="user-avatar">
+            <span>@(Model.ProfileForm?.FullName?.Substring(0, 1) ?? "U")</span>
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success" role="alert">
+            <i class="fas fa-check-circle"></i>
+            <span>@Model.SuccessMessage</span>
+            <button type="button" class="btn-close" onclick="this.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-error" role="alert">
+            <i class="fas fa-exclamation-circle"></i>
+            <span>@Model.ErrorMessage</span>
+            <button type="button" class="btn-close" onclick="this.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    }
+
+    <div class="profile-content">
+        <!-- Profile Information Card -->
+        <div class="profile-card">
+            <div class="card-header">
+                <div class="card-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="card-title">
+                    <h2>Profile Information</h2>
+                    <p>Keep your personal information up to date</p>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <form method="post" asp-page-handler="UpdateProfile" class="profile-form">
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label asp-for="ProfileForm.FullName" class="form-label">
+                                <i class="fas fa-user"></i> Full Name
+                            </label>
+                            <input asp-for="ProfileForm.FullName" class="form-control" placeholder="Enter your full name" />
+                            <span asp-validation-for="ProfileForm.FullName" class="validation-message"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="ProfileForm.Email" class="form-label">
+                                <i class="fas fa-envelope"></i> Email Address
+                            </label>
+                            <input asp-for="ProfileForm.Email" type="email" class="form-control" placeholder="Enter your email" />
+                            <span asp-validation-for="ProfileForm.Email" class="validation-message"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="ProfileForm.PhoneNumber" class="form-label">
+                            <i class="fas fa-phone"></i> Phone Number
+                        </label>
+                        <input asp-for="ProfileForm.PhoneNumber" class="form-control" placeholder="Enter your phone number" />
+                        <span asp-validation-for="ProfileForm.PhoneNumber" class="validation-message"></span>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            Update Profile
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Password Change Card -->
+        <div class="profile-card">
+            <div class="card-header">
+                <div class="card-icon security">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="card-title">
+                    <h2>Security Settings</h2>
+                    <p>Change your password to keep your account secure</p>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <form method="post" asp-page-handler="ChangePassword" class="password-form">
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-group">
+                        <label asp-for="PasswordForm.CurrentPassword" class="form-label">
+                            <i class="fas fa-lock"></i> Current Password
+                        </label>
+                        <div class="password-input-wrapper">
+                            <input asp-for="PasswordForm.CurrentPassword" type="password" class="form-control" placeholder="Enter current password" />
+                            <button type="button" class="password-toggle" onclick="togglePassword(this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <span asp-validation-for="PasswordForm.CurrentPassword" class="validation-message"></span>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label asp-for="PasswordForm.NewPassword" class="form-label">
+                                <i class="fas fa-key"></i> New Password
+                            </label>
+                            <div class="password-input-wrapper">
+                                <input asp-for="PasswordForm.NewPassword" type="password" id="newPasswordInput" class="form-control" placeholder="Enter new password" />
+                                <button type="button" class="password-toggle" onclick="togglePassword(this)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="PasswordForm.NewPassword" class="validation-message"></span>
+                            <div id="passwordStrength" class="password-strength"></div>
+                            <div class="password-requirements">
+                                <small>Password must contain:</small>
+                                <ul>
+                                    <li id="req-length">At least 8 characters</li>
+                                    <li id="req-lower">One lowercase letter</li>
+                                    <li id="req-upper">One uppercase letter</li>
+                                    <li id="req-number">One number</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="PasswordForm.ConfirmNewPassword" class="form-label">
+                                <i class="fas fa-check"></i> Confirm Password
+                            </label>
+                            <div class="password-input-wrapper">
+                                <input asp-for="PasswordForm.ConfirmNewPassword" type="password" id="confirmPasswordInput" class="form-control" placeholder="Confirm new password" />
+                                <button type="button" class="password-toggle" onclick="togglePassword(this)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="PasswordForm.ConfirmNewPassword" class="validation-message"></span>
+                            <div id="passwordMatch" class="password-match"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-shield-alt"></i>
+                            Change Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Profile Page Styles */
+    .profile-page {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Page Header */
+    .page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        padding: 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        color: white;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+
+    .header-content {
+        flex: 1;
+    }
+
+    .breadcrumb {
+        background: none;
+        padding: 0;
+        margin: 0 0 1rem;
+    }
+
+    .breadcrumb-item a {
+        color: rgba(255, 255, 255, 0.8);
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+        .breadcrumb-item a:hover {
+            color: white;
+        }
+
+    .breadcrumb-item.active {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .page-title {
+        margin: 0 0 0.5rem;
+        font-size: 2.5rem;
+        font-weight: 700;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-subtitle {
+        margin: 0;
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+
+    .user-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: 700;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+    }
+
+    /* Alerts */
+    .alert {
+        display: flex;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        border-radius: 15px;
+        border: none;
+        font-weight: 500;
+        position: relative;
+        animation: slideDown 0.3s ease;
+    }
+
+        .alert i:first-child {
+            margin-right: 0.8rem;
+            font-size: 1.2rem;
+        }
+
+    .alert-success {
+        background: linear-gradient(45deg, #4ade80, #22c55e);
+        color: white;
+        box-shadow: 0 5px 15px rgba(74, 222, 128, 0.3);
+    }
+
+    .alert-error {
+        background: linear-gradient(45deg, #ef4444, #dc2626);
+        color: white;
+        box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-close {
+        background: none;
+        border: none;
+        color: inherit;
+        margin-left: auto;
+        padding: 0.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+        .btn-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+    /* Profile Content */
+    .profile-content {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .profile-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+        .profile-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        padding: 2rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .card-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 15px;
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1.5rem;
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+
+        .card-icon.security {
+            background: linear-gradient(45deg, #f59e0b, #d97706);
+            box-shadow: 0 5px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .card-icon i {
+            color: white;
+            font-size: 1.5rem;
+        }
+
+    .card-title h2 {
+        margin: 0 0 0.3rem;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .card-title p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 0.95rem;
+    }
+
+    .card-body {
+        padding: 2rem;
+    }
+
+    /* Form Styles */
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.95rem;
+    }
+
+        .form-label i {
+            margin-right: 0.5rem;
+            color: #6b7280;
+            width: 16px;
+        }
+
+    .form-control {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background: #f9fafb;
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+    .password-input-wrapper {
+        position: relative;
+    }
+
+    .password-toggle {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #9ca3af;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 8px;
+        transition: color 0.3s ease;
+    }
+
+        .password-toggle:hover {
+            color: #667eea;
+        }
+
+    .validation-message {
+        display: block;
+        margin-top: 0.5rem;
+        color: #ef4444;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    /* Password Strength */
+    .password-strength {
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+        .password-strength.weak {
+            background: #fef2f2;
+            color: #ef4444;
+            border: 1px solid #fecaca;
+        }
+
+        .password-strength.medium {
+            background: #fef3c7;
+            color: #f59e0b;
+            border: 1px solid #fed7aa;
+        }
+
+        .password-strength.strong {
+            background: #f0fdf4;
+            color: #22c55e;
+            border: 1px solid #bbf7d0;
+        }
+
+    .password-requirements {
+        margin-top: 0.75rem;
+        padding: 1rem;
+        background: #f8fafc;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+    }
+
+        .password-requirements small {
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .password-requirements ul {
+            margin: 0.5rem 0 0;
+            padding-left: 1rem;
+            list-style: none;
+        }
+
+        .password-requirements li {
+            color: #94a3b8;
+            font-size: 0.875rem;
+            margin: 0.25rem 0;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+            .password-requirements li::before {
+                content: "✕";
+                position: absolute;
+                left: 0;
+                color: #ef4444;
+                font-weight: bold;
+            }
+
+            .password-requirements li.valid {
+                color: #22c55e;
+            }
+
+                .password-requirements li.valid::before {
+                    content: "✓";
+                    color: #22c55e;
+                }
+
+    .password-match {
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-align: center;
+    }
+
+        .password-match.match {
+            background: #f0fdf4;
+            color: #22c55e;
+            border: 1px solid #bbf7d0;
+        }
+
+        .password-match.no-match {
+            background: #fef2f2;
+            color: #ef4444;
+            border: 1px solid #fecaca;
+        }
+
+    /* Buttons */
+    .form-actions {
+        margin-top: 2rem;
+        display: flex;
+        gap: 1rem;
+    }
+
+    .btn {
+        padding: 0.875rem 2rem;
+        border: none;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+    }
+
+        .btn i {
+            margin-right: 0.5rem;
+        }
+
+    .btn-primary {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+    .btn-warning {
+        background: linear-gradient(45deg, #f59e0b, #d97706);
+        color: white;
+        box-shadow: 0 5px 15px rgba(245, 158, 11, 0.3);
+    }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+        }
+
+    /* Animations */
+    @@keyframes slideDown {
+        from
+
+    {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .profile-page
+
+    {
+        padding: 1rem;
+    }
+
+    .page-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .card-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+
+    .card-icon {
+        margin-right: 0;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    }
+</style>
+
+@section Scripts {
+    <partial name="~/Pages/Host/Shared/_ValidationScriptsPartial.cshtml" />
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Password strength checker
+            var passwordInput = document.getElementById("newPasswordInput");
+            var confirmInput = document.getElementById("confirmPasswordInput");
+            var strengthDiv = document.getElementById("passwordStrength");
+            var matchDiv = document.getElementById("passwordMatch");
+
+            if (passwordInput) {
+                passwordInput.addEventListener("input", function () {
+                    checkPasswordStrength(this.value);
+                    checkPasswordMatch();
+                });
+            }
+
+            if (confirmInput) {
+                confirmInput.addEventListener("input", checkPasswordMatch);
+            }
+
+            function checkPasswordStrength(password) {
+                var strength = 0;
+                var requirements = {
+                    length: password.length >= 8,
+                    lower: /[a-z]/.test(password),
+                    upper: /[A-Z]/.test(password),
+                    number: /[0-9]/.test(password)
+                };
+
+                // Update requirement list
+                Object.keys(requirements).forEach(function(req) {
+                    var element = document.getElementById("req-" + req);
+                    if (element) {
+                        element.className = requirements[req] ? "valid" : "";
+                    }
+                });
+
+                // Calculate strength
+                Object.values(requirements).forEach(function(met) {
+                    if (met) strength++;
+                });
+
+                // Update strength indicator
+                if (password.length === 0) {
+                    strengthDiv.innerHTML = "";
+                    strengthDiv.className = "password-strength";
+                } else if (strength <= 2) {
+                    strengthDiv.innerHTML = "Weak Password";
+                    strengthDiv.className = "password-strength weak";
+                } else if (strength === 3) {
+                    strengthDiv.innerHTML = "Medium Password";
+                    strengthDiv.className = "password-strength medium";
+                } else {
+                    strengthDiv.innerHTML = "Strong Password";
+                    strengthDiv.className = "password-strength strong";
+                }
+            }
+
+            function checkPasswordMatch() {
+                var newPassword = passwordInput ? passwordInput.value : "";
+                var confirmPassword = confirmInput ? confirmInput.value : "";
+
+                if (confirmPassword.length === 0) {
+                    matchDiv.innerHTML = "";
+                    matchDiv.className = "password-match";
+                } else if (newPassword === confirmPassword) {
+                    matchDiv.innerHTML = "Passwords match";
+                    matchDiv.className = "password-match match";
+                } else {
+                    matchDiv.innerHTML = "Passwords do not match";
+                    matchDiv.className = "password-match no-match";
+                }
+            }
+        });
+
+        // Toggle password visibility
+        function togglePassword(button) {
+            var input = button.previousElementSibling;
+            var icon = button.querySelector('i');
+
+            if (input.type === "password") {
+                input.type = "text";
+                icon.className = "fas fa-eye-slash";
+            } else {
+                input.type = "password";
+                icon.className = "fas fa-eye";
+            }
+        }
+
+        // Auto-hide alerts after 5 seconds
+        document.addEventListener("DOMContentLoaded", function() {
+            var alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    if (alert.parentNode) {
+                        alert.style.opacity = '0';
+                        alert.style.transform = 'translateY(-10px)';
+                        setTimeout(function() {
+                            alert.remove();
+                        }, 300);
+                    }
+                }, 5000);
+            });
+        });
+    </script>
+}

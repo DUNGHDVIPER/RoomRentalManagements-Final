@@ -1,0 +1,46 @@
+﻿@page
+@model WebHostRazor.Pages.Host.Rooms.CheckInOut.RoomHistoryModel
+@{
+    ViewData["Title"] = "Room History";
+}
+
+<div class="card-container">
+
+    <div class="card-header">
+        <h3>Room History</h3>
+    </div>
+
+    <div class="card-body">
+        <table class="table table-modern">
+            <thead>
+                <tr>
+                    <th>Tenant</th>
+                    <th>Check In</th>
+                    <th>Check Out</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Histories)
+                {
+                    <tr>
+                        <td>@item.Tenant.FullName</td>
+                        <td>@item.CheckInAt.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>
+                            @if (item.CheckOutAt != null)
+                            {
+                                @item.CheckOutAt?.ToString("dd/MM/yyyy HH:mm")
+                            }
+                            else
+                            {
+                                <span class="badge badge-success">
+                                    Still staying
+                                </span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+</div>

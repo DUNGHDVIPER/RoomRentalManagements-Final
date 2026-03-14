@@ -1,0 +1,59 @@
+﻿@page "{id:int}"
+@model WebHostRazor.Pages.Host.Contracts.VersionsModel
+@{
+    ViewData["Title"] = "Contract Versions";
+}
+
+<div class="contract-page">
+    <partial name="/Pages/Host/Shared/_ToastPopup.cshtml" />
+
+    <div class="contract-hero">
+        <div>
+            <div class="contract-breadcrumb">Host / Contracts / Versions</div>
+            <h1>Versions - Contract #@Model.ContractId</h1>
+            <p>Track changes and snapshots of this contract.</p>
+        </div>
+
+        <a class="btn btn-soft" asp-page="./Details" asp-route-id="@Model.ContractId">Back</a>
+    </div>
+
+    <div class="contract-card p-0 overflow-hidden">
+        @if (Model.Versions == null || Model.Versions.Count == 0)
+        {
+            <div class="p-4 text-center text-muted">No versions yet.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table contract-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Version</th>
+                            <th>Changed At</th>
+                            <th>Changed By</th>
+                            <th>Note</th>
+                            <th class="pe-4">Snapshot</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var v in Model.Versions)
+                        {
+                            <tr>
+                                <td class="ps-4 fw-semibold">v@v.VersionNumber</td>
+                                <td>@v.ChangedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>@(v.ChangedByUserId?.ToString() ?? "-")</td>
+                                <td>@(string.IsNullOrWhiteSpace(v.ChangeNote) ? "-" : v.ChangeNote)</td>
+                                <td class="pe-4">
+                                    <details>
+                                        <summary class="text-primary" style="cursor:pointer;">View snapshot</summary>
+                                        <pre class="bg-light p-3 rounded-3 mt-2" style="max-height:420px; overflow:auto; white-space:pre-wrap;">@v.SnapshotJson</pre>
+                                    </details>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

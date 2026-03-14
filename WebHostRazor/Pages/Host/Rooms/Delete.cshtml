@@ -1,0 +1,15 @@
+﻿using Microsoft.AspNetCore.Mvc.RazorPages;
+
+namespace WebHostRazor.Pages.Host.Rooms
+{
+    // Base class chứa các thuộc tính chung mà các page Razor tham chiếu (Room, Form)
+    public abstract class RoomsPageModelBase : PageModel
+    {
+        // Thuộc tính Room mà view đang truy cập: Model.Room
+        public RoomViewModel Room { get; set; }
+
+        // Nếu view tham chiếu Model.Form, bạn có thể dùng object hoặc một type cụ thể
+        // Thay đổi kiểu nếu bạn thực sự có một kiểu FormModel.
+        public object Form { get; set; }
+    }
+}

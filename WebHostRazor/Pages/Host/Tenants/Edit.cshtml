@@ -1,0 +1,202 @@
+﻿@page "{id:int}"
+@model WebHostRazor.Pages.Host.Tenants.EditModel
+
+@{
+    ViewData["Title"] = "Edit Tenant";
+}
+
+<div class="tenant-card">
+
+    <div class="tenant-header">
+        <div class="tenant-header-icon">✏️</div>
+        <div>
+            <div class="tenant-title">Edit Tenant</div>
+            <div class="tenant-sub">Update tenant information</div>
+        </div>
+    </div>
+
+    <form method="post" id="editForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Tenant.Id" />
+
+        <div class="tenant-body">
+
+            <!-- PERSONAL -->
+            <div class="section">
+                <div class="section-title">Personal</div>
+
+                <div class="grid-3">
+
+                    <div class="form-group col-2">
+                        <label>Full Name *</label>
+                        <div class="input-icon">
+                            <span>👤</span>
+                            <input asp-for="Tenant.FullName" />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Gender *</label>
+                        <select asp-for="Tenant.Gender">
+                            <option value="">Select...</option>
+                            <option>Male</option>
+                            <option>Female</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Date of Birth</label>
+                        <input asp-for="Tenant.DateOfBirth" type="date" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>CCCD</label>
+                        <div class="input-icon">
+                            <span>🪪</span>
+                            <input asp-for="Tenant.CCCD" />
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- CONTACT -->
+            <div class="section">
+                <div class="section-title">Contact</div>
+
+                <div class="grid-2">
+
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <div class="input-icon">
+                            <span>📞</span>
+                            <input asp-for="Tenant.Phone"
+                                   pattern="0[0-9]{9}"
+                                   maxlength="10"
+                                   inputmode="numeric" />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email</label>
+                        <div class="input-icon">
+                            <span>✉️</span>
+                            <input asp-for="Tenant.Email" />
+                        </div>
+                    </div>
+
+                    <div class="form-group col-2">
+                        <label>Address</label>
+                        <div class="input-icon">
+                            <span>📍</span>
+                            <input asp-for="Tenant.Address" />
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- LEASE -->
+            <div class="section">
+                <div class="section-title">Lease Details</div>
+
+                <div class="grid-2">
+
+               
+
+                    <div class="form-group">
+                        <label>Status *</label>
+
+                        <div class="status-group">
+                            <label class="status-pill">
+                                <input type="radio"
+                                       asp-for="Tenant.Status"
+                                       value="Active" />
+                                <span>Active</span>
+                            </label>
+
+                            <label class="status-pill">
+                                <input type="radio"
+                                       asp-for="Tenant.Status"
+                                       value="Disabled" />
+                                <span>Disabled</span>
+                            </label>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div class="tenant-footer">
+            <a asp-page="Index" class="btn-light">Cancel</a>
+            <button type="submit" class="btn-primary" id="submitBtn">
+                Save Changes
+            </button>
+        </div>
+
+    </form>
+</div>
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+@section Scripts {
+    <script>
+        const form = document.getElementById("editForm");
+        const submitBtn = document.getElementById("submitBtn");
+
+        form.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Saving...";
+
+            const formData = new FormData(form);
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            try {
+                const response = await fetch("", {
+                    method: "POST",
+                    headers: {
+                        "RequestVerificationToken": token
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Updated',
+                        text: result.message,
+                        confirmButtonColor: '#28a745'
+                    }).then(() => {
+                        window.location.href = "../Index";
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: result.message,
+                        confirmButtonColor: '#d33'
+                    });
+                }
+            }
+            catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Server Error',
+                    text: 'Something went wrong!'
+                });
+            }
+            finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Save Changes";
+            }
+        });
+    </script>
+}

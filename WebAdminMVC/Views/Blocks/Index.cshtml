@@ -1,0 +1,179 @@
+﻿@model List<WebAdminMVC.Models.Blocks.BlockListVm>
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Blocks";
+}
+
+<div class="container">
+    <div class="card">
+
+        <div class="card-head">
+            <div class="card-title">Blocks</div>
+            <a class="btn-gradient" asp-controller="Blocks" asp-action="Create">+ Add New Block</a>
+        </div>
+
+        <div class="table-wrap">
+
+            <table class="table">
+
+                <thead>
+                    <tr>
+                        <th>BLOCK</th>
+                        <th>ADDRESS</th>
+                        <th>FLOORS</th>
+                        <th>ROOMS</th>
+                        <th>STATUS</th>
+                        <th class="th-right">ACTIONS</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @foreach (var b in Model)
+                    {
+                        <tr class="@(b.Status == "Closed" ? "row-closed" : "")">
+
+                            <td class="user-email">@b.BlockName</td>
+
+                            <td>@b.Address</td>
+
+                            <td>@b.TotalFloors</td>
+
+                            <td>@b.TotalRooms</td>
+
+                            <td>
+                                @if (b.Status == "Active")
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Closed</span>
+                                }
+                            </td>
+
+                            <td class="td-right">
+
+                                <a class="link"
+                                   asp-controller="Floors"
+                                   asp-action="Index"
+                                   asp-route-blockId="@b.BlockId">
+                                    Floors
+                                </a>
+
+                                <a class="link"
+                                   asp-controller="Blocks"
+                                   asp-action="Edit"
+                                   asp-route-id="@b.BlockId">
+                                    Edit
+                                </a>
+
+                                @if (b.Status == "Active")
+                                {
+                                    <button class="link danger"
+                                            onclick="confirmClose(@b.BlockId,'@b.BlockName')">
+                                        Close
+                                    </button>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Closed</span>
+                                }
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+</div>
+
+
+<!-- CLOSE MODAL -->
+
+<div id="closeModal" class="modal-overlay" style="display:none">
+
+    <div class="modal-box">
+
+        <h3>Close Block</h3>
+
+        <p id="closeMessage"></p>
+
+        <form id="closeForm" method="post" asp-controller="Blocks" asp-action="Close">
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" id="blockIdInput" name="id" />
+
+            <div class="modal-actions">
+
+                <button type="button"
+                        class="btn"
+                        onclick="closeModal()">
+                    Cancel
+                </button>
+
+                <button type="submit"
+                        class="btn-danger">
+                    Close Block
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<style>
+
+    .badge {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+    }
+
+    .bg-success {
+        background: #16a34a;
+        color: white;
+    }
+
+    .bg-secondary {
+        background: #64748b;
+        color: white;
+    }
+
+    .row-closed {
+        background: #f8fafc;
+        color: #94a3b8;
+    }
+
+</style>
+
+
+<script>
+
+    function confirmClose(id,name)
+    {
+        document.getElementById("closeMessage").innerText =
+            "Close block: " + name + " ?";
+
+        document.getElementById("blockIdInput").value = id;
+
+        document.getElementById("closeModal").style.display = "flex";
+    }
+
+    function closeModal()
+    {
+        document.getElementById("closeModal").style.display = "none";
+    }
+
+</script>

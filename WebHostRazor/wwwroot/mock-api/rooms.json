@@ -1,0 +1,16 @@
+﻿[
+  {
+    "id": "a1f3e8c1-6c2a-4c9e-b9c2-111111111111",
+    "roomNo": "A101",
+    "name": "Phòng đơn view sân",
+    "price": 3500000,
+    "status": "Available"
+  },
+  {
+    "id": "b2e4d9f2-8b1a-4a3d-aaaa-222222222222",
+    "roomNo": "A102",
+    "name": "Phòng đôi",
+    "price": 4500000,
+    "status": "Occupied"
+  }
+]

@@ -1,0 +1,93 @@
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor Http
+
+@{
+    var path = Http.HttpContext?.Request?.Path.Value?.ToLower() ?? "/";
+    bool IsActive(string startsWith)
+        => path.StartsWith(startsWith.ToLower());
+}
+
+<div class="brand">
+    <div class="brand-logo">H</div>
+    <div>
+        <div class="brand-title">Host<span class="brand-accent">Portal</span></div>
+        <div class="brand-sub">Operate • Rooms • Billing</div>
+    </div>
+</div>
+
+<div class="nav-section">MAIN</div>
+<nav class="nav">
+    <a class="nav-item @(IsActive("/host/dashboard") ? "active" : "")" href="/Host/Dashboard">
+        <span class="nav-ic">▦</span>
+        <span>Dashboard</span>
+    </a>
+
+    <a class="nav-item @(IsActive("/host/rooms") ? "active" : "")" href="/Host/Rooms">
+        <span class="nav-ic">⌂</span>
+        <span>Rooms</span>
+    </a>
+
+    <a class="nav-item @(IsActive("/host/tenants") ? "active" : "")" href="/Host/Tenants">
+        <span class="nav-ic">👥</span>
+        <span>Tenants</span>
+    </a>
+
+    <a class="nav-item @(IsActive("/host/contracts") ? "active" : "")" href="/Host/Contracts">
+        <span class="nav-ic">⎘</span>
+        <span>Contracts</span>
+    </a>
+</nav>
+
+<div class="nav-section">FINANCE</div>
+<nav class="nav">
+    <a class="nav-item @(IsActive("/host/bills") ? "active" : "")" href="/Host/Bills">
+        <span class="nav-ic">₫</span>
+        <span>Bills</span>
+    </a>
+
+    <a class="nav-item @(IsActive("/host/utilities") ? "active" : "")" href="/Host/Utilities">
+        <span class="nav-ic">⚡</span>
+        <span>Utilities</span>
+    </a>
+</nav>
+
+<div class="nav-section">SUPPORT</div>
+<nav class="nav">
+    <a class="nav-item @(IsActive("/host/tickets") ? "active" : "")" href="/Host/Tickets">
+        <span class="nav-ic">✉</span>
+        <span>Tickets</span>
+        <span class="nav-badge">12</span>
+    </a>
+
+    <a class="nav-item @(IsActive("/host/notifications") ? "active" : "")" href="/Host/Notifications/">
+        <span class="nav-ic">🔔</span>
+        <span>Notifications</span>
+    </a>
+</nav>
+
+<div class="nav-section">INSIGHTS</div>
+<nav class="nav">
+    <a class="nav-item @(IsActive("/host/reports") ? "active" : "")" href="/Host/Reports">
+        <span class="nav-ic">📈</span>
+        <span>Reports</span>
+    </a>
+
+    <a class="nav-item @(IsActive("/host/audit") ? "active" : "")" href="/Host/Audit">
+        <span class="nav-ic">🧾</span>
+        <span>Audit Logs</span>
+    </a>
+</nav>
+
+
+
+<div class="sidebar-foot">
+    <div class="sidebar-mini">
+        <div class="mini-dot"></div>
+        <div>
+            <div class="mini-title">FE-only demo</div>
+            <div class="mini-sub">Theme: gradient + glass</div>
+        </div>
+    </div>
+
+    <a class="btn-ghost w-full" href="/Auth/Logout">Logout</a>
+</div>

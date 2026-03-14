@@ -1,0 +1,82 @@
+﻿@model WebAdmin.MVC.Models.Users.UserCreateVm
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Create User";
+}
+
+<div class="ui-card form-card">
+    <div class="toolbar">
+        <div>
+            <h1 class="h1">Create User</h1>
+            <div class="muted">Add new user to the system</div>
+        </div>
+        <div class="toolbar-right">
+            <a class="btn btn-ghost" href="/Users/Index">Back</a>
+        </div>
+    </div>
+
+    <form method="post">
+        @Html.AntiForgeryToken()
+
+        <div class="form-row">
+            <div class="form-group">
+                <div class="label">Email *</div>
+                <input class="input" asp-for="Email" placeholder="user@email.com" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <div class="label">Role *</div>
+                <select class="input" asp-for="Role">
+                    <option value="">Select Role</option>
+                    @foreach (var role in ViewBag.Roles as List<string> ?? new List<string>())
+                    {
+                        <option value="@role">@role</option>
+                    }
+                </select>
+                <span asp-validation-for="Role" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <div class="label">Password *</div>
+                <input class="input" asp-for="Password" type="password" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <div class="label">Confirm Password *</div>
+                <input class="input" asp-for="ConfirmPassword" type="password" />
+                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="label">Phone Number</div>
+            <input class="input" asp-for="PhoneNumber" placeholder="+84..." />
+            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label class="checkbox">
+                <input type="checkbox" asp-for="IsActive" checked />
+                <span class="checkmark"></span>
+                Active User
+            </label>
+        </div>
+
+        <div class="row-end mt">
+            <a class="btn btn-ghost" href="/Users/Index">Cancel</a>
+            <button class="btn btn-primary" type="submit">Create User</button>
+        </div>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger mt">
+                @foreach (var e in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <div>• @e.ErrorMessage</div>
+                }
+            </div>
+        }
+    </form>
+</div>

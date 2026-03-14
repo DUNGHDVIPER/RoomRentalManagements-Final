@@ -1,0 +1,21 @@
+﻿@using System.Security.Claims
+
+@{
+    var email = User?.Identity?.IsAuthenticated == true
+        ? (User?.Identity?.Name ?? User?.FindFirstValue(ClaimTypes.Email) ?? "Admin User")
+        : "Admin User";
+}
+
+<div class="topbar-left"></div>
+
+<div class="topbar-right">
+    <button class="icon-btn" title="Notifications">🔔</button>
+
+    <div class="profile">
+        <div class="profile-text">
+            <div class="profile-name">@email</div>
+            <div class="profile-role">Super Admin</div>
+        </div>
+        <div class="profile-avatar">@email.Substring(0, 1).ToUpper()</div>
+    </div>
+</div>

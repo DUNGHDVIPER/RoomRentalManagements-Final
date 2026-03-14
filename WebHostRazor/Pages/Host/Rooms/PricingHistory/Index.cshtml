@@ -1,0 +1,46 @@
+﻿@page
+@model WebHostRazor.Pages.Host.Rooms.PricingHistory.IndexModel
+@{
+    ViewData["Title"] = "Pricing History";
+}
+
+@if (Model.Room == null)
+{
+    <div class="card p-18"><b>Room not found.</b></div>
+}
+else
+{
+    <div class="card p-18">
+        <h2 class="h2">Pricing History — @Model.Room.Name</h2>
+        <div class="muted">Track price changes (FE-only)</div>
+        <hr class="hr" />
+
+        <form method="post" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            <input type="hidden" name="id" value="@Model.Room.Id" />
+            <input class="input" type="date" name="date" />
+            <input class="input" type="number" name="price" placeholder="New price" />
+            <button class="btn-grad" type="submit">Add</button>
+            <a class="btn-ghost" href="/Host/Rooms/Details?id=@Model.Room.Id">Back</a>
+        </form>
+
+        <hr class="hr" />
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Room.PricingHistory)
+                {
+                    <tr class="row-hover">
+                        <td>@row.Date.ToString("yyyy-MM-dd")</td>
+                        <td><b>@row.Price.ToString("N0") ₫</b></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

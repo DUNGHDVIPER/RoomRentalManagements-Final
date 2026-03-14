@@ -1,0 +1,125 @@
+﻿@page
+@model WebHostRazor.Pages.Host.Contracts.IndexModel
+@{
+    ViewData["Title"] = "Contracts";
+}
+
+<div class="contract-page">
+    <partial name="/Pages/Host/Shared/_ToastPopup.cshtml" />
+
+    <div class="contract-hero">
+        <div>
+            <div class="contract-breadcrumb">Host / Contracts</div>
+            <h1>Contracts</h1>
+            <p>Manage rental contracts, deposits, renewals, and attachments.</p>
+        </div>
+
+        <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-soft" asp-page="./ReminderScan">Run Reminder Scan</a>
+            <a class="btn btn-gradient-primary" asp-page="./Create">+ Create Contract</a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="contract-card h-100">
+                <div class="text-muted small">Database Server</div>
+                <div class="fw-semibold fs-5">@Model.DbServer</div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="contract-card h-100">
+                <div class="text-muted small">Database Name</div>
+                <div class="fw-semibold fs-5">@Model.DbName</div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="contract-card h-100">
+                <div class="text-muted small">Total Contracts</div>
+                <div class="fw-bold fs-3">@Model.TotalContracts</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="contract-card p-0 overflow-hidden">
+        @if (Model.Items.Count == 0)
+        {
+            <div class="p-4 text-center text-muted">
+                No contracts found.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table contract-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">ID</th>
+                            <th>Room</th>
+                            <th>Tenant</th>
+                            <th>Period</th>
+                            <th class="text-end">Rent</th>
+                            <th class="text-end">Deposit</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in Model.Items)
+                        {
+                            <tr>
+                                <td class="ps-4 fw-semibold">#@c.Id</td>
+                                <td>@c.RoomId</td>
+                                <td>@c.TenantId</td>
+                                <td>
+                                    <div>@c.StartDate.ToString("yyyy-MM-dd")</div>
+                                    <div class="text-muted small">to @c.EndDate.ToString("yyyy-MM-dd")</div>
+                                </td>
+                                <td class="text-end">@c.Rent.ToString("n0") đ</td>
+                                <td class="text-end">@c.Deposit.ToString("n0") đ</td>
+                                <td>
+                                    @if (c.StatusText == "Active")
+                                    {
+                                        <span class="contract-badge active">Active</span>
+                                    }
+                                    else if (c.StatusText == "Pending")
+                                    {
+                                        <span class="contract-badge pending">Pending</span>
+                                    }
+                                    else if (c.StatusText == "Expired")
+                                    {
+                                        <span class="contract-badge expired">Expired</span>
+                                    }
+                                    else if (c.StatusText == "Terminated")
+                                    {
+                                        <span class="contract-badge terminated">Terminated</span>
+                                    }
+                                    else if (c.StatusText == "Renewed")
+                                    {
+                                        <span class="contract-badge renewed">Renewed</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="contract-badge">@c.StatusText</span>
+                                    }
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-page="./Details" asp-route-id="@c.Id" class="btn btn-outline-info">Details</a>
+                                        <a asp-page="./Renew" asp-route-id="@c.Id" class="btn btn-outline-warning @(c.IsActive ? "" : "disabled")">Renew</a>
+                                        <a asp-page="./Terminate" asp-route-id="@c.Id" class="btn btn-outline-danger @(c.IsActive ? "" : "disabled")">Terminate</a>
+                                        <a asp-page="./UploadAttachment" asp-route-id="@c.Id" class="btn btn-outline-secondary">Upload</a>
+                                        <a asp-page="./Versions" asp-route-id="@c.Id" class="btn btn-outline-dark">Versions</a>
+                                        <a asp-page="./ExportPdf" asp-route-id="@c.Id" class="btn btn-outline-success">PDF</a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

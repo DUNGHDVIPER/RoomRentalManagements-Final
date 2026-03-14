@@ -1,0 +1,32 @@
+﻿@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - Host Portal</title>
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
+
+</head>
+<body class="bg-grad">
+    <div class="shell">
+        <aside class="sidebar glass">
+            <partial name="/Pages/Host/Shared/_Sidebar.cshtml" />
+        </aside>
+
+        <main class="main">
+            <header class="topbar glass">
+                <partial name="/Pages/Host/Shared/_Topbar.cshtml" />
+            </header>
+
+            <section class="content">
+                @RenderBody()
+            </section>
+        </main>
+    </div>
+
+    <script src="~/js/host.js"></script>
+</body>
+</html>

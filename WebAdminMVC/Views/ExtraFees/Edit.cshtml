@@ -1,0 +1,53 @@
+﻿@model WebAdmin.MVC.Models.Billing.ExtraFeeEditVm
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Edit Extra Fee";
+}
+
+<div class="container">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">Edit Extra Fee</div>
+            <a class="link" href="/ExtraFees">Back</a>
+        </div>
+
+        <form method="post" asp-action="Edit" asp-controller="ExtraFees">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+
+            <div asp-validation-summary="All" class="err mt12" style="margin:18px; display:block;"></div>
+
+            <div class="form-grid">
+                <div class="fg">
+                    <label class="lbl">NAME</label>
+                    <input class="inp" asp-for="Name" placeholder="Wifi / Rác / Giữ xe..." />
+                    <span class="text-danger" asp-validation-for="Name"></span>
+                </div>
+
+                <div class="fg">
+                    <label class="lbl">DEFAULT AMOUNT</label>
+                    <input class="inp" asp-for="DefaultAmount" type="number" step="1" placeholder="100000" />
+                    <span class="text-danger" asp-validation-for="DefaultAmount"></span>
+                    <div class="hint">Số tiền mặc định sẽ được thêm vào BillItems khi Generate Batch.</div>
+                </div>
+
+                <div class="fg">
+                    <label class="lbl">ACTIVE</label>
+                    <label style="display:flex; gap:8px; align-items:center; margin-top:10px;">
+                        <input asp-for="IsActive" type="checkbox" />
+                        <span>Enable this fee</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn-gradient" type="submit">Save</button>
+                <a class="link" href="/ExtraFees">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

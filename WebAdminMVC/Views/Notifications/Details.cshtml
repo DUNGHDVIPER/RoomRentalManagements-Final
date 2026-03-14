@@ -1,0 +1,64 @@
+﻿@model List<DAL.Entities.System.Notification>
+
+@{
+    ViewData["Title"] = "Chi Tiết Thông Báo";
+}
+
+@if (!Model.Any())
+{
+    <div class="alert alert-warning">
+        Không có dữ liệu.
+    </div>
+}
+else
+{
+    var first = Model.First();
+
+    <div class="card p-4">
+        <h4>📋 Chi Tiết Thông Báo</h4>
+
+        <div class="mb-3">
+            <strong>Tiêu đề:</strong> @first.Title <br />
+            <strong>Nội dung:</strong> @first.Content <br />
+            <strong>Loại:</strong> @first.SourceType <br />
+            <strong>Thời gian gửi:</strong> @first.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+        </div>
+
+        <hr />
+
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Người nhận</th>
+                    <th>Contract</th>
+                    <th>Trạng thái</th>
+                    <th>Đã đọc lúc</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.ReceiverUser?.UserName</td>
+                        <td>@(item.ContractId?.ToString() ?? "-")</td>
+                        <td>
+                            @if (item.IsRead)
+                            {
+                                <span class="badge bg-success">Đã đọc</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark">Chưa đọc</span>
+                            }
+                        </td>
+                        <td>
+                            @(item.ReadAt?.ToString("dd/MM/yyyy HH:mm") ?? "-")
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
+    </div>
+}

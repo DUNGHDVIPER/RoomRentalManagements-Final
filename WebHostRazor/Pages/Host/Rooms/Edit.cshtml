@@ -1,0 +1,63 @@
+﻿@page
+@model WebHostRazor.Pages.Host.Rooms.EditModel
+@{
+    ViewData["Title"] = "Edit Room";
+}
+
+@if (Model.Room == null)
+{
+    <div class="card p-18"><b>Room not found.</b></div>
+}
+else
+{
+    <div class="card p-18" style="max-width:860px;">
+        <h2 class="h2">Edit Room</h2>
+        <div class="muted">ID: @Model.Room.Id</div>
+        <hr class="hr" />
+
+        <form method="post" style="display:grid;gap:12px;">
+            <input type="hidden" asp-for="Form.Id" />
+
+            <div>
+                <div class="muted">Name</div>
+                <input class="input" asp-for="Form.Name" />
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div>
+                    <div class="muted">City</div>
+                    <input class="input" asp-for="Form.City" />
+                </div>
+                <div>
+                    <div class="muted">District</div>
+                    <input class="input" asp-for="Form.District" />
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div>
+                    <div class="muted">Area (m²)</div>
+                    <input class="input" asp-for="Form.Area" />
+                </div>
+                <div>
+                    <div class="muted">Price (₫)</div>
+                    <input class="input" asp-for="Form.Price" />
+                </div>
+            </div>
+
+            <div>
+                <div class="muted">Status</div>
+                <select class="input" asp-for="Form.Status">
+                    <option>Available</option>
+                    <option>Occupied</option>
+                    <option>Maintenance</option>
+                </select>
+            </div>
+
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button class="btn-grad" type="submit">Save</button>
+                <a class="btn-ghost" href="/Host/Rooms">Back</a>
+            </div>
+        </form>
+    </div>
+}

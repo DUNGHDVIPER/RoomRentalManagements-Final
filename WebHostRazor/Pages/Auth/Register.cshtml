@@ -1,0 +1,131 @@
+﻿@page "/Auth/Register"
+@model WebHostRazor.Pages.Auth.RegisterModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>User Register - Room Rental Management</title>
+    <link rel="stylesheet" href="~/css/theme.css" />
+
+    <style>
+
+        /* checkbox terms */
+        .terms-checkbox {
+            display: flex;
+            justify-content: center; /* căn giữa */
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            margin-bottom: 14px;
+            text-align: center;
+        }
+
+            .terms-checkbox input[type="checkbox"] {
+                width: 16px;
+                height: 16px;
+                cursor: pointer;
+            }
+
+        .terms-text {
+            line-height: 1.5;
+        }
+
+            .terms-text a {
+                color: #4f46e5;
+                font-weight: 600;
+                text-decoration: none;
+            }
+
+                .terms-text a:hover {
+                    text-decoration: underline;
+                }
+
+    </style>
+</head>
+
+<body class="bg-grad">
+
+    <div class="shell" style="justify-content:center;align-items:center;">
+
+        <div class="card p-18" style="width:min(520px,calc(100vw - 32px));">
+
+            <div style="display:flex;gap:12px;align-items:center;">
+                <div class="brand-logo">H</div>
+
+                <div>
+                    <div style="font-weight:950;font-size:18px;">
+                        Create User Account
+                    </div>
+
+                    <div class="muted">
+                        Join our room rental platform
+                    </div>
+                </div>
+            </div>
+
+            <hr class="hr" />
+
+            @if (!string.IsNullOrEmpty(Model.Error))
+            {
+                <div class="badge danger" style="padding:12px;border-radius:16px;margin-bottom:16px;">
+                    @Model.Error
+                </div>
+            }
+
+            <form method="post" style="display:grid;gap:12px;">
+
+                @Html.AntiForgeryToken()
+
+                <input class="input" asp-for="Form.FullName" placeholder="Full Name *" />
+                <span asp-validation-for="Form.FullName" class="text-danger"></span>
+
+                <input class="input" asp-for="Form.Email" placeholder="Email Address *" type="email" />
+                <span asp-validation-for="Form.Email" class="text-danger"></span>
+
+                <input class="input" asp-for="Form.PhoneNumber" placeholder="Phone Number (Optional)" />
+                <span asp-validation-for="Form.PhoneNumber" class="text-danger"></span>
+
+                <input class="input" asp-for="Form.Password" type="password" placeholder="Password *" />
+                <span asp-validation-for="Form.Password" class="text-danger"></span>
+
+                <input class="input" asp-for="Form.ConfirmPassword" type="password" placeholder="Confirm Password *" />
+                <span asp-validation-for="Form.ConfirmPassword" class="text-danger"></span>
+
+                <!-- checkbox đồng ý -->
+                <label class="terms-checkbox">
+                    <input asp-for="Form.AcceptTerms" type="checkbox" />
+
+                    <span class="terms-text">
+                        I agree to the
+                        <a href="#" class="link">Terms of Service</a>
+                        and
+                        <a href="#" class="link">Privacy Policy</a>
+                    </span>
+                </label>
+
+                <span asp-validation-for="Form.AcceptTerms" class="text-danger"></span>
+
+                <button class="btn-grad" type="submit">
+                    Create Account
+                </button>
+
+            </form>
+
+            <hr class="hr" />
+
+            <div style="text-align:center;">
+                <span class="muted">Already have an account?</span>
+                <a href="/Auth/Login" class="link">Sign in here</a>
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>

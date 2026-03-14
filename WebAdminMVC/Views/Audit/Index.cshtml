@@ -1,0 +1,48 @@
+﻿@model List<WebAdmin.MVC.Models.Audit.AuditListItemVm>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Audit Logs";
+    var f = (WebAdmin.MVC.Models.Audit.AuditFilterVm)(ViewBag.Filter ?? new WebAdmin.MVC.Models.Audit.AuditFilterVm());
+}
+<div class="toolbar">
+    <div>
+        <h1 class="h1">Audit Logs</h1>
+        <div class="muted">Search + filter (FE-only)</div>
+    </div>
+</div>
+
+<div class="ui-card">
+    <form method="get" class="toolbar" style="margin-bottom:0;">
+        <div class="toolbar-right" style="width:100%;justify-content:flex-start;gap:10px;">
+            <input class="input" name="Keyword" value="@f.Keyword" placeholder="Keyword..." style="width:260px;" />
+            <button class="btn btn-primary" type="submit">Filter</button>
+            <a class="btn btn-ghost" href="/Audit/Index">Reset</a>
+        </div>
+    </form>
+</div>
+
+<div class="ui-card mt">
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Time (UTC)</th>
+                    <th>Action</th>
+                    <th>Entity</th>
+                    <th>User</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in Model)
+                {
+                    <tr>
+                        <td class="muted">@a.TimeUtc</td>
+                        <td class="strong">@a.Action</td>
+                        <td class="muted">@a.Entity</td>
+                        <td class="muted">@a.User</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

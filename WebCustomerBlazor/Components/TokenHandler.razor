@@ -1,0 +1,83 @@
+﻿@page "/token-handler"
+@using BLL.Services.Interfaces
+@using BLL.Services
+@using Microsoft.AspNetCore.WebUtilities
+@inject ITokenService TokenService
+@inject TokenAuthenticationStateProvider AuthProvider
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<div class="bg-grad">
+    <div class="container section">
+        <div class="card glass p-22" style="text-align: center;">
+            <h2>Đang xử lý đăng nhập...</h2>
+            <div class="muted">@statusMessage</div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string statusMessage = "Đang xử lý token...";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await ProcessToken();
+        }
+    }
+
+    private async Task ProcessToken()
+    {
+        try
+        {
+            var uri = Nav.ToAbsoluteUri(Nav.Uri);
+            var query = QueryHelpers.ParseQuery(uri.Query);
+
+            if (query.TryGetValue("token", out var token))
+            {
+                statusMessage = "Đang xác thực token...";
+                StateHasChanged();
+
+                // Validate token using ITokenService
+                var tokenInfo = await TokenService.GetTokenInfoAsync(token!);
+
+                if (tokenInfo.IsValid)
+                {
+                    // Use AuthProvider's method to save token and notify authentication
+                    await AuthProvider.NotifyUserAuthenticationAsync(token!);
+
+                    statusMessage = "Đăng nhập thành công! Đang chuyển hướng...";
+                    StateHasChanged();
+
+                    await Task.Delay(1000);
+
+                    // Redirect to rooms or original destination
+                    var redirectTo = query.TryGetValue("redirect", out var redirect) ? redirect.ToString() : "/rooms";
+                    Nav.NavigateTo(redirectTo, forceLoad: false);
+                }
+                else
+                {
+                    statusMessage = "Token không hợp lệ. Đang chuyển hướng về trang chủ...";
+                    StateHasChanged();
+                    await Task.Delay(2000);
+                    Nav.NavigateTo("/");
+                }
+            }
+            else
+            {
+                statusMessage = "Không tìm thấy token. Đang chuyển hướng về trang chủ...";
+                StateHasChanged();
+                await Task.Delay(2000);
+                Nav.NavigateTo("/");
+            }
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Lỗi: {ex.Message}";
+            StateHasChanged();
+            await Task.Delay(3000);
+            Nav.NavigateTo("/");
+        }
+    }
+}

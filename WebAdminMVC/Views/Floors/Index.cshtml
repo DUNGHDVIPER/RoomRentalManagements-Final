@@ -1,0 +1,69 @@
+﻿@model List<BLL.DTOs.Property.FloorListVm>
+
+<h2>Floor List</h2>
+
+<a asp-action="Create"
+   asp-route-blockId="@ViewBag.BlockId"
+   class="btn btn-primary mb-3">
+    Create Floor
+</a>
+
+<table class="table table-bordered table-hover">
+
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Floor Name</th>
+            <th>Total Rooms</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        @foreach (var floor in Model)
+        {
+            <tr>
+
+                <td>@floor.Id</td>
+                <td>@floor.FloorName</td>
+                <td>@floor.TotalRooms</td>
+
+                <td>
+
+                    <a asp-action="Details"
+                       asp-route-id="@floor.Id"
+                       class="btn btn-info btn-sm">
+                        Details
+                    </a>
+
+                    <a asp-action="Edit"
+                       asp-route-id="@floor.Id"
+                       class="btn btn-warning btn-sm">
+                        Edit
+                    </a>
+
+                    <form asp-action="Delete"
+                          method="post"
+                          style="display:inline">
+
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden" name="id" value="@floor.Id" />
+                        <input type="hidden" name="blockId" value="@ViewBag.BlockId" />
+
+                        <button class="btn btn-danger btn-sm"
+                                onclick="return confirm('Delete this floor?')">
+                            Delete
+                        </button>
+
+                    </form>
+
+                </td>
+
+            </tr>
+        }
+
+    </tbody>
+
+</table>

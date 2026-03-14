@@ -1,0 +1,48 @@
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor Http
+
+@{
+    var path = Http.HttpContext?.Request?.Path.Value ?? "/";
+    string title =
+        path.StartsWith("/Host/Dashboard", StringComparison.OrdinalIgnoreCase) ? "Dashboard" :
+        path.StartsWith("/Host/Rooms", StringComparison.OrdinalIgnoreCase) ? "Rooms" :
+        path.StartsWith("/Host/Tenants", StringComparison.OrdinalIgnoreCase) ? "Tenants" :
+        path.StartsWith("/Host/Contracts", StringComparison.OrdinalIgnoreCase) ? "Contracts" :
+        path.StartsWith("/Host/Bills", StringComparison.OrdinalIgnoreCase) ? "Bills" :
+        path.StartsWith("/Host/Utilities", StringComparison.OrdinalIgnoreCase) ? "Utilities" :
+        path.StartsWith("/Host/Tickets", StringComparison.OrdinalIgnoreCase) ? "Tickets" :
+        path.StartsWith("/Host/Notifications", StringComparison.OrdinalIgnoreCase) ? "Notifications" :
+        path.StartsWith("/Host/Reports", StringComparison.OrdinalIgnoreCase) ? "Reports" :
+        path.StartsWith("/Host/Audit", StringComparison.OrdinalIgnoreCase) ? "Audit Logs" :
+        "Host Portal";
+}
+
+<div class="topbar-inner">
+    <div class="top-left">
+        <div class="crumb">Host / <span>@title</span></div>
+        <div class="top-title">@title</div>
+    </div>
+
+    <div class="search">
+        <span class="icon">⌕</span>
+        <input class="input" placeholder="Search rooms, tenants, contracts..." />
+        <span class="kbd">Ctrl K</span>
+    </div>
+
+    <div class="top-actions">
+        <a class="btn-grad top-cta" href="/Host/Rooms/Create">+ New Room</a>
+
+        <button class="icon-btn" title="Notifications">
+            🔔
+            <span class="dot"></span>
+        </button>
+
+        <div class="profile">
+            <div class="profile-meta">
+                <div class="profile-name">Host User</div>
+                <div class="profile-role">Host</div>
+            </div>
+            <div class="avatar">H</div>
+        </div>
+    </div>
+</div>

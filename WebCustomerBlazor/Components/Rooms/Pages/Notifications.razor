@@ -1,0 +1,68 @@
+﻿@page "/notifications"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthProvider
+@using BLL.Services.Interfaces
+@using BLL.DTOs.Notification
+@using BLL.DTOs.Common
+@inject IContractService ContractService
+
+<h3>Thông báo của tôi</h3>
+
+@if (!notifications.Any())
+{
+    <p>Không có thông báo</p>
+}
+else
+{
+    <ul class="list-group">
+        @foreach (var item in notifications)
+        {
+            <li class="list-group-item @(item.IsRead ? "" : "fw-bold")">
+                <div class="d-flex justify-content-between">
+                    <span>@item.Title</span>
+                    <small>@item.CreatedAt.ToLocalTime()</small>
+                </div>
+                <div>@item.Content</div>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+
+    private List<NotificationDto> notifications = new();
+    private int contractId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        contractId = await GetContractIdOfCurrentUser();
+
+        if (contractId == 0)
+            return;
+
+        var request = new PagedRequestDto
+            {
+                PageNumber = 1,
+                PageSize = 20
+            };
+
+        var result = await NotificationService
+            .GetUserNotificationsAsync(contractId, request);
+
+        notifications = result.Items;
+    }
+    private async Task<int> GetContractIdOfCurrentUser()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var userId = authState.User
+            .FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(userId))
+            return 0;
+
+        return await ContractService
+            .GetActiveContractIdByUserIdAsync(userId) ?? 0;
+    }
+}

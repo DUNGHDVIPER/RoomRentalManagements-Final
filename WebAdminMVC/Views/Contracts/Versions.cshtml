@@ -1,0 +1,82 @@
+﻿@model WebAdmin.MVC.Models.Contracts.ContractVersionsVm
+@{
+    ViewData["Title"] = "Contract Versions";
+    Layout = "_Layout";
+}
+
+<h2 class="mb-3">Contract Versions</h2>
+
+<div class="mb-3 d-flex gap-2">
+    <a class="btn btn-outline-secondary" asp-action="Details" asp-route-id="@Model.ContractId">← Back to Details</a>
+    <a class="btn btn-outline-secondary" asp-action="Index">All Contracts</a>
+</div>
+
+@if (TempData["Error"] is string err && !string.IsNullOrWhiteSpace(err))
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+@if (Model.Versions == null || Model.Versions.Count == 0)
+{
+    <div class="alert alert-info">No version snapshots found.</div>
+}
+else
+{
+    <div class="accordion" id="versionsAccordion">
+        @for (int i = 0; i < Model.Versions.Count; i++)
+        {
+            var v = Model.Versions[i];
+            var headingId = $"heading_{v.VersionId}";
+            var collapseId = $"collapse_{v.VersionId}";
+
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="@headingId">
+                    <button class="accordion-button @(i == 0 ? "" : "collapsed")"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#@collapseId"
+                            aria-expanded="@(i == 0 ? "true" : "false")"
+                            aria-controls="@collapseId">
+                        <div class="d-flex flex-wrap align-items-center w-100 gap-3">
+                            <div class="fw-semibold">Version #@v.VersionNumber</div>
+                            <div class="text-muted">Changed: @v.ChangedAt.ToString("yyyy-MM-dd HH:mm")</div>
+                            @if (!string.IsNullOrWhiteSpace(v.ChangeNote))
+                            {
+                                <div class="badge bg-light text-dark">Note: @v.ChangeNote</div>
+                            }
+                        </div>
+                    </button>
+                </h2>
+
+                <div id="@collapseId"
+                     class="accordion-collapse collapse @(i == 0 ? "show" : "")"
+                     aria-labelledby="@headingId"
+                     data-bs-parent="#versionsAccordion">
+                    <div class="accordion-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="text-muted">Snapshot JSON</div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    onclick="copyJson('@collapseId')">
+                                Copy
+                            </button>
+                        </div>
+
+                        <pre class="bg-light p-3 rounded border" style="max-height: 420px; overflow:auto;"
+                             id="json_@collapseId">@v.SnapshotJson</pre>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function copyJson(collapseId) {
+            const el = document.getElementById('json_' + collapseId);
+            if (!el) return;
+            const text = el.innerText || el.textContent || '';
+            navigator.clipboard.writeText(text);
+        }
+    </script>
+}

@@ -1,0 +1,57 @@
+﻿@page
+@model WebHostRazor.Pages.Host.Dashboard.IndexModel
+@{
+    ViewData["Title"] = "Host Dashboard";
+}
+
+<div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
+    <div class="card p-18" style="max-width: 600px; text-align: center;">
+        <!-- User Menu Component -->
+        <div style="position: absolute; top: 20px; right: 20px;">
+            @await Html.PartialAsync("_UserMenu")
+        </div>
+
+        <div style="margin-bottom: 24px;">
+            <div style="width: 80px; height: 80px; font-size: 32px; margin: 0 auto 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900;">H</div>
+            <h1 class="h1">Welcome to Host Portal</h1>
+            <p class="muted">Hello <strong>@Model.UserName</strong>, you have successfully logged in!</p>
+        </div>
+
+        <hr class="hr" />
+
+        <div style="margin: 24px 0;">
+            <div class="badge info" style="padding: 12px 20px; font-size: 14px;">
+                🎉 Dashboard Access Confirmed
+            </div>
+        </div>
+
+        <div style="display: grid; gap: 12px; margin-top: 24px;">
+            <div style="padding: 16px; background: #f8f9fa; border-radius: 8px;">
+                <div style="font-weight: 600;">Account Information</div>
+                <div class="muted" style="font-size: 14px; margin-top: 4px;">
+                    Email: @Model.UserEmail
+                </div>
+                <div class="muted" style="font-size: 14px;">
+                    Role: Host
+                </div>
+                <div class="muted" style="font-size: 14px;">
+                    Login Time: @DateTime.Now.ToString("MMM dd, yyyy - HH:mm")
+                </div>
+            </div>
+        </div>
+
+        <hr class="hr" />
+
+        <div style="display: flex; gap: 12px; justify-content: center; margin-top: 24px; flex-wrap: wrap;">
+            <a href="/Host/Profile" class="btn-grad" style="text-decoration: none;">👤 Manage Profile</a>
+            <a href="/Host/Rooms" class="btn-ghost" style="text-decoration: none;">View Rooms</a>
+            <a href="/Auth/Logout" class="btn-ghost" style="text-decoration: none;">Logout</a>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <p class="muted" style="font-size: 13px;">
+                This is a simple confirmation page. Full dashboard features will be implemented later.
+            </p>
+        </div>
+    </div>
+</div>

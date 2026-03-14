@@ -1,0 +1,82 @@
+@page "/Debug/UserInfo"
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<IdentityUser> UserManager
+@inject SignInManager<IdentityUser> SignInManager
+@{
+    ViewData["Title"] = "User Debug Info";
+    
+    var user = await UserManager.GetUserAsync(User);
+    var roles = new List<string>();
+    
+    if (user != null)
+    {
+        roles = (await UserManager.GetRolesAsync(user)).ToList();
+    }
+}
+
+<div class="card p-18" style="margin: 20px auto; max-width: 600px;">
+    <h2>User Debug Information</h2>
+    
+    <div style="margin: 20px 0;">
+        <strong>Is Authenticated:</strong> @User.Identity.IsAuthenticated
+    </div>
+    
+    @if (user != null)
+    {
+        <div style="margin: 10px 0;">
+            <strong>User ID:</strong> @user.Id
+        </div>
+        <div style="margin: 10px 0;">
+            <strong>Email:</strong> @user.Email
+        </div>
+        <div style="margin: 10px 0;">
+            <strong>Username:</strong> @user.UserName
+        </div>
+        <div style="margin: 10px 0;">
+            <strong>Email Confirmed:</strong> @user.EmailConfirmed
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <strong>Roles:</strong>
+            @if (roles.Any())
+            {
+                <ul>
+                    @foreach (var role in roles)
+                    {
+                        <li>@role</li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <span class="badge danger">No roles assigned!</span>
+            }
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <strong>Claims:</strong>
+            @if (User.Claims.Any())
+            {
+                <ul>
+                    @foreach (var claim in User.Claims)
+                    {
+                        <li><strong>@claim.Type:</strong> @claim.Value</li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <span>No claims</span>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="badge danger">User not found!</div>
+    }
+    
+    <div style="margin-top: 20px;">
+        <a href="/Auth/Login" class="btn-ghost">Back to Login</a>
+        <a href="/Auth/Logout" class="btn-grad">Logout</a>
+    </div>
+</div>

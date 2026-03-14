@@ -1,0 +1,104 @@
+﻿@{
+    ViewData["Title"] = "Tạo Thông Báo";
+}
+
+<div class="container">
+
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">📢 Tạo Thông Báo Mới</div>
+        </div>
+
+        <div class="form-section">
+
+            @if (TempData["Error"] != null)
+            {
+                <div class="err">
+                    @TempData["Error"]
+                </div>
+            }
+
+            <form asp-action="Create" method="post">
+
+                <!-- Title -->
+                <div class="form-group">
+                    <label class="form-label">Tiêu đề</label>
+                    <input name="title" class="form-control" required />
+                </div>
+
+                <!-- Content -->
+                <div class="form-group">
+                    <label class="form-label">Nội dung</label>
+                    <textarea name="content"
+                              class="form-control"
+                              rows="4"
+                              required></textarea>
+                </div>
+
+                <!-- SourceType -->
+                <div class="form-group">
+                    <label class="form-label">Loại thông báo</label>
+                    <select name="sourceType" class="form-control">
+                        <option value="0">Thủ công</option>
+                        <option value="1">Hóa đơn</option>
+                        <option value="2">Hợp đồng</option>
+                        <option value="3">Bảo trì</option>
+                        <option value="4">Hệ thống</option>
+                    </select>
+                </div>
+
+                <!-- Receiver -->
+                <div class="form-group">
+                    <label class="form-label">Phạm vi gửi</label>
+                    <select id="receiverType"
+                            name="sendToRole"
+                            class="form-control">
+                        <option value="">-- Chọn --</option>
+                        <option value="host">Host</option>
+                        <option value="allTenant">Tất cả Tenant</option>
+                        <option value="contract">Theo Contract</option>
+                    </select>
+                </div>
+
+                <!-- Contract list -->
+                <div class="form-group"
+                     id="contractWrapper"
+                     style="display:none;">
+                    <label class="form-label">
+                        Danh sách Contract
+                    </label>
+                    <select name="contractIds"
+                            multiple
+                            class="form-control">
+                        @foreach (var c in ViewBag.Contracts)
+                        {
+                            <option value="@c.Id">
+                                @c.TenantName - Phòng @c.RoomName
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">
+                        🚀 Gửi Thông Báo
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        const receiverType = document.getElementById("receiverType");
+        const contractWrapper = document.getElementById("contractWrapper");
+
+        receiverType.addEventListener("change", function () {
+            contractWrapper.style.display =
+                this.value === "contract" ? "block" : "none";
+        });
+    </script>
+}

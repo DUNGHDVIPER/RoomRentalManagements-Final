@@ -1,0 +1,33 @@
+﻿@page
+@model WebHostRazor.Pages.Host.Contracts.Wizard.Step1Model
+@{
+    ViewData["Title"] = "Contract Wizard - Step 1";
+}
+
+<h2>Wizard Step 1: Choose Room & Tenant</h2>
+
+<form method="post">
+    <div class="mb-3">
+        <label class="form-label">Room</label>
+        <select class="form-select" asp-for="RoomId">
+            @foreach (var r in Model.Rooms)
+            {
+                <option value="@r.RoomId">@r.RoomCode</option>
+            }
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Tenant</label>
+        <select class="form-select" asp-for="TenantId">
+            @foreach (var t in Model.Tenants)
+            {
+                <option value="@t.TenantId">@t.FullName</option>
+            }
+        </select>
+    </div>
+
+    <button class="btn btn-primary" type="submit">Next</button>
+    <button type="submit" asp-page-handler="Cancel">Cancel</button>
+
+</form>

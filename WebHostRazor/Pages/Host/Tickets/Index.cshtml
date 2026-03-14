@@ -1,0 +1,146 @@
+﻿@page
+@using DAL.Entities.Common
+@model WebHostRazor.Pages.Host.Tickets.IndexModel
+
+@Html.AntiForgeryToken()
+
+<div class="ticket-wrapper">
+    <div class="ticket-card">
+
+        <h3 class="mb-3">🎫 Ticket Management</h3>
+
+        <!-- 🔎 FILTER FORM -->
+        <form method="get" class="ticket-filter mb-4">
+
+            <div class="filter-item search">
+                <label>Search</label>
+                <input type="text"
+                       name="SearchString"
+                       value="@Model.SearchString"
+                       placeholder="ID / Title / Room"
+                       class="form-control form-control-sm" />
+            </div>
+
+            <div class="filter-item">
+                <label>Status</label>
+                <select name="Status" class="form-select form-select-sm">
+                    <option value="">All</option>
+                    @foreach (TicketStatus s in Enum.GetValues(typeof(TicketStatus)))
+                    {
+                        <option value="@((int)s)"
+                                selected="@(Model.Status == s)">
+                            @s
+                        </option>
+                    }
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <label>From</label>
+                <input type="date"
+                       name="FromDate"
+                       value="@Model.FromDateString"
+                       class="form-control form-control-sm" />
+            </div>
+
+            <div class="filter-item">
+                <label>To</label>
+                <input type="date"
+                       name="ToDate"
+                       value="@Model.ToDateString"
+                       class="form-control form-control-sm" />
+            </div>
+
+            <div class="filter-item button">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    Filter
+                </button>
+            </div>
+
+        </form>
+
+        <!-- 📋 TABLE -->
+        <div class="table-responsive">
+            <table class="table table-bordered ticket-table">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>Room</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Tickets)
+                    {
+                        <tr>
+                            <td>#@item.Id</td>
+                            <td>@item.Title</td>
+                            <td>@item.Room?.RoomName</td>
+                            <td>
+                                <select class="form-select status-dropdown"
+                                        data-id="@item.Id">
+                                    @foreach (TicketStatus s in Enum.GetValues(typeof(TicketStatus)))
+                                    {
+                                        <option value="@((int)s)"
+                                                selected="@(item.Status == s)">
+                                            @s
+                                        </option>
+                                    }
+                                </select>
+                            </td>
+                            <td>@item.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<!-- ✅ TOAST -->
+<div id="toast"
+     style="position:fixed; top:20px; right:20px;
+            background:#28a745; color:white;
+            padding:10px 20px; border-radius:6px;
+            display:none; z-index:9999;">
+    ✅ Updated Successfully
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll(".status-dropdown")
+            .forEach(drop => {
+                drop.addEventListener("change", function () {
+
+                    const id = this.dataset.id;
+                    const status = this.value;
+
+                    fetch("?handler=UpdateStatus&id=" + id + "&status=" + status, {
+                        method: "POST",
+                        headers: {
+                            "RequestVerificationToken":
+                                document.querySelector('input[name="__RequestVerificationToken"]').value
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast();
+                        }
+                    });
+                });
+            });
+
+        function showToast() {
+            const toast = document.getElementById("toast");
+            toast.style.display = "block";
+
+            setTimeout(() => {
+                toast.style.display = "none";
+            }, 2000);
+        }
+    </script>
+}

@@ -1,0 +1,35 @@
+﻿@{
+    ViewData["Title"] = "Run Expiry Reminder Scan";
+    Layout = "_Layout";
+    var days = (int)(ViewBag.DaysBeforeEnd ?? 7);
+}
+
+<h2 class="mb-3">Run Expiry Reminder Scan</h2>
+
+<div class="mb-3 d-flex gap-2">
+    <a class="btn btn-outline-secondary" asp-action="Index">← Back</a>
+</div>
+
+@if (TempData["Err"] is string err && !string.IsNullOrWhiteSpace(err))
+{
+    <div class="alert alert-danger">@err</div>
+}
+@if (TempData["Ok"] is string ok && !string.IsNullOrWhiteSpace(ok))
+{
+    <div class="alert alert-success">@ok</div>
+}
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" asp-action="ReminderScanPost">
+            @Html.AntiForgeryToken()
+
+            <div class="mb-3">
+                <label class="form-label">Days Before End</label>
+                <input class="form-control" type="number" min="1" name="daysBeforeEnd" value="@days" />
+            </div>
+
+            <button class="btn btn-primary" type="submit">Run scan now</button>
+        </form>
+    </div>
+</div>

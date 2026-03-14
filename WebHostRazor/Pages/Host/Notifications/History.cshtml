@@ -1,0 +1,48 @@
+﻿@page
+@model WebHostRazor.Pages.Host.Notifications.HistoryModel
+@using DAL.Entities.System
+@using DAL.Entities.Common
+@{
+    ViewData["Title"] = "Lịch Sử Thông Báo";
+}
+
+<div class="card shadow-lg p-4">
+    <h3 class="mb-4">📜 Lịch Sử Thông Báo</h3>
+
+    <table class="table table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>Tiêu đề</th>
+                <th>Ten</th>
+                <th>Nội dung</th>
+                <th>Loại</th>
+                <th>Ngày tạo</th>
+                <th>Trạng thái</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Notifications)
+            {
+                <tr>
+                    <td>@item.Title</td>
+                    <td>
+                        @item.Contract?.Tenant?.FullName
+                    </td>
+                    <td>@item.Content</td>
+                    <td>@item.SourceType</td>
+                    <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>
+                        @if (item.IsRead)
+                        {
+                            <span class="badge bg-success">Đã đọc</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning text-dark">Chưa đọc</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

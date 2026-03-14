@@ -1,0 +1,85 @@
+﻿@model WebAdmin.MVC.Models.Contracts.UploadAttachmentVm
+@{
+    ViewData["Title"] = "Upload Attachment";
+    Layout = "_Layout";
+}
+
+<h2 class="mb-3">Upload Attachment</h2>
+
+<div class="mb-3 d-flex gap-2">
+    <a class="btn btn-outline-secondary" asp-action="Details" asp-route-id="@Model.ContractId">← Back</a>
+</div>
+
+@if (TempData["Error"] is string err && !string.IsNullOrWhiteSpace(err))
+{
+    <div class="alert alert-danger">@err</div>
+}
+@if (TempData["Success"] is string ok && !string.IsNullOrWhiteSpace(ok))
+{
+    <div class="alert alert-success">@ok</div>
+}
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        <div asp-validation-summary="All"></div>
+    </div>
+}
+
+<div class="card mb-3">
+    <div class="card-header">Upload new file (PDF/JPG/PNG, max 5MB)</div>
+    <div class="card-body">
+        <form method="post"
+              asp-action="UploadAttachment"
+              asp-route-id="@Model.ContractId"
+              enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+
+            <div class="mb-3">
+                <input type="file" name="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
+            </div>
+
+            <button type="submit" class="btn btn-primary">Upload</button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">Existing attachments</div>
+    <div class="card-body">
+        @if (Model.Attachments == null || Model.Attachments.Count == 0)
+        {
+            <div class="text-muted">No attachments yet.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th style="width:180px;">Uploaded</th>
+                            <th style="width:90px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in Model.Attachments)
+                        {
+                            <tr>
+                                <td>@a.FileName</td>
+                                <td>@a.UploadedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td class="text-end">
+                                    <a class="btn btn-sm btn-outline-secondary" href="@a.Url" target="_blank">Open</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

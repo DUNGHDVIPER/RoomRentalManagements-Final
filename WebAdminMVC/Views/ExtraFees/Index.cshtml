@@ -1,0 +1,78 @@
+﻿@model List<DAL.Entities.Billing.ExtraFee>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "ExtraFees";
+}
+
+<div class="container">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">Extra Fees (Catalog)</div>
+            <div>
+                <a class="btn-gradient" href="/ExtraFees/Create">+ Create</a>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>NAME</th>
+                        <th class="th-right num">DEFAULT AMOUNT</th>
+                        <th>STATUS</th>
+                        <th style="width:260px"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model == null || !Model.Any())
+                    {
+                        <tr>
+                            <td colspan="4" style="color:#64748b; font-weight:700; padding:18px;">
+                                Chưa có extra fee nào. Bấm <b>Create</b> để thêm.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var x in Model)
+                        {
+                            var chip = x.IsActive ? "success" : "info";
+                            <tr>
+                                <td style="font-weight:850;">@x.Name</td>
+                                <td class="td-right num">@x.DefaultAmount.ToString("N0")</td>
+                                <td>
+                                    <span class="chip @chip">@(x.IsActive ? "Active" : "Disabled")</span>
+                                </td>
+                                <td class="td-right" style="white-space:nowrap;">
+                                    <a class="link" href="/ExtraFees/Edit/@x.Id">Edit</a>
+
+                                    <form method="post" action="/ExtraFees/Toggle/@x.Id" style="display:inline">
+                                        @Html.AntiForgeryToken()
+                                        <button class="link" type="submit">
+                                            @(x.IsActive ? "Disable" : "Enable")
+                                        </button>
+                                    </form>
+
+                                    @* Khuyến nghị: không delete cứng nếu đã dùng trong BillItems.
+                                       Nếu bạn vẫn giữ Delete action thì để lại như dưới *@
+                                    <form method="post" action="/ExtraFees/Delete/@x.Id"
+                                          style="display:inline"
+                                          onsubmit="return confirm('Delete this fee?')">
+                                        @Html.AntiForgeryToken()
+                                        <button class="link danger" type="submit">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pad-20">
+            <div class="hint">
+                Tip: Extra Fees là danh mục phí chung. Khi Generate Bills (Batch), bạn tick fee nào thì fee đó sẽ được thêm vào Bill Breakdown cho tất cả phòng trong batch.
+            </div>
+        </div>
+    </div>
+</div>

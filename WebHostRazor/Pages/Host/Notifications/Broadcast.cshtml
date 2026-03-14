@@ -1,0 +1,177 @@
+﻿@page
+@model WebHostRazor.Pages.Host.Notifications.BroadcastModel
+@{
+    ViewData["Title"] = "Gửi Thông Báo";
+}
+
+<div class="card shadow-lg p-4">
+    <h4 class="mb-4">📢 Gửi Thông Báo</h4>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            ✅ @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form method="post" id="broadcastForm">
+
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+        <div class="mb-3">
+            <label>Tiêu đề</label>
+            <input asp-for="Input.Title" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label>Nội dung</label>
+            <textarea asp-for="Input.Content"
+                      class="form-control"
+                      rows="3"></textarea>
+        </div>
+
+        <hr />
+
+        <div class="mb-3">
+            <label>Loại thông báo</label>
+            <select asp-for="Input.SourceType"
+                    asp-items="Model.SourceTypeList"
+                    class="form-select">
+            </select>
+        </div>
+
+        <h5>Phạm vi gửi</h5>
+
+        <select id="receiverType" class="form-select mb-2">
+            <option value="all">Tất cả</option>
+            <option value="block">Theo Block</option>
+            <option value="floor">Theo Floor</option>
+        </select>
+
+        <select id="blockSelect" class="form-select mb-2"></select>
+        <select id="floorSelect" class="form-select mb-2"></select>
+
+        <label>Danh sách Tenant</label>
+        <select asp-for="Input.ContractIds"
+                id="tenantSelect"
+                class="form-select"
+                multiple>
+        </select>
+
+        <button type="submit" class="btn btn-primary mt-3" id="submitBtn">
+            🚀 Gửi Thông Báo
+        </button>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        const contracts = @Html.Raw(Model.ContractsJson);
+        const blocks = @Html.Raw(Model.BlocksJson);
+        const floors = @Html.Raw(Model.FloorsJson);
+
+        const receiverType = document.getElementById("receiverType");
+        const blockSelect = document.getElementById("blockSelect");
+        const floorSelect = document.getElementById("floorSelect");
+        const tenantSelect = document.getElementById("tenantSelect");
+        const form = document.getElementById("broadcastForm");
+        const submitBtn = document.getElementById("submitBtn");
+
+        function renderTenants(data){
+            tenantSelect.innerHTML = "";
+            data.forEach(c => {
+                tenantSelect.innerHTML +=
+                `<option value="${c.id}" selected>
+                    ${c.tenant}
+                </option>`;
+            });
+        }
+
+        function renderBlocks(){
+            blockSelect.innerHTML = "<option value=''>-- Chọn Block --</option>";
+            blocks.forEach(b => {
+                blockSelect.innerHTML +=
+                `<option value="${b.id}">
+                    ${b.name}
+                </option>`;
+            });
+        }
+
+        function renderFloors(blockId){
+            floorSelect.innerHTML = "<option value=''>-- Chọn Floor --</option>";
+            floors
+                .filter(f => f.blockId == blockId)
+                .forEach(f => {
+                    floorSelect.innerHTML +=
+                    `<option value="${f.id}">
+                        ${f.name}
+                    </option>`;
+                });
+        }
+
+        // Ẩn ban đầu
+        blockSelect.style.display = "none";
+        floorSelect.style.display = "none";
+
+        receiverType.addEventListener("change", function(){
+
+            if(this.value === "all"){
+                blockSelect.style.display = "none";
+                floorSelect.style.display = "none";
+                renderTenants(contracts);
+            }
+
+            if(this.value === "block"){
+                blockSelect.style.display = "block";
+                floorSelect.style.display = "none";
+                renderBlocks();
+                tenantSelect.innerHTML = "";
+            }
+
+            if(this.value === "floor"){
+                blockSelect.style.display = "block";
+                floorSelect.style.display = "block";
+                renderBlocks();
+                tenantSelect.innerHTML = "";
+            }
+        });
+
+        blockSelect.addEventListener("change", function(){
+
+            if(receiverType.value === "block"){
+                renderTenants(
+                    contracts.filter(c => c.blockId == this.value)
+                );
+            }
+
+            if(receiverType.value === "floor"){
+                renderFloors(this.value);
+            }
+        });
+
+        floorSelect.addEventListener("change", function(){
+            renderTenants(
+                contracts.filter(c => c.floorId == this.value)
+            );
+        });
+
+        // Loading khi submit + chống double click
+        form.addEventListener("submit", function(){
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = "⏳ Đang gửi...";
+        });
+
+        // Mặc định load tất cả
+        renderTenants(contracts);
+
+        // Tự ẩn alert sau 3 giây
+        setTimeout(function(){
+            const alert = document.querySelector(".alert-success");
+            if(alert){
+                alert.classList.remove("show");
+            }
+        }, 3000);
+
+    </script>
+}

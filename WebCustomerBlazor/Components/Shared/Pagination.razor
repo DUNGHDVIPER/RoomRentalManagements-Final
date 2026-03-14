@@ -1,0 +1,16 @@
+﻿<div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;">
+    <div class="muted">Page @Page / @TotalPages</div>
+    <div style="display:flex;gap:10px;">
+        <button class="btn-ghost" disabled="@(Page <= 1)" @onclick="Prev">Prev</button>
+        <button class="btn-ghost" disabled="@(Page >= TotalPages)" @onclick="Next">Next</button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Page { get; set; }
+    [Parameter] public int TotalPages { get; set; }
+    [Parameter] public EventCallback<int> OnPageChanged { get; set; }
+
+    private Task Prev() => OnPageChanged.InvokeAsync(Page - 1);
+    private Task Next() => OnPageChanged.InvokeAsync(Page + 1);
+}

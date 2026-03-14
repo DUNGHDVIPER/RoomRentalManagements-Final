@@ -1,0 +1,43 @@
+﻿@model WebAdmin.MVC.Models.Users.UserDetailsVm
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "User Details";
+}
+<div class="ui-card form-card">
+    <div class="toolbar">
+        <div>
+            <h1 class="h1">User Details</h1>
+            <div class="muted">Read-only (FE-only)</div>
+        </div>
+        <div class="toolbar-right">
+            <a class="btn btn-ghost" href="/Users/Edit/@Model.Id">Edit</a>
+            <a class="btn btn-primary" href="/Users/Index">Back</a>
+        </div>
+    </div>
+
+    <div class="grid grid-2 mt">
+        <div class="ui-card">
+            <div class="muted">Email</div>
+            <div class="strong">@Model.Email</div>
+        </div>
+        <div class="ui-card">
+            <div class="muted">Role</div>
+            <span class="badge badge-info">@Model.Role</span>
+        </div>
+        <div class="ui-card">
+            <div class="muted">Status</div>
+            @if (Model.Status == "Active")
+            {
+                <span class="badge badge-success">Active</span>
+            }
+            else
+            {
+                <span class="badge badge-danger">Locked</span>
+            }
+        </div>
+        <div class="ui-card">
+            <div class="muted">Created (UTC)</div>
+            <div class="strong">@Model.CreatedAt.ToString("yyyy-MM-dd")</div>
+        </div>
+    </div>
+</div>

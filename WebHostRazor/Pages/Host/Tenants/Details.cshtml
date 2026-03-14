@@ -1,0 +1,138 @@
+﻿@page
+@model WebHostRazor.Pages.Host.Tenants.DetailsModel
+
+@{
+    ViewData["Title"] = "Tenant Details";
+}
+
+<div class="tenant-card">
+
+    <div class="tenant-header">
+        <div class="tenant-header-icon">👁</div>
+        <div>
+            <div class="tenant-title">Tenant Details</div>
+            <div class="tenant-sub">View full tenant information</div>
+        </div>
+    </div>
+
+    <div class="tenant-body">
+
+        <!-- PROFILE -->
+        <div class="section">
+            <div class="section-title">Profile</div>
+
+            <div class="profile-box">
+                <div class="avatar-large">
+                    @Model.Tenant.FullName?.Substring(0, 1)
+                </div>
+
+                <div class="profile-info">
+                    <div class="profile-name">
+                        @Model.Tenant.FullName
+                    </div>
+
+                    <div class="profile-sub">
+                        @Model.Tenant.Gender • @Model.Tenant.CCCD
+                    </div>
+
+                    <div class="profile-status">
+                        @if (Model.Tenant.Status == "Active")
+                        {
+                            <span class="badge success">Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge danger">Disabled</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PERSONAL -->
+        <div class="section">
+            <div class="section-title">Personal Information</div>
+
+            <div class="grid-2">
+
+                <div class="info-item">
+                    <div class="label">Date of Birth</div>
+                    <div class="value">
+                        @(Model.Tenant.DateOfBirth?.ToString("dd MMM yyyy") ?? "-")
+                    </div>
+                </div>
+
+                @* <div class="info-item"> *@
+                @*     <div class="label">Check-in Date</div> *@
+                @*     <div class="value"> *@
+                @*         @(Model.Tenant.CheckInAt?.ToString("dd MMM yyyy") ?? "-") *@
+                @*     </div> *@
+                @* </div> *@
+
+            </div>
+        </div>
+
+        <!-- CONTACT -->
+        <div class="section">
+            <div class="section-title">Contact Information</div>
+
+            <div class="grid-2">
+
+                <div class="info-item">
+                    <div class="label">Phone</div>
+                    <div class="value">@Model.Tenant.Phone</div>
+                </div>
+
+                <div class="info-item">
+                    <div class="label">Email</div>
+                    <div class="value">@Model.Tenant.Email</div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">Address</div>
+                    <div class="detail-value">
+                        @(string.IsNullOrEmpty(Model.Tenant.Address)
+                            ? "—"
+                            : Model.Tenant.Address)
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- SYSTEM -->
+        <div class="section">
+            <div class="section-title">System Info</div>
+
+            <div class="grid-2">
+
+                <div class="info-item">
+                    <div class="label">Created At</div>
+                    <div class="value">
+                        @Model.Tenant.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <div class="label">Updated At</div>
+                    <div class="value">
+                        @(Model.Tenant.UpdatedAt?.ToString("dd MMM yyyy HH:mm") ?? "-")
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <div class="tenant-footer">
+        <a asp-page="Index" class="btn-light">Back</a>
+
+        <a asp-page="Edit"
+           asp-route-id="@Model.Tenant.Id"
+           class="btn-primary">
+            Edit Tenant
+        </a>
+    </div>
+
+</div>

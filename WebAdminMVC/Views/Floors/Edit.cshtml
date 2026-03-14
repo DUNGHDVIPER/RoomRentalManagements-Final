@@ -1,0 +1,36 @@
+﻿@model BLL.DTOs.Property.FloorDto
+
+<h2>Edit Floor</h2>
+
+<form asp-action="Edit" method="post">
+
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="BlockId" />
+
+    <div class="mb-3">
+
+        <label asp-for="FloorName" class="form-label"></label>
+
+        <input asp-for="FloorName" class="form-control" />
+
+        <span asp-validation-for="FloorName" class="text-danger"></span>
+
+    </div>
+
+    <button class="btn btn-primary">
+        Update
+    </button>
+
+    <a asp-action="Index"
+       asp-route-blockId="@Model.BlockId"
+       class="btn btn-secondary">
+        Back
+    </a>
+
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

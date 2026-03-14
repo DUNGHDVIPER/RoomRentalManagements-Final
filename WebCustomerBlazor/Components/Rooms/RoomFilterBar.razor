@@ -1,0 +1,31 @@
+﻿@using BLL.Common
+@using BLL.DTOs.Common
+
+<div class="card" style="padding:14px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+    <input class="input" style="flex:1; min-width:220px;" placeholder="Search room..." @bind="Filter.Keyword" />
+    <select class="select" @bind="Filter.City">
+        <option value="">All cities</option>
+        <option value="Hồ Chí Minh">Hồ Chí Minh</option>
+        <option value="Hà Nội">Hà Nội</option>
+    </select>
+
+    <select class="select" @bind="Page.SortBy">
+        <option value="">Sort</option>
+        <option value="price_asc">Price ↑</option>
+        <option value="price_desc">Price ↓</option>
+    </select>
+
+    <button class="btn-ghost" @onclick="OpenFilters">More filters</button>
+    <button class="btn-grad" @onclick="Apply">Apply</button>
+</div>
+
+@code {
+    [Parameter] public FilterRoomDto Filter { get; set; } = new();
+    [Parameter] public PagedRequestDto Page { get; set; } = new(1, 10); // Provide default values for required parameters
+
+    [Parameter] public EventCallback OnApply { get; set; }
+    [Parameter] public EventCallback OnOpenDrawer { get; set; }
+
+    private Task Apply() => OnApply.InvokeAsync();
+    private Task OpenFilters() => OnOpenDrawer.InvokeAsync();
+}

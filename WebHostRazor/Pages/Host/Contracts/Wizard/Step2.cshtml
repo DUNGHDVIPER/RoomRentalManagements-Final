@@ -1,0 +1,51 @@
+﻿@page
+@model WebHostRazor.Pages.Host.Contracts.Wizard.Step2Model
+@{
+    ViewData["Title"] = "Contract Wizard - Step 2";
+}
+
+<h2>Wizard Step 2: Dates & Pricing</h2>
+
+<form method="post">
+    <!-- ✅ keep RoomId/TenantId across post -->
+    <input type="hidden" asp-for="RoomId" />
+    <input type="hidden" asp-for="TenantId" />
+
+    <div>
+        <label asp-for="StartDate"></label>
+        <input asp-for="StartDate" type="date" />
+    </div>
+
+    <div>
+        <label asp-for="EndDate"></label>
+        <input asp-for="EndDate" type="date" />
+    </div>
+
+    <div>
+        <label asp-for="Rent"></label>
+        <input asp-for="Rent" type="number" step="0.01" />
+    </div>
+
+    <div>
+        <label asp-for="Deposit"></label>
+        <input asp-for="Deposit" type="number" step="0.01" />
+    </div>
+
+    <div>
+        <input asp-for="ActivateNow" />
+        <label asp-for="ActivateNow">Activate now (Active). Uncheck to save as Pending.</label>
+    </div>
+
+    <button type="submit">Next</button>
+    <button type="submit" asp-page-handler="Back">Back</button>
+</form>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div style="color:red">
+        @foreach (var e in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div>@e.ErrorMessage</div>
+        }
+    </div>
+}

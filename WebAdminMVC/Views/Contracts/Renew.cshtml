@@ -1,0 +1,99 @@
+﻿@* Views/Contracts/Renew.cshtml *@
+@model WebAdmin.MVC.Models.Contracts.RenewVm
+
+@{
+    ViewData["Title"] = "Renew Contract";
+    Layout = "_Layout";
+}
+
+<h2 class="mb-3">Renew Contract</h2>
+
+<div class="mb-3">
+    <a class="btn btn-outline-secondary" asp-action="Details" asp-route-id="@Model.ContractId">← Back to Details</a>
+</div>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        <div class="fw-semibold mb-1">Please fix the errors below.</div>
+        <div asp-validation-summary="All"></div>
+    </div>
+}
+
+<div class="card mb-3">
+    <div class="card-header">Current Contract</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-2">
+                <div class="text-muted">Id</div>
+                <div class="fw-semibold">@Model.ContractId</div>
+            </div>
+            <div class="col-md-2">
+                <div class="text-muted">Status</div>
+                <div class="fw-semibold">@Model.CurrentStatus</div>
+            </div>
+            <div class="col-md-2">
+                <div class="text-muted">Start</div>
+                <div class="fw-semibold">@Model.CurrentStartDate.ToString("yyyy-MM-dd")</div>
+            </div>
+            <div class="col-md-2">
+                <div class="text-muted">End</div>
+                <div class="fw-semibold">@Model.CurrentEndDate.ToString("yyyy-MM-dd")</div>
+            </div>
+            <div class="col-md-2">
+                <div class="text-muted">Rent</div>
+                <div class="fw-semibold">@Model.CurrentRent.ToString("N0")</div>
+            </div>
+            <div class="col-md-2">
+                <div class="text-muted">Deposit</div>
+                <div class="fw-semibold">@Model.CurrentDeposit.ToString("N0")</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form method="post" asp-action="Renew" asp-route-id="@Model.ContractId" class="card">
+    <div class="card-header">New Contract Terms</div>
+    <div class="card-body">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="ContractId" />
+
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label asp-for="NewStartDate" class="form-label"></label>
+                <input asp-for="NewStartDate" class="form-control" type="date" />
+                <span asp-validation-for="NewStartDate" class="text-danger"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="NewEndDate" class="form-label"></label>
+                <input asp-for="NewEndDate" class="form-control" type="date" />
+                <span asp-validation-for="NewEndDate" class="text-danger"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="NewRent" class="form-label"></label>
+                <input asp-for="NewRent" class="form-control" />
+                <span asp-validation-for="NewRent" class="text-danger"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="NewDeposit" class="form-label"></label>
+                <input asp-for="NewDeposit" class="form-control" />
+                <span asp-validation-for="NewDeposit" class="text-danger"></span>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="Reason" class="form-label">Reason (optional)</label>
+                <textarea asp-for="Reason" class="form-control" rows="3" placeholder="e.g., extend contract for another year..."></textarea>
+                <span asp-validation-for="Reason" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-footer d-flex justify-content-end gap-2">
+        <a class="btn btn-outline-secondary" asp-action="Details" asp-route-id="@Model.ContractId">Cancel</a>
+        <button type="submit" class="btn btn-warning">Renew</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

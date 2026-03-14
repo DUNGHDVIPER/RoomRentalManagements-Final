@@ -1,0 +1,115 @@
+﻿@page
+@model WebHostRazor.Pages.Host.Contracts.CreateModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Create Contract";
+
+    var roomPriceJson = JsonSerializer.Serialize(Model.RoomPriceMap);
+}
+
+<div class="contract-page">
+    <partial name="/Pages/Host/Shared/_ToastPopup.cshtml" />
+
+    <div class="contract-hero">
+        <div>
+            <div class="contract-breadcrumb">Host / Contracts</div>
+            <h1>Create Contract</h1>
+            <p>Create a rental contract with room, tenant, period, and pricing.</p>
+        </div>
+
+        <a class="btn btn-soft" asp-page="./Index">Back</a>
+    </div>
+
+    <div class="contract-card">
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger rounded-4 mb-4">
+                <div asp-validation-summary="All"></div>
+            </div>
+        }
+
+        <form method="post" class="contract-form">
+            <div class="contract-section-title">Contract Information</div>
+
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <label asp-for="Vm.RoomId" class="form-label fw-semibold"></label>
+                    <select asp-for="Vm.RoomId" asp-items="Model.RoomOptions" class="form-select" id="roomSelect">
+                        <option value="">-- Select available room --</option>
+                    </select>
+                    <div class="form-text">Only rooms without ACTIVE contract are shown.</div>
+                    <span asp-validation-for="Vm.RoomId" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Vm.TenantId" class="form-label fw-semibold"></label>
+                    <select asp-for="Vm.TenantId" asp-items="Model.TenantOptions" class="form-select">
+                        <option value="">-- Select tenant --</option>
+                    </select>
+                    <span asp-validation-for="Vm.TenantId" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Vm.StartDate" class="form-label fw-semibold"></label>
+                    <input asp-for="Vm.StartDate" type="date" class="form-control" />
+                    <span asp-validation-for="Vm.StartDate" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Vm.EndDate" class="form-label fw-semibold"></label>
+                    <input asp-for="Vm.EndDate" type="date" class="form-control" />
+                    <span asp-validation-for="Vm.EndDate" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Vm.Rent" class="form-label fw-semibold"></label>
+                    <input asp-for="Vm.Rent" class="form-control" id="rentInput" placeholder="Rent will auto-fill after selecting room" />
+                    <div class="form-text">Auto-filled from room base price. You can still edit it manually.</div>
+                    <span asp-validation-for="Vm.Rent" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Vm.Deposit" class="form-label fw-semibold"></label>
+                    <input asp-for="Vm.Deposit" class="form-control" placeholder="Enter deposit amount" />
+                    <span asp-validation-for="Vm.Deposit" class="text-danger"></span>
+                </div>
+
+                <div class="col-12">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" asp-for="Vm.ActivateNow" />
+                        <label class="form-check-label fw-semibold" asp-for="Vm.ActivateNow">
+                            Activate immediately after creation
+                        </label>
+                    </div>
+                </div>
+
+                <div class="col-12 d-flex flex-wrap gap-2 pt-2">
+                    <button class="btn btn-gradient-primary" type="submit">Create Contract</button>
+                    <a class="btn btn-soft" asp-page="./Index">Cancel</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="/Pages/Host/Shared/_ValidationScriptsPartial.cshtml" />
+
+    <script>
+        const roomPriceMap = @Html.Raw(roomPriceJson);
+
+        const roomSelect = document.getElementById("roomSelect");
+        const rentInput = document.getElementById("rentInput");
+
+        function fillRentFromRoom() {
+            const roomId = parseInt(roomSelect.value);
+            if (!isNaN(roomId) && roomPriceMap[roomId] !== undefined) {
+                rentInput.value = roomPriceMap[roomId];
+            }
+        }
+
+        if (roomSelect) {
+            roomSelect.addEventListener("change", fillRentFromRoom);
+        }
+    </script>
+}

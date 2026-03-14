@@ -1,0 +1,57 @@
+﻿@model List<WebAdmin.MVC.Models.Billing.BillListItemVm>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Bills";
+}
+
+<div class="container">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">Bills</div>
+            <a class="btn-gradient" href="/Bills/Create">+ Add New Bill</a>
+            <a class="btn-gradient" href="/Bills/GenerateBatch">Generate Bills</a>
+        </div>
+
+        <!-- 🔥 HIỂN THỊ DEBUG / SUCCESS MESSAGE -->
+        @if (TempData["success"] != null)
+        {
+            <div class="alert alert-warning" style="margin:15px;">
+                @TempData["success"]
+            </div>
+        }
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ROOM</th>
+                        <th>MONTH</th>
+                        <th>TOTAL</th>
+                        <th>STATUS</th>
+                        <th class="th-right">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var b in Model)
+                    {
+                        <tr>
+                            <td class="user-email">@b.RoomName</td>
+                            <td>@b.Month</td>
+                            <td>@b.Total.ToString("N0")</td>
+                            <td>
+                                <span class="chip @(b.Status == "Paid" ? "success" : (b.Status == "Overdue" ? "danger" : "info"))">
+                                    @b.Status
+                                </span>
+                            </td>
+                            <td class="td-right">
+                                <a class="link" href="/Bills/Details/@b.Id">Details</a>
+                                <a class="link" href="/Bills/Edit/@b.Id">Edit</a>
+                                <a class="link text-danger" href="/Bills/Delete/@b.Id">Delete</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

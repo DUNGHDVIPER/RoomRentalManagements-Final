@@ -1,0 +1,32 @@
+﻿@{
+    var success = TempData["Success"]?.ToString() ?? TempData["Ok"]?.ToString();
+    var error = TempData["Error"]?.ToString() ?? TempData["Err"]?.ToString();
+}
+
+@if (!string.IsNullOrWhiteSpace(success))
+{
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: '@Html.Raw(success.Replace("'", "\\'"))',
+                confirmButtonText: 'OK'
+            });
+        });
+    </script>
+}
+
+@if (!string.IsNullOrWhiteSpace(error))
+{
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: '@Html.Raw(error.Replace("'", "\\'"))',
+                confirmButtonText: 'OK'
+            });
+        });
+    </script>
+}

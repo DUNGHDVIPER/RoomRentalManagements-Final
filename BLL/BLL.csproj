@@ -1,0 +1,56 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<GenerateStaticWebAssetsManifest>false</GenerateStaticWebAssetsManifest>
+		<StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+		<NoWarn>CS0168;CS8602</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Remove="Pages\Notifications\**" />
+		<Content Remove="Pages\Notifications\**" />
+		<EmbeddedResource Remove="Pages\Notifications\**" />
+		<None Remove="Pages\Notifications\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Remove="Seed\IdentitySeedExtensions.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Remove="Pages\Host\Shared\TMP.cshtml" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\DAL\DAL.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="Pages\Bills\" />
+		<Folder Include="Pages\Audit\" />
+		<Folder Include="Pages\Reports\" />
+		<Folder Include="Pages\Utilities\" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="Pages\Host\Shared\TMP.cshtml" />
+		<None Include="Seed\IdentitySeedExtensions.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="CloudinaryDotNet" Version="1.28.0" />
+		<PackageReference Include="ClosedXML" Version="0.105.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.11" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.11" />
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.23" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.23" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.23" />
+		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.11" />
+		<PackageReference Include="QuestPDF" Version="2026.2.0" />
+	</ItemGroup>
+
+</Project>

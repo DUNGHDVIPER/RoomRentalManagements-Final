@@ -1,0 +1,85 @@
+﻿@model BLL.DTOs.Utility.BulkUtilityReadingDto
+@using DAL.Entities.Property
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "UtilityReadings";
+    var rooms = ViewBag.Rooms as List<Room>;
+}
+
+<div class="container">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">Utility Readings (Bulk)</div>
+            <a class="link" href="/Dashboard/Index">Back</a>
+        </div>
+
+        @if (TempData["success"] != null)
+        {
+            <div class="pad-20">
+                <div class="ok">@TempData["success"]</div>
+            </div>
+        }
+
+        <form method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="pad-20">
+                <div class="form-item">
+                    <label class="form-label">Period (YYYYMM)</label>
+                    <input class="form-control" asp-for="Period" type="number" />
+                </div>
+
+                <div style="margin-top:20px;"></div>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Room</th>
+                            <th>Electric (kWh)</th>
+                            <th>Water (m³)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.Items.Count; i++)
+                        {
+                            var room = rooms?.FirstOrDefault(r => r.RoomId == Model.Items[i].RoomId);
+
+                            <tr>
+                                <td>
+                                    <strong>
+                                        @(room != null ? $"Room {room.RoomCode}" : $"RoomId {Model.Items[i].RoomId}")
+                                    </strong>
+                                    <input type="hidden" asp-for="Items[i].RoomId" />
+                                </td>
+
+                                <td>
+                                    <input class="form-control"
+                                           asp-for="Items[i].ElectricKwh"
+                                           type="number" min="0" step="1" />
+                                </td>
+
+                                <td>
+                                    <input class="form-control"
+                                           asp-for="Items[i].WaterM3"
+                                           type="number" min="0" step="1" />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="form-actions" style="display:flex; gap:12px; align-items:center;">
+                <button type="submit" class="btn-gradient">Save</button>
+
+                <a class="btn-gradient"
+                   style="text-decoration:none;"
+                   href="/UtilityCharges/Preview?period=@Model.Period">
+                    Preview charges
+                </a>
+
+                <a class="link" href="/UtilityReadings/Bulk?period=@Model.Period">Reload</a>
+            </div>
+        </form>
+    </div>
+</div>

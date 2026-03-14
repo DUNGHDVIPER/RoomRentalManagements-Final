@@ -1,0 +1,18 @@
+﻿@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Profile";
+    var email = Context.Session.GetString("ADMIN_EMAIL") ?? "admin@demo.com";
+}
+<div class="ui-card">
+    <h1 class="h1">Profile</h1>
+    <div class="grid grid-2">
+        <div class="ui-card">
+            <div class="muted">Email</div>
+            <div class="strong">@email</div>
+        </div>
+        <div class="ui-card">
+            <div class="muted">Role</div>
+            <span class="badge badge-info">Admin</span>
+        </div>
+    </div>
+</div>

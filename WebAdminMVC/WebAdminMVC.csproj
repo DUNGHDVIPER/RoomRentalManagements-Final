@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateStaticWebAssetsManifest>false</GenerateStaticWebAssetsManifest>
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+    <NoWarn>CS0168;CS8602</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Pages\Notifications\**" />
+    <Content Remove="Pages\Notifications\**" />
+    <EmbeddedResource Remove="Pages\Notifications\**" />
+    <None Remove="Pages\Notifications\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Seed\IdentitySeedExtensions.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="Pages\Host\Shared\TMP.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BLL\BLL.csproj" />
+    <ProjectReference Include="..\DAL\DAL.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Pages\Bills\" />
+    <Folder Include="Pages\Audit\" />
+    <Folder Include="Pages\Reports\" />
+    <Folder Include="Pages\Utilities\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Pages\Host\Shared\TMP.cshtml" />
+    <None Include="Seed\IdentitySeedExtensions.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.105.0" />
+    <PackageReference Include="QuestPDF" Version="2026.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.23" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.23" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.11" />
+  </ItemGroup>
+
+</Project>

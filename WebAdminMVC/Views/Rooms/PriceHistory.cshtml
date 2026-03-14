@@ -1,0 +1,29 @@
+﻿@model List<WebAdmin.MVC.Models.Rooms.RoomPriceHistoryVm>
+
+<h2>Room Price History</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Old Price</th>
+            <th>New Price</th>
+            <th>Changed At</th>
+            <th>Note</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.OldPrice</td>
+                <td>@item.NewPrice</td>
+                <td>@item.ChangedAt</td>
+                <td>@item.Note</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a class="btn btn-secondary" href="/Rooms/Details/@ViewBag.RoomId">
+    Back
+</a>

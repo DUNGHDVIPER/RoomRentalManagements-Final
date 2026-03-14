@@ -1,0 +1,59 @@
+﻿@model BLL.DTOs.Utility.UtilityPriceDto
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Set Utility Price";
+}
+
+<div class="container">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">Set Utility Price</div>
+            <a class="link" href="/UtilityPrices">Back</a>
+        </div>
+
+        <form method="post" asp-action="Set" asp-controller="UtilityPrices">
+            @Html.AntiForgeryToken()
+
+            <div class="pad-20">
+                @* Validation summary *@
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="err">
+                        Vui lòng kiểm tra lại dữ liệu.
+                    </div>
+                }
+
+                <div class="form-grid">
+                    <div class="form-item">
+                        <label class="form-label">Effective From</label>
+                        <input class="form-control" asp-for="EffectiveFrom" type="date" />
+                        <span class="text-danger" asp-validation-for="EffectiveFrom"></span>
+                    </div>
+
+                    <div class="form-item">
+                        <label class="form-label">Electric (đ/kWh)</label>
+                        <input class="form-control" asp-for="ElectricPerKwh" type="number" min="0" step="1" />
+                        <span class="text-danger" asp-validation-for="ElectricPerKwh"></span>
+                    </div>
+
+                    <div class="form-item">
+                        <label class="form-label">Water (đ/m³)</label>
+                        <input class="form-control" asp-for="WaterPerM3" type="number" min="0" step="1" />
+                        <span class="text-danger" asp-validation-for="WaterPerM3"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-gradient">
+                    Save
+                </button>
+                <a class="link" href="/UtilityPrices">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

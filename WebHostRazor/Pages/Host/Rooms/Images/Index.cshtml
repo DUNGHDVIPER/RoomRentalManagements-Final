@@ -1,0 +1,52 @@
+﻿@page "/Host/Rooms/{id:int}/Images"
+@model WebHostRazor.Pages.Host.Rooms.Images.IndexModel
+@{
+    ViewData["Title"] = "Room Images";
+}
+
+@if (Model.Room == null)
+{
+    <div class="card p-18"><b>Room not found.</b></div>
+}
+else
+{
+    <div class="card p-18">
+        <h2 class="h2">Images — @Model.Room.Name</h2>
+        <div class="muted">Add / remove images (FE-only)</div>
+        <hr class="hr" />
+
+        <form method="post" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            <input type="hidden" name="id" value="@Model.Room.Id" />
+            <input class="input" name="url" style="min-width:360px;flex:1" placeholder="Paste image url..." />
+            <button class="btn-grad" type="submit">Add</button>
+            <a class="btn-ghost" href="/Host/Rooms/Details?id=@Model.Room.Id">Back</a>
+        </form>
+
+        <hr class="hr" />
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;">
+            @for (int i = 0; i < Model.Room.Images.Count; i++)
+            {
+                <div class="card" style="overflow:hidden;border-radius:22px;">
+                    <img src="@Model.Room.Images[i]" style="width:100%;height:170px;object-fit:cover;" alt="Room Image @(i+1)" />
+                    <div style="padding:12px;display:flex;justify-content:space-between;align-items:center;">
+                        <div class="muted small">Image #@(i+1)</div>
+                        <form method="post" asp-page-handler="Remove" style="display:inline;">
+                            <input type="hidden" name="id" value="@Model.Room.Id" />
+                            <input type="hidden" name="index" value="@i" />
+                            <button class="btn-ghost" type="submit" onclick="return confirm('Remove this image?');">Remove</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (Model.Room.Images.Count == 0)
+        {
+            <div class="text-center muted" style="padding:40px;">
+                <p>No images uploaded yet.</p>
+                <p>Use the form above to add your first image.</p>
+            </div>
+        }
+    </div>
+}

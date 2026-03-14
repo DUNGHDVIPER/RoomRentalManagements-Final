@@ -1,0 +1,167 @@
+﻿@model WebAdmin.MVC.Models.Rooms.RoomDetailsVm
+
+@{
+    ViewData["Title"] = "Room Details";
+}
+
+<h2 class="mb-4">Room Details</h2>
+
+<div class="card mb-4 shadow-sm">
+    <div class="card-body">
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <strong>Room Code:</strong> @Model.RoomCode
+            </div>
+
+            <div class="col-md-6">
+                <strong>Room Name:</strong> @Model.RoomName
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <strong>Block:</strong> @Model.Block
+            </div>
+
+            <div class="col-md-4">
+                <strong>Floor:</strong> @Model.Floor
+            </div>
+
+            <div class="col-md-4">
+                <strong>Price:</strong> @Model.Price.ToString("N0") $
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <strong>Status:</strong> @Model.Status
+            </div>
+        </div>
+
+        <!-- ===== AMENITIES ===== -->
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <strong>Amenities:</strong>
+
+                @if (Model.Amenities != null && Model.Amenities.Any())
+                {
+                    <div class="mt-2">
+                        @foreach (var amenity in Model.Amenities)
+                        {
+                            <span class="badge bg-primary me-2 mb-2 p-2">
+                                @amenity
+                            </span>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-muted mt-2">
+                        No amenities available
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <a asp-action="PriceHistory"
+               asp-route-id="@Model.Id"
+               class="btn btn-info btn-sm">
+                View Price History
+            </a>
+        </div>
+
+    </div>
+</div>
+
+<h4 class="mb-3">Room Images</h4>
+
+@if (Model.Images != null && Model.Images.Any())
+{
+    <div class="row">
+
+        @foreach (var img in Model.Images)
+        {
+            <div class="col-md-3 mb-3">
+
+                <div class="card shadow-sm h-100">
+
+                    <img src="@(img.ImageUrl ?? "/images/no-image.png")"
+                         class="card-img-top"
+                         style="height:180px; object-fit:cover;" />
+
+                    <div class="card-body text-center">
+
+                        @if (img.IsPrimary)
+                        {
+                            <span class="badge bg-success mb-2">
+                                Primary
+                            </span>
+                        }
+
+                        <form asp-action="DeleteImage" method="post">
+
+                            @Html.AntiForgeryToken()
+
+                            <input type="hidden" name="imageId" value="@img.ImageId" />
+                            <input type="hidden" name="roomId" value="@Model.Id" />
+
+                            <button type="submit"
+                                    class="btn btn-sm btn-danger">
+                                Delete
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+            </div>
+        }
+
+    </div>
+}
+else
+{
+    <div class="alert alert-light border">
+        No images uploaded yet.
+    </div>
+}
+
+<hr />
+
+<h4 class="mt-4">Upload New Image</h4>
+
+<form asp-action="UploadImage"
+      method="post"
+      enctype="multipart/form-data"
+      class="card card-body shadow-sm">
+
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" name="roomId" value="@Model.Id" />
+
+    <div class="mb-3">
+
+        <input type="file"
+               name="file"
+               class="form-control"
+               accept="image/*"
+               required />
+
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        Upload Image
+    </button>
+
+</form>
+
+<div class="mt-4">
+    <a asp-action="Index"
+       class="btn btn-secondary">
+        Back to List
+    </a>
+</div>

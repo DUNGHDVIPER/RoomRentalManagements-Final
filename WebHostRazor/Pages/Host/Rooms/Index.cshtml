@@ -1,0 +1,116 @@
+﻿@* @page *@
+@* @model WebHostRazor.Pages.Host.Rooms.IndexModel *@
+@{
+    ViewData["Title"] = "Rooms";
+}
+
+<div class="card p-18">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div>
+            <h2 class="h2">Rooms</h2>
+            <div class="muted">Manage rooms • images • amenities • pricing history</div>
+        </div>
+        <a class="btn-grad" href="/Host/Rooms/Create">+ New Room</a>
+    </div>
+
+    <hr class="hr" />
+
+
+    <div class="card shadow-sm rounded-4 border-0">
+        <div class="card-body p-4">
+
+            <table class="table align-middle text-center table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Number</th>
+						<th>Room</th>
+                        <th>Price</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                        <th>Check In/Out</th> 
+                        <th>StayHistories</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var room in Model.Rooms)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@room.RoomCode</td>
+                            <td>@room.RoomName</td>
+                            <td>@room.Price.ToString("N0") đ</td>
+
+                            <!-- STATUS -->
+                            <td>
+                                @if (room.Status == "Occupied")
+                                {
+                                    <span class="badge bg-danger-subtle text-danger px-3 py-2 rounded-pill">
+                                        OCCUPIED
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill">
+                                        AVAILABLE
+                                    </span>
+                                }
+                            </td>
+
+                            <!-- CHECK IN OUT -->
+                            <td>
+                                @if (room.Status == "Occupied")
+                                {
+                                    <a asp-page="CheckInOut/CheckOut"
+                                       asp-route-roomId="@room.Id"
+                                       class="btn btn-sm btn-outline-warning rounded-pill px-3">
+                                        🏠 Check Out
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a asp-page="CheckInOut/CheckIn"
+                                       asp-route-roomId="@room.Id"
+                                       class="btn btn-sm btn-outline-success rounded-pill px-3">
+                                        🏠 Check In
+                                    </a>
+                                }
+                            </td>
+
+                            <!-- ACTIONS -->
+                            <td>
+                                <div class="d-flex justify-content-center gap-2">
+                                    <a asp-page="Details" asp-route-id="@room.Id"
+                                       class="btn btn-sm btn-outline-primary rounded-pill">
+                                        Details
+                                    </a>
+
+                                    <a asp-page="Edit" asp-route-id="@room.Id"
+                                       class="btn btn-sm btn-outline-dark rounded-pill">
+                                        Edit
+                                    </a>
+
+                                    <a asp-page="Delete" asp-route-id="@room.Id"
+                                       class="btn btn-sm btn-outline-danger rounded-pill">
+                                        Delete
+                                    </a>
+
+                                  
+                                </div>
+                            </td>
+
+                            <td>
+                                <a asp-page="CheckInOut/RoomHistory"
+                                   asp-route-roomId="@room.Id"
+                                   class="btn btn-info">
+                                    📜 History
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+
+            </table>
+        </div>
+    </div>
+
+</div>

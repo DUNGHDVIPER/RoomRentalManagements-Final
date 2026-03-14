@@ -1,0 +1,80 @@
+﻿@model WebAdminMVC.Models.Roles.RoleDetailsVm;
+@{
+    ViewData["Title"] = "Role Details";
+    Layout = "_Layout";
+}
+
+<div class="container">
+    <div class="card">
+        <div class="card-head">
+            <div class="card-title">🔍 Role Details</div>
+            <div class="btn-group">
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Edit
+                </a>
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to List
+                </a>
+            </div>
+        </div>
+
+        <div class="p-4">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h5>Role Information</h5>
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Role Name:</strong></td>
+                            <td>@Model.Name</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total Users:</strong></td>
+                            <td><span class="badge bg-info">@Model.Users.Count users</span></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <h5>Users in this Role</h5>
+                    @if (Model.Users.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Email</th>
+                                        <th>Username</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var user in Model.Users)
+                                    {
+                                        <tr>
+                                            <td>@user.Email</td>
+                                            <td>@user.UserName</td>
+                                            <td>
+                                                <a asp-controller="Users" asp-action="Details" asp-route-id="@user.Id" 
+                                                   class="btn btn-sm btn-outline-info">
+                                                    <i class="fas fa-user"></i> View User
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No users are currently assigned to this role.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,69 @@
+@page "/Debug/FixRoles"
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<IdentityUser> UserManager
+@inject RoleManager<IdentityRole> RoleManager
+@{
+    ViewData["Title"] = "Fix User Roles";
+    
+    string message = "";
+    
+    if (Request.Method == "POST")
+    {
+        try
+        {
+            // Ensure roles exist
+            var roles = new[] { "Admin", "Host", "Customer", "User" };
+            foreach (var roleName in roles)
+            {
+                if (!await RoleManager.RoleExistsAsync(roleName))
+                {
+                    await RoleManager.CreateAsync(new IdentityRole(roleName));
+                }
+            }
+            
+            // Fix host user
+            var hostUser = await UserManager.FindByEmailAsync("host@demo.com");
+            if (hostUser != null)
+            {
+                var currentRoles = await UserManager.GetRolesAsync(hostUser);
+                if (!currentRoles.Contains("Host"))
+                {
+                    await UserManager.AddToRoleAsync(hostUser, "Host");
+                    message = "Host role added successfully!";
+                }
+                else
+                {
+                    message = "Host already has Host role.";
+                }
+            }
+            else
+            {
+                message = "Host user not found!";
+            }
+        }
+        catch (Exception ex)
+        {
+            message = $"Error: {ex.Message}";
+        }
+    }
+}
+
+<div class="card p-18" style="margin: 20px auto; max-width: 600px;">
+    <h2>Fix User Roles</h2>
+    
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <div class="badge @(message.Contains("Error") ? "danger" : "success")" style="padding: 12px; margin: 10px 0;">
+            @message
+        </div>
+    }
+    
+    <form method="post" style="margin: 20px 0;">
+        <button type="submit" class="btn-grad">Fix Host Roles</button>
+    </form>
+    
+    <div style="margin-top: 20px;">
+        <a href="/Debug/UserInfo" class="btn-ghost">Check User Info</a>
+        <a href="/Auth/Login" class="btn-ghost">Back to Login</a>
+    </div>
+</div>

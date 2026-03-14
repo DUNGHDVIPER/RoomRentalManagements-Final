@@ -1,0 +1,92 @@
+﻿@page "/tickets/create"
+
+@using Microsoft.AspNetCore.Components.Forms
+@using DAL.Data
+@using DAL.Entities.Maintenance
+@using DAL.Entities.Common
+@using System.ComponentModel.DataAnnotations
+
+@inject AppDbContext _context
+@inject NavigationManager Nav
+
+<div class="bg-grad">
+    <div class="container section">
+        <div class="card glass p-22" style="max-width:650px;margin:40px auto;">
+
+            <div style="margin-bottom:20px;">
+                <div class="kicker">SUPPORT PORTAL</div>
+                <h2 class="h2">New Support Ticket</h2>
+                <div class="muted small">
+                    Describe your issue and our team will get back to you shortly.
+                </div>
+            </div>
+
+            <EditForm Model="@ticket" OnValidSubmit="HandleSubmit" class="form">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <!-- TITLE -->
+                <div>
+                    <div class="label">TITLE</div>
+                    <InputText class="input"
+                               placeholder="Brief summary..."
+                               @bind-Value="ticket.Title" />
+                </div>
+
+                <!-- DESCRIPTION -->
+                <div>
+                    <div class="label">DESCRIPTION (max 255 chars)</div>
+                    <InputTextArea class="input textarea-big w-100"
+                                   maxlength="255"
+                                   placeholder="Describe the issue..."
+                                   @bind-Value="ticket.Description" />
+                   
+                </div>
+
+                <!-- CATEGORY -->
+                <div>
+                    <div class="label">CATEGORY</div>
+
+                    <InputRadioGroup @bind-Value="ticket.Category" class="form-select">
+                        @foreach (TicketCategory c in Enum.GetValues(typeof(TicketCategory)))
+                        {
+                            <option value="@c">@c</option>
+                        }
+                    </InputRadioGroup>
+                </div>
+
+                <div class="row" style="margin-top:16px;">
+                    <button type="button"
+                            class="btn-ghost"
+                            @onclick='() => Nav.NavigateTo("/tickets")'>
+                        Cancel
+                    </button>
+
+                    <button type="submit" class="btn-grad">
+                        Save Ticket
+                    </button>
+                </div>
+
+            </EditForm>
+
+        </div>
+    </div>
+</div>
+
+@code {
+    private Ticket ticket = new()
+        {
+            Category = TicketCategory.Other
+        };
+
+    private async Task HandleSubmit()
+    {
+        ticket.Status = TicketStatus.Open;
+        ticket.CreatedAt = DateTime.Now;
+
+        _context.Tickets.Add(ticket);
+        await _context.SaveChangesAsync();
+
+        Nav.NavigateTo("/tickets");
+    }
+}

@@ -1,0 +1,38 @@
+﻿@using BLL.DTOs.Room.Public
+@using Microsoft.AspNetCore.Components
+@inject NavigationManager Nav
+
+<div class="card room-card" style="cursor:pointer"
+     @onclick="@(() => Nav.NavigateTo($"/rooms/{Room.Id}"))">
+    <img class="room-img" src="@Room.Images.FirstOrDefault()?.Url" />
+
+    <div class="room-body">
+        <div class="badges">
+            @foreach (var b in Room.Badges)
+            {
+                <span class="badge info">@b</span>
+            }
+        </div>
+
+        <div class="room-title">@Room.Name</div>
+
+        <div class="room-meta">
+            <span>@Room.Area m²</span>
+            <span>•</span>
+            <span>@Room.District, @Room.City</span>
+            <span>•</span>
+            <span>@Room.PostedAgo</span>
+        </div>
+
+        <div class="room-price">@Room.Price.ToString("N0") ₫ / tháng</div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public RoomPublicDto Room { get; set; } = new() 
+    { 
+        Name = "", 
+        City = "", 
+        District = "" 
+    };
+}

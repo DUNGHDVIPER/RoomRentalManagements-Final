@@ -1,0 +1,83 @@
+﻿@page
+@model WebHostRazor.Pages.Host.Contracts.RenewModel
+@{
+    ViewData["Title"] = "Renew Contract";
+}
+
+<div class="contract-page">
+    <partial name="/Pages/Host/Shared/_ToastPopup.cshtml" />
+
+    <div class="contract-hero">
+        <div>
+            <div class="contract-breadcrumb">Host / Contracts / Renew</div>
+            <h1>Renew Contract</h1>
+            <p>Extend the contract with a new period, rent, and deposit.</p>
+        </div>
+
+        <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-soft" asp-page="./Details" asp-route-id="@Model.Vm.ContractId">Back</a>
+            <a class="btn btn-soft" asp-page="/Host/Contracts/Create">+ Create Contract</a>
+        </div>
+    </div>
+
+    <div class="contract-card">
+        @if (TempData["Error"] is string err && !string.IsNullOrWhiteSpace(err))
+        {
+            <div class="alert alert-danger rounded-4 mb-4">@err</div>
+        }
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger rounded-4 mb-4">
+                <div asp-validation-summary="All"></div>
+            </div>
+        }
+
+        <form method="post" class="contract-form">
+            <input type="hidden" asp-for="Vm.ContractId" />
+
+            <div class="contract-section-title">Renewal Information</div>
+
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-3">
+                    <label asp-for="Vm.NewStartDate" class="form-label fw-semibold"></label>
+                    <input asp-for="Vm.NewStartDate" type="date" class="form-control" />
+                    <span asp-validation-for="Vm.NewStartDate" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+                    <label asp-for="Vm.NewEndDate" class="form-label fw-semibold"></label>
+                    <input asp-for="Vm.NewEndDate" type="date" class="form-control" />
+                    <span asp-validation-for="Vm.NewEndDate" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+                    <label asp-for="Vm.NewRent" class="form-label fw-semibold"></label>
+                    <input asp-for="Vm.NewRent" class="form-control" />
+                    <span asp-validation-for="Vm.NewRent" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+                    <label asp-for="Vm.NewDeposit" class="form-label fw-semibold"></label>
+                    <input asp-for="Vm.NewDeposit" class="form-control" />
+                    <span asp-validation-for="Vm.NewDeposit" class="text-danger"></span>
+                </div>
+
+                <div class="col-12">
+                    <label asp-for="Vm.Reason" class="form-label fw-semibold"></label>
+                    <input asp-for="Vm.Reason" class="form-control" />
+                    <span asp-validation-for="Vm.Reason" class="text-danger"></span>
+                </div>
+
+                <div class="col-12 d-flex gap-2 flex-wrap">
+                    <button class="btn btn-gradient-primary" type="submit">Renew Contract</button>
+                    <a class="btn btn-soft" asp-page="./Details" asp-route-id="@Model.Vm.ContractId">Cancel</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="/Pages/Host/Shared/_ValidationScriptsPartial.cshtml" />
+}

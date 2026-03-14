@@ -1,0 +1,90 @@
+﻿@model WebAdmin.MVC.Models.Billing.PaymentCreateVm
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Record Payment";
+}
+
+<div class="container">
+    <div class="card">
+
+        <div class="card-head">
+            <div class="card-title">Record Payment</div>
+            <a class="link" href="/Bills/Details/@Model.BillId">Back</a>
+        </div>
+
+        <form method="post" class="form-grid">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="BillId" />
+
+            <!-- Room -->
+            <div class="fg">
+                <label class="lbl">Room</label>
+                <input class="inp" value="@Model.RoomName" readonly />
+            </div>
+
+            <!-- Month -->
+            <div class="fg">
+                <label class="lbl">Month</label>
+                <input class="inp" value="@Model.Month" readonly />
+            </div>
+
+            <!-- Total Bill -->
+            <div class="fg">
+                <label class="lbl">Total Bill</label>
+                <input class="inp" value="@Model.BillTotal.ToString("N0")" readonly />
+            </div>
+
+            <!-- Paid So Far -->
+            <div class="fg">
+                <label class="lbl">Paid So Far</label>
+                <input class="inp" value="@Model.PaidSoFar.ToString("N0")" readonly />
+            </div>
+
+            <!-- Remaining -->
+            <div class="fg">
+                <label class="lbl">Remaining</label>
+                <input class="inp" value="@Model.Remaining.ToString("N0")" readonly />
+            </div>
+
+            <!-- Amount -->
+            <div class="fg">
+                <label class="lbl">Payment Amount</label>
+                <input class="inp" asp-for="Amount" />
+                <span class="text-danger">@Html.ValidationMessageFor(m => m.Amount)</span>
+            </div>
+
+            <!-- Method -->
+            <div class="fg">
+                <label class="lbl">Payment Method</label>
+                <select class="inp" asp-for="Method">
+                    <option value="Cash">Cash</option>
+                    <option value="Banking">Banking</option>
+                    <option value="Momo">Momo</option>
+                </select>
+            </div>
+
+            <!-- Transaction Ref -->
+            <div class="fg">
+                <label class="lbl">Transaction Reference</label>
+                <input class="inp" asp-for="TransactionRef" placeholder="Optional..." />
+            </div>
+
+            <div class="form-actions">
+                <button class="btn-gradient" type="submit">
+                    Confirm Payment
+                </button>
+
+                <a class="link danger" href="/Bills/Details/@Model.BillId">
+                    Cancel
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
