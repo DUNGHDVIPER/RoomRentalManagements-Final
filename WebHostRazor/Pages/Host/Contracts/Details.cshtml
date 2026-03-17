@@ -4,207 +4,166 @@
     ViewData["Title"] = "Contract Details";
 }
 
-<div class="contract-page">
-    <partial name="/Pages/Host/Shared/_ToastPopup.cshtml" />
+@if (TempData["Err"] != null)
+{
+    <div class="alert alert-danger">@TempData["Err"]</div>
+}
+@if (TempData["Error"] is string err && !string.IsNullOrWhiteSpace(err))
+{
+    <div class="alert alert-danger">@err</div>
+}
+@if (TempData["Success"] is string ok && !string.IsNullOrWhiteSpace(ok))
+{
+    <div class="alert alert-success">@ok</div>
+}
+@if (Model.Contract == null)
+{
+    <div>Not found.</div>
+}
+else
+{
+    <h2>Contract #@Model.Contract.Id</h2>
 
-    @if (Model.Contract == null)
+    <dl class="row">
+        <dt class="col-sm-2">RoomId</dt>
+        <dd class="col-sm-10">@Model.Contract.RoomId</dd>
+        <dt class="col-sm-2">TenantId</dt>
+        <dd class="col-sm-10">@Model.Contract.TenantId</dd>
+        <dt class="col-sm-2">Start</dt>
+        <dd class="col-sm-10">@Model.Contract.StartDate.ToString("yyyy-MM-dd")</dd>
+        <dt class="col-sm-2">End</dt>
+        <dd class="col-sm-10">@Model.Contract.EndDate.ToString("yyyy-MM-dd")</dd>
+        <dt class="col-sm-2">Rent</dt>
+        <dd class="col-sm-10">@Model.Contract.Rent.ToString("n0")</dd>
+        <dt class="col-sm-2">Deposit</dt>
+        <dd class="col-sm-10">@Model.Contract.Deposit.ToString("n0")</dd>
+        <dt class="col-sm-2">Active</dt>
+        <dd class="col-sm-10">@Model.Contract.IsActive</dd>
+        <dt class="col-sm-2">Status</dt>
+        <dd class="col-sm-10">@Model.Contract.Status</dd>
+
+        <dt class="col-sm-2">DepositStatus</dt>
+        <dd class="col-sm-10">@Model.Contract.DepositStatus</dd>
+
+        <dt class="col-sm-2">DepositPaidAt</dt>
+        <dd class="col-sm-10">@Model.Contract.DepositPaidAt?.ToString("yyyy-MM-dd HH:mm")</dd>
+
+        <dt class="col-sm-2">DepositPaidAmount</dt>
+        <dd class="col-sm-10">@Model.Contract.DepositPaidAmount?.ToString("n0")</dd>
+
+    </dl>
+
+    <div class="d-flex gap-2">
+        <a class="btn btn-secondary" asp-page="./Index">Back</a>
+
+        <a class="btn btn-primary" asp-page="./Renew" asp-route-id="@Model.Contract.Id">Renew</a>
+        <a class="btn btn-warning" asp-page="./Terminate" asp-route-id="@Model.Contract.Id">Terminate</a>
+
+        <a class="btn btn-info" asp-page="./UploadAttachment" asp-route-id="@Model.Contract.Id">Upload Attachment</a>
+        <a class="btn btn-success" asp-page="./ExportPdf" asp-route-id="@Model.Contract.Id">Export PDF</a>
+
+        <a class="btn btn-outline-dark" asp-page="./Versions" asp-route-id="@Model.Contract.Id">Change History</a>
+
+        <form method="post" asp-page-handler="Activate" asp-route-id="@Model.Contract.Id" class="d-inline">
+            @Html.AntiForgeryToken()
+            <button class="btn btn-success" type="submit">Activate</button>
+        </form>
+    </div>
+    <hr />
+
+    <h4>Attachments</h4>
+
+    @if (Model.Attachments == null || !Model.Attachments.Any())
     {
-        <div class="alert alert-warning rounded-4">Contract not found.</div>
+        <div class="text-muted">No attachments yet.</div>
     }
     else
     {
-        <div class="contract-hero">
-            <div>
-                <div class="contract-breadcrumb">Host / Contracts / Details</div>
-                <h1>Contract #@Model.Contract.Id</h1>
-                <p>View contract details, deposit, history, and attachments.</p>
-            </div>
+        <div class="row">
+            @foreach (var a in Model.Attachments)
+            {
+                var url = a.Url ?? "";
+                var lower = url.ToLowerInvariant();
+                var isImg = lower.EndsWith(".jpg") || lower.EndsWith(".jpeg") || lower.EndsWith(".png");
 
-            <div class="d-flex gap-2 flex-wrap">
-                <a class="btn btn-soft" asp-page="./Index">Back</a>
-                <a class="btn btn-soft" asp-page="./Renew" asp-route-id="@Model.Contract.Id">Renew</a>
-                <a class="btn btn-soft" asp-page="./Terminate" asp-route-id="@Model.Contract.Id">Terminate</a>
-                <a class="btn btn-soft" asp-page="./UploadAttachment" asp-route-id="@Model.Contract.Id">Upload Contract</a>
-                <a class="btn btn-soft" asp-page="./Versions" asp-route-id="@Model.Contract.Id">History</a>
-            </div>
-        </div>
-
-        <div class="row g-4">
-            <div class="col-lg-7">
-                <div class="contract-card h-100">
-                    <div class="contract-section-title">Contract Information</div>
-
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="text-muted small">Room ID</div>
-                            <div class="fw-semibold">@Model.Contract.RoomId</div>
+                <div class="col-md-4 mb-3">
+                    <div class="card p-2">
+                        <div style="font-weight:600">
+                            <a href="@url" target="_blank">@(!string.IsNullOrWhiteSpace(a.FileName) ? a.FileName : url)</a>
                         </div>
-                        <div class="col-md-6">
-                            <div class="text-muted small">Tenant ID</div>
-                            <div class="fw-semibold">@Model.Contract.TenantId</div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="text-muted small">Start Date</div>
-                            <div class="fw-semibold">@Model.Contract.StartDate.ToString("yyyy-MM-dd")</div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="text-muted small">End Date</div>
-                            <div class="fw-semibold">@Model.Contract.EndDate.ToString("yyyy-MM-dd")</div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="text-muted small">Rent</div>
-                            <div class="fw-semibold">@Model.Contract.Rent.ToString("n0") đ</div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="text-muted small">Deposit</div>
-                            <div class="fw-semibold">@Model.Contract.Deposit.ToString("n0") đ</div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="text-muted small">Contract Code</div>
-                            <div class="fw-semibold">@Model.Contract.ContractCode</div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="text-muted small">Status</div>
-                            <div>
-                                @if (Model.Contract.IsActive)
-                                {
-                                    <span class="contract-badge active">Active</span>
-                                }
-                                else
-                                {
-                                    <span class="contract-badge">@Model.Contract.Status</span>
-                                }
-                            </div>
-                        </div>
-                    </div>
+                        <div class="text-muted" style="font-size:12px">@a.UploadedAt</div>
 
-                    <hr class="my-4" />
-
-                    <form method="post" asp-page-handler="Activate" asp-route-id="@Model.Contract.Id" class="d-flex flex-wrap gap-2">
-                        @Html.AntiForgeryToken()
-                        <button class="btn btn-gradient-primary" type="submit">Activate Contract</button>
-                        <a class="btn btn-soft" asp-page="./ExportPdf" asp-route-id="@Model.Contract.Id">Export PDF</a>
-                    </form>
-                </div>
-            </div>
-
-            <div class="col-lg-5">
-                <div class="contract-card mb-4">
-                    <div class="contract-section-title">Deposit Status</div>
-
-                    <div class="mb-2">
-                        <div class="text-muted small">Status</div>
-                        <div class="fw-semibold">@Model.Contract.DepositStatus</div>
-                    </div>
-
-                    <div class="mb-2">
-                        <div class="text-muted small">Paid At</div>
-                        <div class="fw-semibold">@Model.Contract.DepositPaidAt?.ToString("yyyy-MM-dd HH:mm")</div>
-                    </div>
-
-                    <div>
-                        <div class="text-muted small">Paid Amount</div>
-                        <div class="fw-semibold">@Model.Contract.DepositPaidAmount?.ToString("n0") đ</div>
+                        @if (isImg)
+                        {
+                            <img src="@url" style="max-width:100%; margin-top:8px; border-radius:8px; border:1px solid #eee;" />
+                        }
                     </div>
                 </div>
-
-                <div class="contract-card">
-                    <div class="contract-section-title">Contract files (shared with admin & tenant)</div>
-
-                    @if (Model.Attachments == null || !Model.Attachments.Any())
-                    {
-                        <div class="text-muted">No attachments yet.</div>
-                    }
-                    else
-                    {
-                        <div class="d-flex flex-column gap-3">
-                            @foreach (var a in Model.Attachments)
-                            {
-                                var url = a.Url ?? "";
-                                var lower = url.ToLowerInvariant();
-                                var isImg = lower.EndsWith(".jpg") || lower.EndsWith(".jpeg") || lower.EndsWith(".png");
-
-                                <div class="border rounded-4 p-3">
-                                    <div class="fw-semibold">
-                                        <a href="@url" target="_blank">@a.FileName</a>
-                                    </div>
-                                    <div class="text-muted small mb-2">@a.UploadedAt.ToString("yyyy-MM-dd HH:mm")</div>
-
-                                    @if (isImg)
-                                    {
-                                        <img src="@url" class="img-fluid rounded-3 border" />
-                                    }
-                                </div>
-                            }
-                        </div>
-                    }
-                </div>
-            </div>
-
-            <div class="col-12">
-                <div class="contract-card">
-                    <div class="contract-section-title">Deposit Management</div>
-
-                    <div class="row g-4">
-                        <div class="col-lg-6">
-                            <div class="border rounded-4 p-4 h-100">
-                                <h6 class="fw-semibold mb-3">Update Deposit Amount</h6>
-                                <form method="post" asp-page-handler="UpdateDepositAmount" asp-route-id="@Model.Contract.Id" class="contract-form">
-                                    @Html.AntiForgeryToken()
-
-                                    <div class="mb-3">
-                                        <label class="form-label">New Deposit Amount</label>
-                                        <input class="form-control" type="number" step="0.01" asp-for="DepositAmountForm.NewDeposit" />
-                                    </div>
-
-                                    <button class="btn btn-gradient-primary" type="submit">Update Amount</button>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="col-lg-6">
-                            <div class="border rounded-4 p-4 h-100">
-                                <h6 class="fw-semibold mb-3">Update Deposit Status</h6>
-                                <form method="post" asp-page-handler="UpdateDepositStatus" asp-route-id="@Model.Contract.Id" class="contract-form">
-                                    @Html.AntiForgeryToken()
-
-                                    <div class="mb-3">
-                                        <label class="form-label">Required Deposit Amount</label>
-                                        <input class="form-control" type="number" step="0.01" asp-for="DepositStatusForm.DepositAmount" />
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label">Deposit Status</label>
-                                        <select class="form-select" asp-for="DepositStatusForm.DepositStatus">
-                                            <option value="Unpaid">Unpaid</option>
-                                            <option value="Paid">Paid</option>
-                                            <option value="Refunded">Refunded</option>
-                                            <option value="Forfeit">Forfeit</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label">Paid Amount</label>
-                                        <input class="form-control" type="number" step="0.01" asp-for="DepositStatusForm.PaidAmount" />
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label">Paid At</label>
-                                        <input class="form-control" type="datetime-local" asp-for="DepositStatusForm.PaidAt" />
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label">Note</label>
-                                        <input class="form-control" asp-for="DepositStatusForm.Note" />
-                                    </div>
-
-                                    <button class="btn btn-gradient-primary" type="submit">Update Status</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            }
         </div>
     }
-</div>
+    <h4>Deposit</h4>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card p-3">
+                <div class="fw-semibold mb-2">G1) Update Deposit Amount</div>
+
+                <form method="post" asp-page-handler="UpdateDepositAmount" asp-route-id="@Model.Contract.Id">
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-2">
+                        <label class="form-label">New Deposit Amount</label>
+                        <input class="form-control" type="number" step="0.01" asp-for="DepositAmountForm.NewDeposit" />
+                    </div>
+
+                    <button class="btn btn-primary" type="submit">Update Amount</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card p-3">
+                <div class="fw-semibold mb-2">G2) Update Deposit Status</div>
+
+                <form method="post" asp-page-handler="UpdateDepositStatus" asp-route-id="@Model.Contract.Id">
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-2">
+                        <label class="form-label">Required Deposit Amount</label>
+                        <input class="form-control" type="number" step="0.01" asp-for="DepositStatusForm.DepositAmount" />
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label">Deposit Status</label>
+                        <select class="form-select" asp-for="DepositStatusForm.DepositStatus">
+                            <option value="Unpaid">Unpaid</option>
+                            <option value="Paid">Paid</option>
+                            <option value="Refunded">Refunded</option>
+                            <option value="Forfeit">Forfeit</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label">Paid Amount (required if Paid)</label>
+                        <input class="form-control" type="number" step="0.01" asp-for="DepositStatusForm.PaidAmount" />
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label">Paid At (required if Paid)</label>
+                        <input class="form-control" type="datetime-local" asp-for="DepositStatusForm.PaidAt" />
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label">Note</label>
+                        <input class="form-control" asp-for="DepositStatusForm.Note" />
+                    </div>
+
+                    <button class="btn btn-primary" type="submit">Update Status</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <hr />
+}

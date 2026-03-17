@@ -25,53 +25,6 @@ public class ContractService : IContractService
         _audit = audit;
     }
 
-    private Task ExecuteInTransactionAsync(
-        Func<CancellationToken, Task> action,
-        CancellationToken ct = default,
-        IsolationLevel isolationLevel = IsolationLevel.Serializable)
-    {
-        var strategy = _db.Database.CreateExecutionStrategy();
-
-        return strategy.ExecuteAsync(async () =>
-        {
-            await using var tx = await _db.Database.BeginTransactionAsync(isolationLevel, ct);
-            try
-            {
-                await action(ct);
-                await tx.CommitAsync(ct);
-            }
-            catch
-            {
-                await tx.RollbackAsync(ct);
-                throw;
-            }
-        });
-    }
-
-    private Task<T> ExecuteInTransactionAsync<T>(
-        Func<CancellationToken, Task<T>> action,
-        CancellationToken ct = default,
-        IsolationLevel isolationLevel = IsolationLevel.Serializable)
-    {
-        var strategy = _db.Database.CreateExecutionStrategy();
-
-        return strategy.ExecuteAsync(async () =>
-        {
-            await using var tx = await _db.Database.BeginTransactionAsync(isolationLevel, ct);
-            try
-            {
-                var result = await action(ct);
-                await tx.CommitAsync(ct);
-                return result;
-            }
-            catch
-            {
-                await tx.RollbackAsync(ct);
-                throw;
-            }
-        });
-    }
-
     private const string OneActivePerRoomIndexName = "UX_Contracts_Room_ActiveOnly";
 
     private static bool IsOneActivePerRoomViolation(DbUpdateException ex)
@@ -80,6 +33,10 @@ public class ContractService : IContractService
         return msg.Contains(OneActivePerRoomIndexName, StringComparison.OrdinalIgnoreCase);
     }
 
+
+    // =========================
+    // Centralized status constants + compare helper
+    // =========================
     private static class ContractStatus
     {
         public const string Pending = "Pending";
@@ -92,38 +49,52 @@ public class ContractService : IContractService
             => string.Equals(s?.Trim(), expected, StringComparison.OrdinalIgnoreCase);
     }
 
+    // ============================================================
+    // VALIDATION HELPERS (shared for MVC + Razor Pages)
+    // ============================================================
+
+    // Validate value >= 0
     private static void EnsureNonNegative(decimal value, string fieldName)
     {
         if (value < 0)
             throw new ValidationException($"{fieldName} must be >= 0.");
     }
 
+    // Validate StartDate < EndDate (date part)
     private static void EnsureDateRange(DateTime start, DateTime end, string startName, string endName)
     {
         if (start.Date >= end.Date)
             throw new ValidationException($"{startName} must be earlier than {endName}.");
     }
 
+    // Validate Room exists
+
     private async Task EnsureRoomExistsAsync(int roomId, CancellationToken ct)
     {
+
         var exists = await _db.Rooms
             .AsNoTracking()
-            .AnyAsync(r => r.RoomId == roomId, ct);
+            .AnyAsync(r => r.Id == roomId, ct); // ✅ Room PK là Id (dbo.Rooms.Id)
 
         if (!exists)
             throw new InvalidOperationException("Room not found.");
+        var conn = _db.Database.GetDbConnection().ConnectionString;
+        Console.WriteLine("DB = " + conn);
+
     }
 
+    // Validate Tenant exists
     private async Task EnsureTenantExistsAsync(int tenantId, CancellationToken ct)
     {
         var exists = await _db.Tenants
             .AsNoTracking()
-            .AnyAsync(t => t.Id == tenantId, ct);
+            .AnyAsync(t => t.Id == tenantId, ct); // ✅ dbo.Tenants.Id
 
         if (!exists)
             throw new InvalidOperationException("Tenant not found.");
     }
 
+    // Ensure contract is ACTIVE
     private static void EnsureActive(Contract c, string actionName)
     {
         if (!ContractStatus.Is(c.Status, ContractStatus.Active))
@@ -131,6 +102,8 @@ public class ContractService : IContractService
                 $"Only ACTIVE contracts can be {actionName}. Current status = '{c.Status}'.");
     }
 
+    // (Optional) Ensure contract is renewable (Active/Expired/Terminated)
+    // Nếu bạn muốn renew cả Expired/Terminated -> dùng hàm này thay EnsureActive ở RenewAsync.
     private static void EnsureRenewable(Contract c)
     {
         if (ContractStatus.Is(c.Status, ContractStatus.Pending))
@@ -147,6 +120,7 @@ public class ContractService : IContractService
         }
     }
 
+    // Ensure not in blocked statuses
     private static void EnsureNotInStatuses(string? status, params string[] blocked)
     {
         foreach (var s in blocked)
@@ -157,17 +131,34 @@ public class ContractService : IContractService
         }
     }
 
+    // ============================================================
+    // 1) CREATE
+    // Requirements:
+    // - RoomId exists
+    // - TenantId exists
+    // - StartDate < EndDate
+    // - Rent >= 0
+    // - Deposit >= 0
+    // - If ActivateNow=true: room must not already have ACTIVE contract
+    // ============================================================
     public async Task<ContractDto> CreateAsync(CreateContractDto dto, int? actorUserId = null, CancellationToken ct = default)
     {
         if (dto is null) throw new ArgumentNullException(nameof(dto));
 
+        // Input validation
         EnsureDateRange(dto.StartDate, dto.EndDate, "StartDate", "EndDate");
         EnsureNonNegative(dto.Rent, nameof(dto.Rent));
         EnsureNonNegative(dto.Deposit, nameof(dto.Deposit));
 
+#if DEBUG
+        System.Diagnostics.Debug.WriteLine(
+            $"[CreateAsync] Provider={_db.Database.ProviderName}, RoomId={dto.RoomId}, TenantId={dto.TenantId}, ActivateNow={dto.ActivateNow}");
+#endif
+        // Existence validation
         await EnsureRoomExistsAsync(dto.RoomId, ct);
         await EnsureTenantExistsAsync(dto.TenantId, ct);
 
+        // Business rule: ActivateNow => must not have another ACTIVE contract in same room
         if (dto.ActivateNow)
         {
             var activeUpper = ContractStatus.Active.ToUpper();
@@ -181,268 +172,343 @@ public class ContractService : IContractService
                     $"Please renew/terminate the current active contract first.");
         }
 
+        await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+
         try
         {
-            return await ExecuteInTransactionAsync(async innerCt =>
+            var status = dto.ActivateNow ? ContractStatus.Active : ContractStatus.Pending;
+            var code = await GenerateContractCodeAsync(ct);
+
+            var contract = new Contract
             {
-                var status = dto.ActivateNow ? ContractStatus.Active : ContractStatus.Pending;
-                var code = await GenerateContractCodeAsync(innerCt);
+                RoomId = dto.RoomId,
+                TenantId = dto.TenantId,
+                ContractCode = code,
 
-                var contract = new Contract
+                StartDate = dto.StartDate.Date,
+                EndDate = dto.EndDate.Date,
+
+                BaseRent = dto.Rent,
+                DepositAmount = dto.Deposit,
+
+                PaymentCycle = "Monthly",
+                Status = status,
+
+                CreatedAt = DateTime.UtcNow,
+                CreatedByUserId = actorUserId
+            };
+
+            _db.Contracts.Add(contract);
+
+            // Create initial deposit history row if Deposit > 0
+            if (dto.Deposit > 0)
+            {
+                _db.Deposits.Add(new Deposit
                 {
-                    RoomId = dto.RoomId,
-                    TenantId = dto.TenantId,
-                    ContractCode = code,
-                    StartDate = dto.StartDate.Date,
-                    EndDate = dto.EndDate.Date,
-                    BaseRent = dto.Rent,
-                    DepositAmount = dto.Deposit,
-                    PaymentCycle = "Monthly",
-                    Status = status,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedByUserId = actorUserId
-                };
+                    Contract = contract,
+                    Amount = dto.Deposit,
+                    Type = "Hold",
+                    Note = "Initial deposit",
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
 
-                _db.Contracts.Add(contract);
+            await _db.SaveChangesAsync(ct);
 
-                if (dto.Deposit > 0)
+            // Version snapshot
+            await CreateVersionSnapshotInternalAsync(contract.ContractId, actorUserId, "Create contract", ct);
+
+            // Audit
+            await _audit.LogAsync(
+                actorUserId,
+                action: "CreateContract",
+                entityType: "Contract",
+                entityId: contract.ContractId.ToString(),
+                note: "Create contract",
+                oldValue: null,
+                newValue: new
                 {
-                    _db.Deposits.Add(new Deposit
-                    {
-                        Contract = contract,
-                        Amount = dto.Deposit,
-                        Type = "Hold",
-                        Note = "Initial deposit",
-                        CreatedAt = DateTime.UtcNow
-                    });
-                }
+                    contract.ContractId,
+                    contract.ContractCode,
+                    contract.RoomId,
+                    contract.TenantId,
+                    contract.StartDate,
+                    contract.EndDate,
+                    contract.BaseRent,
+                    contract.DepositAmount,
+                    contract.PaymentCycle,
+                    contract.Status
+                },
+                ct: ct);
 
-                await _db.SaveChangesAsync(innerCt);
-
-                await CreateVersionSnapshotInternalAsync(contract.ContractId, actorUserId, "Create contract", innerCt);
-
-                await _audit.LogAsync(
-                    actorUserId,
-                    action: "CreateContract",
-                    entityType: "Contract",
-                    entityId: contract.ContractId.ToString(),
-                    note: "Create contract",
-                    oldValue: null,
-                    newValue: new
-                    {
-                        contract.ContractId,
-                        contract.ContractCode,
-                        contract.RoomId,
-                        contract.TenantId,
-                        contract.StartDate,
-                        contract.EndDate,
-                        contract.BaseRent,
-                        contract.DepositAmount,
-                        contract.PaymentCycle,
-                        contract.Status
-                    },
-                    ct: innerCt);
-
-                return MapToDto(contract);
-            }, ct);
+            await tx.CommitAsync(ct);
+            return MapToDto(contract);
         }
         catch (DbUpdateException ex) when (ex.IsUniqueViolation() && IsOneActivePerRoomViolation(ex))
         {
+            await tx.RollbackAsync(ct);
             throw new InvalidOperationException(
                 "Cannot activate contract because this room already has an ACTIVE contract (DB constraint). " +
                 "Please renew/terminate the existing active contract and try again.");
         }
+        catch
+        {
+            await tx.RollbackAsync(ct);
+            throw;
+        }
     }
-
+    // ============================================================
+    // 1.2) ACTIVATE
+    // Requirements:
+    // - Contract exists
+    // - Only PENDING contracts can be activated
+    // - Must not violate one-active-contract-per-room
+    // ============================================================
     public async Task ActivateAsync(int contractId, int? actorUserId = null, CancellationToken ct = default)
     {
         if (contractId <= 0) throw new InvalidOperationException("Invalid contract id.");
 
         var id = (long)contractId;
 
+        await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+
         try
         {
-            await ExecuteInTransactionAsync(async innerCt =>
+            var c = await _db.Contracts
+                .FirstOrDefaultAsync(x => x.ContractId == id, ct);
+
+            if (c == null)
+                throw new InvalidOperationException("Contract not found.");
+
+            // Idempotent behavior: if already ACTIVE, do nothing.
+            if (ContractStatus.Is(c.Status, ContractStatus.Active))
             {
-                var c = await _db.Contracts.FirstOrDefaultAsync(x => x.ContractId == id, innerCt);
+                await tx.CommitAsync(ct);
+                return;
+            }
 
-                if (c == null)
-                    throw new InvalidOperationException("Contract not found.");
+            if (!ContractStatus.Is(c.Status, ContractStatus.Pending))
+                throw new InvalidOperationException($"Only PENDING contracts can be activated. Current status = '{c.Status}'.");
 
-                if (ContractStatus.Is(c.Status, ContractStatus.Active))
-                    return;
+            // Must not exist another ACTIVE contract in same room
+            var activeUpper = ContractStatus.Active.ToUpper();
 
-                if (!ContractStatus.Is(c.Status, ContractStatus.Pending))
-                    throw new InvalidOperationException($"Only PENDING contracts can be activated. Current status = '{c.Status}'.");
+            var hasOtherActive = await _db.Contracts.AsNoTracking()
+                .AnyAsync(x => x.RoomId == c.RoomId
+                              && x.ContractId != c.ContractId
+                              && x.Status != null
+                              && x.Status.ToUpper() == activeUpper, ct);
 
-                var activeUpper = ContractStatus.Active.ToUpper();
+            if (hasOtherActive)
+                throw new InvalidOperationException("Cannot activate: this room already has an ACTIVE contract.");
 
-                var hasOtherActive = await _db.Contracts.AsNoTracking()
-                    .AnyAsync(x => x.RoomId == c.RoomId
-                                  && x.ContractId != c.ContractId
-                                  && x.Status != null
-                                  && x.Status.ToUpper() == activeUpper, innerCt);
+            await CreateVersionSnapshotInternalAsync(c.ContractId, actorUserId, "Before activate", ct);
 
-                if (hasOtherActive)
-                    throw new InvalidOperationException("Cannot activate: this room already has an ACTIVE contract.");
+            var oldAudit = new { c.Status, c.Note };
 
-                await CreateVersionSnapshotInternalAsync(c.ContractId, actorUserId, "Before activate", innerCt);
+            c.Status = ContractStatus.Active;
+            c.Note = AppendNote(c.Note, $"Activated at {DateTime.UtcNow:yyyy-MM-dd HH:mm} (UTC).");
 
-                var oldAudit = new { c.Status, c.Note };
+            await _db.SaveChangesAsync(ct);
 
-                c.Status = ContractStatus.Active;
-                c.Note = AppendNote(c.Note, $"Activated at {DateTime.UtcNow:yyyy-MM-dd HH:mm} (UTC).");
+            await CreateVersionSnapshotInternalAsync(c.ContractId, actorUserId, "After activate", ct);
 
-                await _db.SaveChangesAsync(innerCt);
+            await _audit.LogAsync(
+                actorUserId,
+                action: "ActivateContract",
+                entityType: "Contract",
+                entityId: c.ContractId.ToString(),
+                note: "Activate contract",
+                oldValue: oldAudit,
+                newValue: new { c.Status, c.Note },
+                ct: ct);
 
-                await CreateVersionSnapshotInternalAsync(c.ContractId, actorUserId, "After activate", innerCt);
-
-                await _audit.LogAsync(
-                    actorUserId,
-                    action: "ActivateContract",
-                    entityType: "Contract",
-                    entityId: c.ContractId.ToString(),
-                    note: "Activate contract",
-                    oldValue: oldAudit,
-                    newValue: new { c.Status, c.Note },
-                    ct: innerCt);
-            }, ct);
+            await tx.CommitAsync(ct);
         }
         catch (DbUpdateException ex) when (ex.IsUniqueViolation() && IsOneActivePerRoomViolation(ex))
         {
+            await tx.RollbackAsync(ct);
             throw new InvalidOperationException(
                 "Cannot activate contract because this room already has an ACTIVE contract (DB constraint). " +
                 "Please renew/terminate the existing active contract and try again.");
         }
+        catch
+        {
+            await tx.RollbackAsync(ct);
+            throw;
+        }
     }
 
+    // ============================================================
+    // 2) RENEW
+    // Requirements:
+    // - Contract exists
+    // - Contract must be ACTIVE (the requirement asked)
+    // - NewStartDate < NewEndDate
+    // - NewRent >= 0
+    // - NewDeposit >= 0
+    // - Must not violate one-active-contract-per-room
+    // ============================================================
     public async Task<ContractDto> RenewAsync(RenewContractDto dto, int? actorUserId = null, CancellationToken ct = default)
     {
         if (dto is null) throw new ArgumentNullException(nameof(dto));
 
+        // Input validation
         EnsureDateRange(dto.NewStartDate, dto.NewEndDate, "NewStartDate", "NewEndDate");
         EnsureNonNegative(dto.NewRent, nameof(dto.NewRent));
         EnsureNonNegative(dto.NewDeposit, nameof(dto.NewDeposit));
 
+        await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+
         try
         {
-            return await ExecuteInTransactionAsync(async innerCt =>
+            var old = await _db.Contracts
+                .FirstOrDefaultAsync(c => c.ContractId == (long)dto.ContractId, ct);
+
+            if (old == null)
+                throw new InvalidOperationException("Contract not found.");
+
+            // Requirement says: contract must be ACTIVE
+            EnsureActive(old, "renew");
+
+            // If you want allow renew from Expired/Terminated too:
+            // EnsureRenewable(old);
+
+            // Rule: new start must be >= old.EndDate or old.EndDate+1 based on flag
+            var minStart = dto.RequireStartNextDay ? old.EndDate.Date.AddDays(1) : old.EndDate.Date;
+            if (dto.NewStartDate.Date < minStart)
+                throw new ValidationException($"NewStartDate must be >= {minStart:yyyy-MM-dd}.");
+
+            // Must not exist another ACTIVE contract in same room
+            var activeUpper = ContractStatus.Active.ToUpper();
+
+            var hasOtherActive = await _db.Contracts.AsNoTracking()
+                .AnyAsync(c => c.RoomId == old.RoomId
+                           && c.ContractId != old.ContractId
+                           && c.Status != null
+                           && c.Status.ToUpper() == activeUpper, ct);
+
+            if (hasOtherActive)
+                throw new InvalidOperationException("Renew failed: Room already has another ACTIVE contract.");
+
+            // Snapshot before
+            await CreateVersionSnapshotInternalAsync(old.ContractId, actorUserId, "Before renew (old)", ct);
+
+            var oldAudit = new
             {
-                var old = await _db.Contracts
-                    .FirstOrDefaultAsync(c => c.ContractId == (long)dto.ContractId, innerCt);
+                old.ContractId,
+                old.ContractCode,
+                old.Status,
+                old.StartDate,
+                old.EndDate,
+                old.BaseRent,
+                old.DepositAmount,
+                old.Note
+            };
 
-                if (old == null)
-                    throw new InvalidOperationException("Contract not found.");
+            // Old -> Renewed
+            old.Status = ContractStatus.Renewed;
+            old.Note = AppendNote(old.Note,
+                $"Renewed -> new period {dto.NewStartDate:yyyy-MM-dd} to {dto.NewEndDate:yyyy-MM-dd}. Reason: {dto.Reason}");
 
-                EnsureActive(old, "renew");
+            // New contract -> Active
+            var newCode = await GenerateContractCodeAsync(ct);
 
-                var minStart = dto.RequireStartNextDay ? old.EndDate.Date.AddDays(1) : old.EndDate.Date;
-                if (dto.NewStartDate.Date < minStart)
-                    throw new ValidationException($"NewStartDate must be >= {minStart:yyyy-MM-dd}.");
+            var renewed = new Contract
+            {
+                RoomId = old.RoomId,
+                TenantId = old.TenantId,
+                ContractCode = newCode,
 
-                var activeUpper = ContractStatus.Active.ToUpper();
+                StartDate = dto.NewStartDate.Date,
+                EndDate = dto.NewEndDate.Date,
 
-                var hasOtherActive = await _db.Contracts.AsNoTracking()
-                    .AnyAsync(c => c.RoomId == old.RoomId
-                               && c.ContractId != old.ContractId
-                               && c.Status != null
-                               && c.Status.ToUpper() == activeUpper, innerCt);
+                BaseRent = dto.NewRent,
+                DepositAmount = dto.NewDeposit,
 
-                if (hasOtherActive)
-                    throw new InvalidOperationException("Renew failed: Room already has another ACTIVE contract.");
+                PaymentCycle = old.PaymentCycle,
+                Status = ContractStatus.Active,
 
-                await CreateVersionSnapshotInternalAsync(old.ContractId, actorUserId, "Before renew (old)", innerCt);
+                Note = $"Renew from {old.ContractCode}. Reason: {dto.Reason}",
+                CreatedAt = DateTime.UtcNow,
+                CreatedByUserId = actorUserId
+            };
 
-                var oldAudit = new
+            _db.Contracts.Add(renewed);
+
+            await _db.SaveChangesAsync(ct);
+
+            // Snapshot after
+            await CreateVersionSnapshotInternalAsync(old.ContractId, actorUserId, "After renew (old renewed)", ct);
+            await CreateVersionSnapshotInternalAsync(renewed.ContractId, actorUserId, "After renew (new created)", ct);
+
+            // Audit
+            await _audit.LogAsync(
+                actorUserId,
+                action: "RenewContract",
+                entityType: "Contract",
+                entityId: old.ContractId.ToString(),
+                note: $"NewContractId={renewed.ContractId}",
+                oldValue: oldAudit,
+                newValue: new
                 {
-                    old.ContractId,
-                    old.ContractCode,
-                    old.Status,
-                    old.StartDate,
-                    old.EndDate,
-                    old.BaseRent,
-                    old.DepositAmount,
-                    old.Note
-                };
+                    renewed.ContractId,
+                    renewed.ContractCode,
+                    renewed.Status,
+                    renewed.StartDate,
+                    renewed.EndDate,
+                    renewed.BaseRent,
+                    renewed.DepositAmount
+                },
+                ct: ct);
 
-                old.Status = ContractStatus.Renewed;
-                old.Note = AppendNote(old.Note,
-                    $"Renewed -> new period {dto.NewStartDate:yyyy-MM-dd} to {dto.NewEndDate:yyyy-MM-dd}. Reason: {dto.Reason}");
-
-                var newCode = await GenerateContractCodeAsync(innerCt);
-
-                var renewed = new Contract
-                {
-                    RoomId = old.RoomId,
-                    TenantId = old.TenantId,
-                    ContractCode = newCode,
-                    StartDate = dto.NewStartDate.Date,
-                    EndDate = dto.NewEndDate.Date,
-                    BaseRent = dto.NewRent,
-                    DepositAmount = dto.NewDeposit,
-                    PaymentCycle = old.PaymentCycle,
-                    Status = ContractStatus.Active,
-                    Note = $"Renew from {old.ContractCode}. Reason: {dto.Reason}",
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedByUserId = actorUserId
-                };
-
-                _db.Contracts.Add(renewed);
-
-                await _db.SaveChangesAsync(innerCt);
-
-                await CreateVersionSnapshotInternalAsync(old.ContractId, actorUserId, "After renew (old renewed)", innerCt);
-                await CreateVersionSnapshotInternalAsync(renewed.ContractId, actorUserId, "After renew (new created)", innerCt);
-
-                await _audit.LogAsync(
-                    actorUserId,
-                    action: "RenewContract",
-                    entityType: "Contract",
-                    entityId: old.ContractId.ToString(),
-                    note: $"NewContractId={renewed.ContractId}",
-                    oldValue: oldAudit,
-                    newValue: new
-                    {
-                        renewed.ContractId,
-                        renewed.ContractCode,
-                        renewed.Status,
-                        renewed.StartDate,
-                        renewed.EndDate,
-                        renewed.BaseRent,
-                        renewed.DepositAmount
-                    },
-                    ct: innerCt);
-
-                return MapToDto(renewed);
-            }, ct);
+            await tx.CommitAsync(ct);
+            return MapToDto(renewed);
         }
         catch (DbUpdateException ex) when (ex.IsUniqueViolation() && IsOneActivePerRoomViolation(ex))
         {
+            await tx.RollbackAsync(ct);
             throw new InvalidOperationException(
                 "Renew failed because the room already has another ACTIVE contract (DB constraint).");
         }
+        catch
+        {
+            await tx.RollbackAsync(ct);
+            throw;
+        }
     }
 
+    // ============================================================
+    // 3) TERMINATE
+    // Requirements:
+    // - Contract exists
+    // - Contract not Terminated/Expired/Renewed
+    // - TerminateDate within [StartDate, EndDate]
+    // ============================================================
     public async Task TerminateAsync(TerminateContractDto dto, int? actorUserId = null, CancellationToken ct = default)
     {
         if (dto is null) throw new ArgumentNullException(nameof(dto));
 
         var terminateDate = dto.TerminateDate.Date;
 
-        await ExecuteInTransactionAsync(async innerCt =>
+        await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+
+        try
         {
             var c = await _db.Contracts
-                .FirstOrDefaultAsync(x => x.ContractId == (long)dto.ContractId, innerCt);
+                .FirstOrDefaultAsync(x => x.ContractId == (long)dto.ContractId, ct);
 
             if (c == null)
                 throw new InvalidOperationException("Contract not found.");
 
+            // Block invalid statuses
             EnsureNotInStatuses(c.Status, ContractStatus.Terminated, ContractStatus.Expired, ContractStatus.Renewed);
 
+            // Validate terminate date range
             if (terminateDate < c.StartDate.Date || terminateDate > c.EndDate.Date)
                 throw new ValidationException("TerminateDate must be within [StartDate, EndDate].");
 
-            await CreateVersionSnapshotInternalAsync(c.ContractId, actorUserId, "Before terminate", innerCt);
+            await CreateVersionSnapshotInternalAsync(c.ContractId, actorUserId, "Before terminate", ct);
 
             var oldAudit = new { c.Status, c.EndDate, c.Note };
             var endDateBefore = c.EndDate.Date;
@@ -451,9 +517,10 @@ public class ContractService : IContractService
             c.EndDate = terminateDate;
             c.Note = AppendNote(c.Note, $"Terminated at {terminateDate:yyyy-MM-dd}. Reason: {dto.Reason}");
 
+            // Checkout residents
             var residents = await _db.RoomResidents
                 .Where(r => r.RoomId == c.RoomId && r.TenantId == c.TenantId && r.IsActive)
-                .ToListAsync(innerCt);
+                .ToListAsync(ct);
 
             foreach (var r in residents)
             {
@@ -461,9 +528,9 @@ public class ContractService : IContractService
                 r.IsActive = false;
             }
 
-            await _db.SaveChangesAsync(innerCt);
+            await _db.SaveChangesAsync(ct);
 
-            await CreateVersionSnapshotInternalAsync(c.ContractId, actorUserId, "After terminate", innerCt);
+            await CreateVersionSnapshotInternalAsync(c.ContractId, actorUserId, "After terminate", ct);
 
             await _audit.LogAsync(
                 actorUserId,
@@ -473,8 +540,15 @@ public class ContractService : IContractService
                 note: dto.Reason,
                 oldValue: new { oldAudit.Status, EndDate = endDateBefore, oldAudit.Note },
                 newValue: new { c.Status, c.EndDate, c.Note, TerminatedAt = terminateDate },
-                ct: innerCt);
-        }, ct);
+                ct: ct);
+
+            await tx.CommitAsync(ct);
+        }
+        catch
+        {
+            await tx.RollbackAsync(ct);
+            throw;
+        }
     }
     public async Task ForceExpireAsync(int contractId, int? actorUserId = null, CancellationToken ct = default)
     {
@@ -484,16 +558,22 @@ public class ContractService : IContractService
         var id = (long)contractId;
         var today = DateTime.Today;
 
-        await ExecuteInTransactionAsync(async innerCt =>
+        await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+
+        try
         {
             var c = await _db.Contracts
-                .FirstOrDefaultAsync(x => x.ContractId == id, innerCt);
+                .FirstOrDefaultAsync(x => x.ContractId == id, ct);
 
             if (c == null)
                 throw new InvalidOperationException("Contract not found.");
 
+            // Idempotent
             if (ContractStatus.Is(c.Status, ContractStatus.Expired))
+            {
+                await tx.CommitAsync(ct);
                 return;
+            }
 
             if (!ContractStatus.Is(c.Status, ContractStatus.Active))
                 throw new InvalidOperationException($"Only ACTIVE contracts can be force-expired. Current status = '{c.Status}'.");
@@ -506,9 +586,9 @@ public class ContractService : IContractService
             c.Status = ContractStatus.Expired;
             c.Note = AppendNote(c.Note, $"Force expired by admin at {DateTime.UtcNow:yyyy-MM-dd HH:mm} (UTC).");
 
-            await _db.SaveChangesAsync(innerCt);
+            await _db.SaveChangesAsync(ct);
 
-            await CreateVersionSnapshotInternalAsync(c.ContractId, actorUserId, "Force expire contract", innerCt);
+            await CreateVersionSnapshotInternalAsync(c.ContractId, actorUserId, "Force expire contract", ct);
 
             await _audit.LogAsync(
                 actorUserId,
@@ -518,10 +598,20 @@ public class ContractService : IContractService
                 note: "Admin force expire",
                 oldValue: oldAudit,
                 newValue: new { c.Status, c.EndDate, c.Note },
-                ct: innerCt);
-        }, ct);
+                ct: ct);
+
+            await tx.CommitAsync(ct);
+        }
+        catch
+        {
+            await tx.RollbackAsync(ct);
+            throw;
+        }
     }
 
+    // ============================================================
+    // 4) GET LIST + GET BY ID
+    // ============================================================
     public async Task<PagedResultDto<ContractDto>> GetContractsAsync(PagedRequestDto req, CancellationToken ct = default)
     {
         var page = req.PageNumber < 1 ? 1 : req.PageNumber;
@@ -553,7 +643,7 @@ public class ContractService : IContractService
                 EndDate = c.EndDate,
                 Rent = c.BaseRent,
                 Deposit = c.DepositAmount,
-                Status = c.Status,
+                Status = StatusToInt(c.Status),
                 IsActive = c.Status == ContractStatus.Active,
                 ContractCode = c.ContractCode
             })
@@ -562,6 +652,10 @@ public class ContractService : IContractService
         return new PagedResultDto<ContractDto>(items, total, page, pageSize);
     }
 
+    /*    public async Task<ContractDto> GetByIdAsync(int id, CancellationToken ct = default)
+        {
+
+        }*/
     public async Task<ContractDto> GetByIdAsync(int id, CancellationToken ct = default)
     {
         var contractId = (long)id;
@@ -572,7 +666,6 @@ public class ContractService : IContractService
         if (c == null) throw new InvalidOperationException("Contract not found.");
         return MapToDto(c);
     }
-
     public Task<ContractDto> GetByIdAsync(long contractId, CancellationToken ct = default)
     {
         if (contractId <= 0 || contractId > int.MaxValue)
@@ -580,19 +673,24 @@ public class ContractService : IContractService
 
         return GetByIdAsync((int)contractId, ct);
     }
-
+    // ============================================================
+    // 5) UPDATE DEPOSIT
+    // Requirement: newDeposit >= 0
+    // ============================================================
     public async Task UpdateDepositAsync(int contractId, decimal newDeposit, int? actorUserId = null, CancellationToken ct = default)
     {
         EnsureNonNegative(newDeposit, nameof(newDeposit));
 
         var id = (long)contractId;
 
-        await ExecuteInTransactionAsync(async innerCt =>
+        await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+
+        try
         {
-            var contract = await _db.Contracts.FirstOrDefaultAsync(c => c.ContractId == id, innerCt);
+            var contract = await _db.Contracts.FirstOrDefaultAsync(c => c.ContractId == id, ct);
             if (contract == null) throw new InvalidOperationException("Contract not found.");
 
-            await CreateVersionSnapshotInternalAsync(contract.ContractId, actorUserId, "Before deposit update", innerCt);
+            await CreateVersionSnapshotInternalAsync(contract.ContractId, actorUserId, "Before deposit update", ct);
 
             var oldDeposit = contract.DepositAmount;
             contract.DepositAmount = newDeposit;
@@ -609,9 +707,9 @@ public class ContractService : IContractService
                 });
             }
 
-            await _db.SaveChangesAsync(innerCt);
+            await _db.SaveChangesAsync(ct);
 
-            await CreateVersionSnapshotInternalAsync(contract.ContractId, actorUserId, "After deposit update", innerCt);
+            await CreateVersionSnapshotInternalAsync(contract.ContractId, actorUserId, "After deposit update", ct);
 
             await _audit.LogAsync(
                 actorUserId,
@@ -621,14 +719,22 @@ public class ContractService : IContractService
                 note: "Update deposit amount",
                 oldValue: new { DepositAmount = oldDeposit },
                 newValue: new { DepositAmount = contract.DepositAmount },
-                ct: innerCt);
-        }, ct);
+                ct: ct);
+
+            await tx.CommitAsync(ct);
+        }
+        catch
+        {
+            await tx.RollbackAsync(ct);
+            throw;
+        }
     }
 
     public async Task UpdateDepositAsync(UpdateDepositDto dto, int? actorUserId = null, CancellationToken ct = default)
     {
         if (dto is null) throw new ArgumentNullException(nameof(dto));
 
+        // Minimal requirement you asked: deposit >= 0
         EnsureNonNegative(dto.DepositAmount, nameof(dto.DepositAmount));
 
         dto.DepositStatus = (dto.DepositStatus ?? "Unpaid").Trim();
@@ -650,12 +756,14 @@ public class ContractService : IContractService
             if (dto.PaidAt != null) throw new InvalidOperationException("PaidAt must be null when DepositStatus=Unpaid.");
         }
 
-        await ExecuteInTransactionAsync(async innerCt =>
+        await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+
+        try
         {
-            var c = await _db.Contracts.FirstOrDefaultAsync(x => x.ContractId == (long)dto.ContractId, innerCt);
+            var c = await _db.Contracts.FirstOrDefaultAsync(x => x.ContractId == (long)dto.ContractId, ct);
             if (c == null) throw new InvalidOperationException("Contract not found.");
 
-            await CreateVersionSnapshotInternalAsync(c.ContractId, actorUserId, "Before deposit update", innerCt);
+            await CreateVersionSnapshotInternalAsync(c.ContractId, actorUserId, "Before deposit update", ct);
 
             var oldAudit = new
             {
@@ -732,9 +840,9 @@ public class ContractService : IContractService
                 }
             }
 
-            await _db.SaveChangesAsync(innerCt);
+            await _db.SaveChangesAsync(ct);
 
-            await CreateVersionSnapshotInternalAsync(c.ContractId, actorUserId, "After deposit update", innerCt);
+            await CreateVersionSnapshotInternalAsync(c.ContractId, actorUserId, "After deposit update", ct);
 
             await _audit.LogAsync(
                 actorUserId,
@@ -750,20 +858,30 @@ public class ContractService : IContractService
                     c.DepositPaidAt,
                     c.DepositPaidAmount
                 },
-                ct: innerCt);
-        }, ct);
+                ct: ct);
+
+            await tx.CommitAsync(ct);
+        }
+        catch
+        {
+            await tx.RollbackAsync(ct);
+            throw;
+        }
     }
+
+    // ============================================================
+    // 6) ATTACHMENT UPLOAD (metadata)
+    // ============================================================
     public async Task AddAttachmentStubAsync(int contractId, string fileName, string url, int? actorUserId = null, CancellationToken ct = default)
     {
-        var id = contractId;
+        var id = (int)contractId;
 
-        await ExecuteInTransactionAsync(async innerCt =>
+        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+
+        try
         {
-            var contractExists = await _db.Contracts.AsNoTracking()
-                .AnyAsync(c => c.ContractId == id, innerCt);
-
-            if (!contractExists)
-                throw new InvalidOperationException("Contract not found.");
+            var contractExists = await _db.Contracts.AsNoTracking().AnyAsync(c => c.ContractId == id, ct);
+            if (!contractExists) throw new InvalidOperationException("Contract not found.");
 
             _db.ContractAttachments.Add(new ContractAttachment
             {
@@ -774,9 +892,9 @@ public class ContractService : IContractService
                 UploadedByUserId = actorUserId
             });
 
-            await _db.SaveChangesAsync(innerCt);
+            await _db.SaveChangesAsync(ct);
 
-            await CreateVersionSnapshotInternalAsync(id, actorUserId, $"Add attachment: {fileName}", innerCt);
+            await CreateVersionSnapshotInternalAsync(id, actorUserId, $"Add attachment: {fileName}", ct);
 
             await _audit.LogAsync(
                 actorUserId,
@@ -786,10 +904,20 @@ public class ContractService : IContractService
                 note: fileName,
                 oldValue: null,
                 newValue: new { FileName = fileName, Url = url },
-                ct: innerCt);
-        }, ct, IsolationLevel.ReadCommitted);
+                ct: ct);
+
+            await tx.CommitAsync(ct);
+        }
+        catch
+        {
+            await tx.RollbackAsync(ct);
+            throw;
+        }
     }
 
+    // ============================================================
+    // 7) VERSIONING
+    // ============================================================
     public Task CreateVersionSnapshotAsync(int contractId, string changedByUserId, CancellationToken ct = default)
         => CreateVersionSnapshotInternalAsync((int)contractId, TryParseUserId(changedByUserId), "Manual snapshot", ct);
 
@@ -876,7 +1004,9 @@ public class ContractService : IContractService
 
         await _db.SaveChangesAsync(ct);
     }
-
+    // ============================================================
+    // 8) REMINDERS
+    // ============================================================
     public async Task CreateReminderAsync(int contractId, DateTime remindAt, string type, CancellationToken ct = default)
     {
         var id = (long)contractId;
@@ -900,6 +1030,9 @@ public class ContractService : IContractService
         await _db.SaveChangesAsync(ct);
     }
 
+    // ============================================================
+    // 9) EXPORT PDF
+    // ============================================================
     public async Task<byte[]> ExportPdfStubAsync(int contractId, int? actorUserId = null, CancellationToken ct = default)
     {
         var id = (long)contractId;
@@ -926,21 +1059,26 @@ public class ContractService : IContractService
         return bytes;
     }
 
+    // ============================================================
+    // 10) EXPIRY JOB (demo)
+    // ============================================================
     public async Task<int> ScanAndSendExpiryRemindersAsync(
-        int daysBeforeEnd = 7,
-        string remindType = "Expiry_7d",
-        int? actorUserId = null,
-        CancellationToken ct = default)
+int daysBeforeEnd = 7,
+string remindType = "Expiry_7d",
+int? actorUserId = null,
+CancellationToken ct = default)
     {
         var today = DateTime.Today;
         var target = today.AddDays(daysBeforeEnd);
 
-        return await ExecuteInTransactionAsync(async innerCt =>
+        await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+
+        try
         {
             var contracts = await _db.Contracts.AsNoTracking()
                 .Where(c => c.Status == ContractStatus.Active && c.EndDate.Date == target.Date)
                 .Select(c => new { c.ContractId, c.ContractCode, c.TenantId })
-                .ToListAsync(innerCt);
+                .ToListAsync(ct);
 
             var sent = 0;
 
@@ -950,32 +1088,31 @@ public class ContractService : IContractService
                     .AnyAsync(x =>
                         x.ContractId == c.ContractId &&
                         x.RemindType == remindType &&
-                        x.RemindAtDate == today, innerCt);
+                        x.RemindAtDate == today, ct);
 
                 if (already) continue;
 
-                var notification = new DAL.Entities.System.Notification
-                {
-                    Title = $"Contract Expiry Reminder ({daysBeforeEnd} days)",
-                    Content = $"Contract {c.ContractCode} will expire on {target:yyyy-MM-dd}. Please review / renew / terminate.",
-                    IsRead = false,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = null,
-                    ContractId = c.ContractId
-                };
+                var title = $"Contract Expiry Reminder ({daysBeforeEnd} days)";
+                var content = $"Contract {c.ContractCode} will expire on {target:yyyy-MM-dd}. Please review / renew / terminate.";
+                var createdAt = DateTime.UtcNow;
 
-                _db.Notifications.Add(notification);
-                await _db.SaveChangesAsync(innerCt);
+                var pTitle = new Microsoft.Data.SqlClient.SqlParameter("@title", title);
+                var pContent = new Microsoft.Data.SqlClient.SqlParameter("@content", content);
+                var pCreatedAt = new Microsoft.Data.SqlClient.SqlParameter("@createdAt", createdAt);
 
-                _db.NotificationRecipients.Add(new NotificationRecipient
-                {
-                    NotificationId = notification.Id,
-                    TenantId = c.TenantId,
-                    IsRead = false,
-                    ReadAt = null,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = null
-                });
+                var notifId = await _db.Database.SqlQueryRaw<long>(@"
+INSERT INTO [Notifications] ([UserId],[Title],[Content],[IsRead],[ReadAt],[CreatedAt])
+OUTPUT INSERTED.[Id]
+VALUES (NULL, @title, @content, 0, NULL, @createdAt);
+", pTitle, pContent, pCreatedAt).SingleAsync(ct);
+
+                var pNotifId = new Microsoft.Data.SqlClient.SqlParameter("@nid", notifId);
+                var pTenantId = new Microsoft.Data.SqlClient.SqlParameter("@tid", c.TenantId);
+
+                await _db.Database.ExecuteSqlRawAsync(@"
+INSERT INTO [NotificationRecipients] ([NotificationId],[TenantId],[IsRead],[ReadAt])
+VALUES (@nid, @tid, 0, NULL);
+", pNotifId, pTenantId);
 
                 _db.ContractReminderLogs.Add(new ContractReminderLog
                 {
@@ -989,7 +1126,7 @@ public class ContractService : IContractService
             }
 
             if (sent > 0)
-                await _db.SaveChangesAsync(innerCt);
+                await _db.SaveChangesAsync(ct);
 
             await _audit.LogAsync(
                 actorUserId,
@@ -1005,11 +1142,21 @@ public class ContractService : IContractService
                     targetEndDate = target.ToString("yyyy-MM-dd"),
                     sent
                 },
-                ct: innerCt);
+                ct: ct);
 
+            await tx.CommitAsync(ct);
             return sent;
-        }, ct);
+        }
+        catch
+        {
+            await tx.RollbackAsync(ct);
+            throw;
+        }
     }
+
+    // ============================================================
+    // Mapping helpers
+    // ============================================================
     private static ContractDto MapToDto(Contract c) => new()
     {
         Id = (int)c.ContractId,
@@ -1019,8 +1166,9 @@ public class ContractService : IContractService
         EndDate = c.EndDate,
         Rent = c.BaseRent,
         Deposit = c.DepositAmount,
-        Status = c.Status,
+        Status = StatusToInt(c.Status),
         IsActive = c.Status == ContractStatus.Active,
+
         ContractCode = c.ContractCode,
         DepositStatus = c.DepositStatus ?? "Unpaid",
         DepositPaidAt = c.DepositPaidAt,
@@ -1077,51 +1225,4 @@ public class ContractService : IContractService
             .FirstOrDefaultAsync();
     }
 
-
-    public async Task<TenantContractDetailsDto?> GetActiveContractDetailsByUserIdAsync(string userId, CancellationToken ct = default)
-    {
-        var contract = await _db.Contracts
-            .AsNoTracking()
-            .Include(c => c.Room)
-            .Include(c => c.Tenant)
-            .Include(c => c.Attachments)
-            .Where(c => c.Tenant.UserId == userId && c.Status == ContractStatus.Active)
-            .OrderByDescending(c => c.StartDate)
-            .FirstOrDefaultAsync(ct);
-
-        if (contract == null)
-            return null;
-
-        return new TenantContractDetailsDto
-        {
-            ContractId = contract.ContractId,
-            ContractCode = contract.ContractCode ?? string.Empty,
-            Status = contract.Status,
-            IsActive = string.Equals(contract.Status, ContractStatus.Active, StringComparison.OrdinalIgnoreCase),
-            RoomId = contract.RoomId,
-            RoomCode = contract.Room?.RoomCode ?? string.Empty,
-            RoomName = contract.Room?.RoomName ?? string.Empty,
-            TenantId = contract.TenantId,
-            TenantName = contract.Tenant?.FullName ?? string.Empty,
-            TenantEmail = contract.Tenant?.Email ?? string.Empty,
-            StartDate = contract.StartDate,
-            EndDate = contract.EndDate,
-            Rent = contract.BaseRent,
-            Deposit = contract.DepositAmount,
-            DepositStatus = contract.DepositStatus ?? "Unpaid",
-            DepositPaidAt = contract.DepositPaidAt,
-            DepositPaidAmount = contract.DepositPaidAmount,
-            Note = contract.Note,
-            Attachments = contract.Attachments
-                .OrderByDescending(a => a.UploadedAt)
-                .Select(a => new BLL.DTOs.Contract.ContractAttachmentDto
-                {
-                    AttachmentId = a.AttachmentId,
-                    FileName = a.FileName ?? string.Empty,
-                    FileUrl = a.FileUrl,
-                    UploadedAt = a.UploadedAt
-                })
-                .ToList()
-        };
-    }
 }

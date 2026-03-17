@@ -1,5 +1,5 @@
-﻿@* @page *@
-@* @model WebHostRazor.Pages.Host.Rooms.IndexModel *@
+﻿@page
+@model WebHostRazor.Pages.Host.Rooms.IndexModel
 @{
     ViewData["Title"] = "Rooms";
 }
@@ -36,8 +36,8 @@
                     @foreach (var room in Model.Rooms)
                     {
                         <tr>
-                            <td class="fw-semibold">@room.RoomCode</td>
-                            <td>@room.RoomName</td>
+                            <td class="fw-semibold">@room.RoomNo</td>
+                            <td>@room.Name</td>
                             <td>@room.Price.ToString("N0") đ</td>
 
                             <!-- STATUS -->

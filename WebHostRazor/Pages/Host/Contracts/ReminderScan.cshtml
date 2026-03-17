@@ -4,32 +4,20 @@
     ViewData["Title"] = "Run Expiry Reminder Scan";
 }
 
-<div class="contract-page">
-    <partial name="/Pages/Host/Shared/_ToastPopup.cshtml" />
+<h2>Run Expiry Reminder Scan</h2>
 
-    <div class="contract-hero">
-        <div>
-            <div class="contract-breadcrumb">Host / Contracts / Reminder Scan</div>
-            <h1>Run Expiry Reminder Scan</h1>
-            <p>Send reminders for contracts near expiration.</p>
-        </div>
+@if (TempData["Ok"] != null)
+{
+    <div class="alert alert-success">@TempData["Ok"]</div>
+}
+@if (TempData["Err"] != null)
+{
+    <div class="alert alert-danger">@TempData["Err"]</div>
+}
 
-        <a class="btn btn-soft" asp-page="./Index">Back</a>
-    </div>
-
-    <div class="contract-card">
-        <form method="post" class="contract-form">
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <label asp-for="DaysBeforeEnd" class="form-label fw-semibold">Days Before End</label>
-                    <input type="number" class="form-control"
-                           asp-for="DaysBeforeEnd" min="0" />
-                </div>
-
-                <div class="col-12">
-                    <button class="btn btn-gradient-primary" type="submit">Run Scan Now</button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
+<form method="post" class="d-flex gap-2">
+    <input type="number" class="form-control" style="max-width:200px"
+           asp-for="DaysBeforeEnd" min="0" />
+    <button class="btn btn-primary" type="submit">Run scan now</button>
+    <a class="btn btn-secondary" asp-page="./Index">Back</a>
+</form>

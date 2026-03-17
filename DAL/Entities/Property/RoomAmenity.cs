@@ -1,13 +1,10 @@
-﻿using DAL.Entities.Common;
-using System.ComponentModel.DataAnnotations;
+﻿namespace DAL.Entities.Property;
 
-namespace DAL.Entities.Property;
-
-public class Amenity : AuditableEntity<int>
+public class RoomAmenity
 {
-    [Required]
-    [MaxLength(100)]
-    public string AmenityName { get; set; } = null!;
+    public int RoomId { get; set; }
+    public int AmenityId { get; set; }
 
-    public ICollection<RoomAmenity> RoomAmenities { get; set; } = new List<RoomAmenity>();
+    public Room Room { get; set; } = null!;
+    public Amenity Amenity { get; set; } = null!;
 }

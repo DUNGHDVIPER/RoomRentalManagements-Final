@@ -1,0 +1,137 @@
+﻿@page "/"
+@inject NavigationManager Nav
+@inject IJSRuntime JSRuntime
+
+<div class="bg-grad">
+    <div class="section">
+        <div class="container">
+            <div class="hero">
+                <div class="card glass p-22">
+                    <div class="kicker">ROOM SEARCH</div>
+                    <h1 class="h1" style="margin-top:10px;">Find your next room</h1>
+                    <p class="muted" style="margin-top:12px; max-width:620px;">
+                        Modern rental portal UI (Customer). Filter by location, price, amenities — FE-only mock today.
+                    </p>
+
+                    <div class="card glass p-16 hero-search" style="margin-top:16px;">
+                        <input class="input" placeholder="Try: District 1, studio..." @bind="kw" />
+                        <button class="btn-grad" @onclick="GoRooms">Search</button>
+                    </div>
+
+                    <div class="chips">
+                        @foreach (var c in cities)
+                        {
+                            <button class="chip" @onclick="() => GoCity(c)">@c</button>
+                        }
+                    </div>
+
+                    <hr class="hr" />
+                    <div class="muted small">
+                        Tip: Click a city chip to pre-filter your listing.
+                    </div>
+                </div>
+
+                <div class="card glass p-22">
+                    <h2 class="h2">Quick actions</h2>
+                    <p class="muted" style="margin-top:10px;">
+                        Jump into room browsing or login to see My Room + Profile.
+                    </p>
+
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
+                        <a class="btn-grad" href="/rooms">Browse Rooms</a>
+                        @if (isLoggedIn)
+                        {
+                            <a class="btn-grad" href="/Customer/Profile">My Profile</a>
+                            <a class="btn-ghost" href="/my-room">My Room</a>
+                            <button class="btn-ghost" @onclick="Logout">Logout</button>
+                        }
+                        else
+                        {
+                            <a class="btn-ghost" href="/login">Login</a>
+                        }
+                        <a class="btn-ghost" href="/tickets">Support Center</a>
+                    </div>
+
+                    <hr class="hr" />
+                    <div class="muted small">
+                        Theme: gradient + glass • Responsive layout
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer">
+                <div class="footer-inner">
+                    <div>© 2026 Roomy Customer — FE-only demo</div>
+                    <div>Theme: gradient + glass</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    string kw = "";
+    string[] cities = new[] { "Hồ Chí Minh", "Hà Nội", "Đà Nẵng", "Bình Dương" };
+    bool isLoggedIn = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // ✅ Check authentication từ cookies
+        await CheckAuthenticationStatus();
+    }
+
+    void GoRooms() => Nav.NavigateTo($"/rooms?kw={Uri.EscapeDataString(kw)}");
+    void GoCity(string c) => Nav.NavigateTo($"/rooms?city={Uri.EscapeDataString(c)}");
+
+    private async Task CheckAuthenticationStatus()
+    {
+        try
+        {
+            // ✅ Kiểm tra cookies để xác định login status
+            var authToken = await JSRuntime.InvokeAsync<string>("getCookie", "AuthToken");
+            var userId = await JSRuntime.InvokeAsync<string>("getCookie", "UserId");
+            
+            isLoggedIn = !string.IsNullOrEmpty(authToken) && !string.IsNullOrEmpty(userId);
+        }
+        catch (Exception)
+        {
+            isLoggedIn = false;
+        }
+    }
+
+    private async Task Logout()
+    {
+        try
+        {
+            //Xóa cookies
+            await JSRuntime.InvokeVoidAsync("deleteCookie", "AuthToken");
+            await JSRuntime.InvokeVoidAsync("deleteCookie", "RefreshToken");
+            await JSRuntime.InvokeVoidAsync("deleteCookie", "UserId");
+            await JSRuntime.InvokeVoidAsync("deleteCookie", "UserEmail");
+            
+            isLoggedIn = false;
+            StateHasChanged();
+            
+            // Redirect về login page
+            Nav.NavigateTo("/login");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during logout: {ex.Message}");
+        }
+    }
+}
+
+<script>
+    window.getCookie = (name) => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return '';
+    };
+
+    window.deleteCookie = (name) => {
+        document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; Secure;";
+    };
+</script>

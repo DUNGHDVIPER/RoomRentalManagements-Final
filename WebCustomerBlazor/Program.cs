@@ -1,13 +1,13 @@
-﻿using Microsoft.Extensions.FileProviders;
-using DAL.Data;
+﻿using DAL.Data;
 using DAL.Seed;
-using DAL.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WebCustomerBlazor.Components;
 using BLL.Services;
 using BLL.Services.Interfaces;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Components.Authorization;
+using WebCustomerBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,51 +28,62 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(opt =>
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders();
 
-// Cookie Auth
+// ✅ FIXED: Use SHARED DataProtection keys with WebHostRazor
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "..", "DataProtection-Keys"))) // ✅ Same folder as WebHostRazor
+    .SetApplicationName("RoomRentalApp"); // ✅ Same application name as WebHostRazor
+
+// ✅ FIXED: Cookie Auth configuration for cross-domain compatibility
 builder.Services.ConfigureApplicationCookie(options =>
 {
-    options.LoginPath = "/Auth/Login";
+    options.LoginPath = "/redirect-to-host-login";
     options.LogoutPath = "/Auth/Logout";
     options.AccessDeniedPath = "/Auth/AccessDenied";
+    options.Cookie.Name = "CustomerAuth";
+    // ✅ Cross-domain cookie settings
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.ExpireTimeSpan = TimeSpan.FromHours(24);
+    options.SlidingExpiration = true;
 });
 
+// ✅ Custom Authentication State Provider
+builder.Services.AddScoped<ICookieService, CookieService>();
+builder.Services.AddScoped<CookieAuthenticationStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<CookieAuthenticationStateProvider>());
+
 // Authorization
-builder.Services.AddAuthorizationCore();
+builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 
 // =====================
-// 2) Razor Components
+// 2) Razor Components + Pages
 // =====================
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddRazorPages();
+builder.Services.AddHttpContextAccessor();
+
+// ✅ Configure Antiforgery for proper token handling
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "RequestVerificationToken";
+    options.Cookie.Name = "__RequestVerificationToken";
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+});
 
 // =====================
 // 3) Services DI
 // =====================
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
-
-// CORE BUSINESS SERVICES
-builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<IContractService, ContractService>();
-builder.Services.AddScoped<IAuditService, AuditService>();
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<ITenantService, TenantService>();
 builder.Services.AddScoped<IRoomService, RoomService>();
+builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddScoped<IStayHistoryService, StayHistoryService>();
-builder.Services.AddScoped<IBillingService, BillingService>();
-builder.Services.AddScoped<IUtilityService, UtilityService>();
-
-// REPOSITORIES
-builder.Services.AddScoped<ITenantRepository, TenantRepository>();
-
-// OTHER SERVICES
-builder.Services.AddMemoryCache();
-
-// BLAZOR-SPECIFIC AUTHENTICATION
-builder.Services.AddScoped<TokenAuthenticationStateProvider>();
-builder.Services.AddScoped<AuthenticationStateProvider>(provider =>
-    provider.GetRequiredService<TokenAuthenticationStateProvider>());
+builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 var app = builder.Build();
 
@@ -89,14 +100,11 @@ await using (var scope = app.Services.CreateAsyncScope())
 
     await IdentitySeeder.SeedAsync(roleMgr, userMgr);
 
-    // Reset password Admin
     var admin = await userMgr.FindByEmailAsync("admin@demo.com");
-
     if (admin != null)
     {
         var token = await userMgr.GeneratePasswordResetTokenAsync(admin);
         await userMgr.ResetPasswordAsync(admin, token, "Admin@123");
-
         await userMgr.SetLockoutEndDateAsync(admin, null);
         admin.AccessFailedCount = 0;
         await userMgr.UpdateAsync(admin);
@@ -106,61 +114,23 @@ await using (var scope = app.Services.CreateAsyncScope())
 // =====================
 // 5) Middleware
 // =====================
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    app.UseHsts();
+}
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
-var sharedUploadsPath = Path.GetFullPath(
-    Path.Combine(app.Environment.ContentRootPath, "..", "SharedUploads"));
-Directory.CreateDirectory(sharedUploadsPath);
-
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(sharedUploadsPath),
-    RequestPath = "/uploads"
-});
-
 app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.UseAntiforgery();
 
-// =====================
-// 6) Map Blazor
-// =====================
+
+app.MapRazorPages();
 app.MapRazorComponents<App>()
    .AddInteractiveServerRenderMode();
 
 app.Run();
-static async Task InitializeDatabaseAsync(IServiceProvider services)
-{
-    await using var scope = services.CreateAsyncScope();
-
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
-    try
-    {
-        await db.Database.MigrateAsync();
-
-        // KHÔNG seed role/user ở đây nữa.
-        // Việc seed chỉ để WebHostRazor xử lý để tránh duplicate role khi chạy đồng thời.
-
-        var customer = await userManager.FindByEmailAsync("customer@demo.com");
-        var tenant = await userManager.FindByEmailAsync("tenant@demo.com");
-
-        if (customer == null && tenant == null)
-        {
-            logger.LogWarning("Customer/Tenant demo accounts not found yet. Run WebHostRazor first so it can seed Identity data.");
-        }
-
-        logger.LogInformation("WebCustomerBlazor database initialization completed successfully");
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "Error initializing WebCustomerBlazor database");
-        throw;
-    }
-}

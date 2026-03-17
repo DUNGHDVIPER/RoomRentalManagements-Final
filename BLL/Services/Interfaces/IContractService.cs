@@ -36,6 +36,5 @@ public interface IContractService
         CancellationToken ct = default);
 
     Task<int?> GetActiveContractIdByUserIdAsync(string userId);
-    Task<TenantContractDetailsDto?> GetActiveContractDetailsByUserIdAsync(string userId, CancellationToken ct = default);
 
 }

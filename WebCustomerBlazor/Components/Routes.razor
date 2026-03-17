@@ -1,51 +1,16 @@
-﻿@using Microsoft.AspNetCore.Components.Authorization
+﻿<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData"
+                   DefaultLayout="@typeof(WebCustomerBlazor.Components.Layout.MainLayout)" />
+    </Found>
 
-<CascadingAuthenticationState>
-    <Router AppAssembly="@typeof(App).Assembly">
-        <Found Context="routeData">
-            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
-                <Authorizing>
-                    <LayoutView Layout="@typeof(MainLayout)">
-                        <div class="section">
-                            <div class="container">
-                                <div class="card glass p-22" style="max-width:720px;margin:40px auto;">
-                                    <h3>Đang kiểm tra đăng nhập...</h3>
-                                </div>
-                            </div>
-                        </div>
-                    </LayoutView>
-                </Authorizing>
-
-                <NotAuthorized>
-                    <LayoutView Layout="@typeof(MainLayout)">
-                        <div class="section">
-                            <div class="container">
-                                <div class="card glass p-22" style="max-width:720px;margin:40px auto;">
-                                    <h3>Bạn cần đăng nhập để truy cập trang này</h3>
-                                    <p class="muted" style="margin-top:10px;">
-                                        Hãy đăng nhập bằng tài khoản Customer hoặc Tenant.
-                                    </p>
-                                    <div style="margin-top:16px;">
-                                        <a class="btn-grad" href="/login">Đi tới Login</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </LayoutView>
-                </NotAuthorized>
-            </AuthorizeRouteView>
-        </Found>
-
-        <NotFound>
-            <LayoutView Layout="@typeof(MainLayout)">
-                <div class="section">
-                    <div class="container">
-                        <div class="card glass p-22" style="max-width:720px;margin:40px auto;">
-                            <h3>Page not found</h3>
-                        </div>
-                    </div>
-                </div>
-            </LayoutView>
-        </NotFound>
-    </Router>
-</CascadingAuthenticationState>
+    <NotFound>
+        <LayoutView Layout="@typeof(WebCustomerBlazor.Components.Layout.MainLayout)">
+            <div class="container py-24">
+                <h2 class="h2">404</h2>
+                <p class="muted">Page not found.</p>
+                <a class="btn-grad" href="/">Go Home</a>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>

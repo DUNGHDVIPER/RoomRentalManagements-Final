@@ -1,131 +1,94 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace DAL.Seed;
 
 public static class IdentitySeeder
 {
-    public static readonly string[] Roles = ["Admin", "Host", "Customer", "Tenant"];
+    public static readonly string[] Roles = ["Admin", "Host", "Customer", "User"];
 
     public static async Task SeedAsync(
         RoleManager<IdentityRole> roleManager,
         UserManager<IdentityUser> userManager,
         CancellationToken ct = default)
     {
+        // 1) Roles
         foreach (var role in Roles)
         {
-            await EnsureRoleAsync(roleManager, role);
-        }
-
-        await EnsureUserAsync(userManager, "admin@demo.com", "Admin@123!", "Admin");
-        await EnsureUserAsync(userManager, "host@demo.com", "Host@123!", "Host");
-        await EnsureUserAsync(userManager, "customer@demo.com", "Customer@123!", "Customer");
-        await EnsureUserAsync(userManager, "tenant@demo.com", "Tenant@123!", "Tenant");
-    }
-
-    private static async Task EnsureRoleAsync(RoleManager<IdentityRole> roleManager, string role)
-    {
-        if (await roleManager.RoleExistsAsync(role))
-            return;
-
-        try
-        {
-            var created = await roleManager.CreateAsync(new IdentityRole(role));
-
-            if (!created.Succeeded)
+            if (!await roleManager.RoleExistsAsync(role))
             {
-                var msg = string.Join(", ", created.Errors.Select(e => $"{e.Code}: {e.Description}"));
-
-                // Nếu role đã tồn tại do app khác vừa seed xong thì bỏ qua
-                if (!await roleManager.RoleExistsAsync(role))
+                var created = await roleManager.CreateAsync(new IdentityRole(role));
+                if (!created.Succeeded)
                 {
+                    var msg = string.Join("; ", created.Errors.Select(e => $"{e.Code}:{e.Description}"));
                     throw new InvalidOperationException($"Create role '{role}' failed: {msg}");
                 }
             }
         }
-        catch (DbUpdateException)
-        {
-            // Trường hợp 2 app cùng tạo 1 role một lúc
-            if (!await roleManager.RoleExistsAsync(role))
-                throw;
-        }
-        catch (Exception ex) when (ex.InnerException?.Message.Contains("RoleNameIndex", StringComparison.OrdinalIgnoreCase) == true)
-        {
-            // Phòng thêm cho lỗi duplicate role name từ SQL Server
-            if (!await roleManager.RoleExistsAsync(role))
-                throw;
-        }
+
+        // 2) Demo admin & host accounts
+        await EnsureUserAsync(userManager, "admin@demo.com", "Admin@123!", "Admin", ct);
+        await EnsureUserAsync(userManager, "host@demo.com", "Host@123!", "Host", ct);
+        await EnsureUserAsync(userManager, "customer@demo.com", "Customer@123!", "Customer", ct);
+        await EnsureUserAsync(userManager, "user@demo.com", "User@123!", "User", ct);
     }
 
     private static async Task EnsureUserAsync(
         UserManager<IdentityUser> userManager,
         string email,
         string password,
-        string role)
+        string role,
+        CancellationToken ct)
     {
         var user = await userManager.FindByEmailAsync(email);
 
         if (user == null)
         {
+            // Tạo user mới
             user = new IdentityUser
             {
                 UserName = email,
                 Email = email,
-                EmailConfirmed = true,
-                LockoutEnabled = true
+                EmailConfirmed = true
             };
 
-            try
+            var create = await userManager.CreateAsync(user, password);
+            if (!create.Succeeded)
             {
-                var created = await userManager.CreateAsync(user, password);
-
-                if (!created.Succeeded)
-                {
-                    // Có thể app khác vừa tạo xong
-                    user = await userManager.FindByEmailAsync(email);
-                    if (user == null)
-                    {
-                        var msg = string.Join(", ", created.Errors.Select(e => $"{e.Code}: {e.Description}"));
-                        throw new InvalidOperationException($"Create user '{email}' failed: {msg}");
-                    }
-                }
-            }
-            catch (DbUpdateException)
-            {
-                user = await userManager.FindByEmailAsync(email);
-                if (user == null)
-                    throw;
+                var msg = string.Join("; ", create.Errors.Select(e => $"{e.Code}:{e.Description}"));
+                throw new InvalidOperationException($"Create user '{email}' failed: {msg}");
             }
         }
+        // ✅ Bỏ reset password để tránh concurrency conflict
 
-        // reset password về đúng demo password
-        var token = await userManager.GeneratePasswordResetTokenAsync(user);
-        var reset = await userManager.ResetPasswordAsync(user, token, password);
-
-        if (!reset.Succeeded)
+        // ✅ Reload user để đảm bảo có data mới nhất
+        user = await userManager.FindByEmailAsync(email);
+        if (user == null)
         {
-            var msg = string.Join(", ", reset.Errors.Select(e => $"{e.Code}: {e.Description}"));
-            throw new InvalidOperationException($"Reset password for '{email}' failed: {msg}");
+            throw new InvalidOperationException($"User '{email}' not found after creation");
         }
 
-        // clear lockout
-        await userManager.SetLockoutEndDateAsync(user, null);
-        user.AccessFailedCount = 0;
-        await userManager.UpdateAsync(user);
+        // ✅ Logic gán role: nếu chưa có role nào thì gán Customer, nếu có rồi thì gán role chỉ định
+        var userRoles = await userManager.GetRolesAsync(user);
 
-        // ensure role
-        var roles = await userManager.GetRolesAsync(user);
-        if (!roles.Contains(role))
+        if (userRoles.Count == 0)
+        {
+            // Chưa có role nào -> gán Customer làm default
+            var addCustomerRole = await userManager.AddToRoleAsync(user, "Customer");
+            if (!addCustomerRole.Succeeded)
+            {
+                var msg = string.Join("; ", addCustomerRole.Errors.Select(e => $"{e.Code}:{e.Description}"));
+                throw new InvalidOperationException($"Add default role 'Customer' to '{email}' failed: {msg}");
+            }
+        }
+
+        // Nếu role chỉ định khác Customer và user chưa có role đó -> thêm role
+        if (role != "Customer" && !userRoles.Contains(role))
         {
             var addRole = await userManager.AddToRoleAsync(user, role);
             if (!addRole.Succeeded)
             {
-                var rolesAfter = await userManager.GetRolesAsync(user);
-                if (!rolesAfter.Contains(role))
-                {
-                    var msg = string.Join(", ", addRole.Errors.Select(e => $"{e.Code}: {e.Description}"));
-                    throw new InvalidOperationException($"Add role '{role}' to '{email}' failed: {msg}");
-                }
+                var msg = string.Join("; ", addRole.Errors.Select(e => $"{e.Code}:{e.Description}"));
+                throw new InvalidOperationException($"Add role '{role}' to '{email}' failed: {msg}");
             }
         }
     }

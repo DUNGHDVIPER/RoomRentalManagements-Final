@@ -2,24 +2,21 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace DAL.Data.Configurations.Property;
+namespace DAL.Data.Configurations;
 
 public class RoomAmenityConfig : IEntityTypeConfiguration<RoomAmenity>
 {
     public void Configure(EntityTypeBuilder<RoomAmenity> b)
     {
         b.ToTable("RoomAmenities");
-
         b.HasKey(x => new { x.RoomId, x.AmenityId });
 
         b.HasOne(x => x.Room)
-            .WithMany(x => x.RoomAmenities)
-            .HasForeignKey(x => x.RoomId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .WithMany(r => r.RoomAmenities)
+            .HasForeignKey(x => x.RoomId);
 
         b.HasOne(x => x.Amenity)
-            .WithMany(x => x.RoomAmenities)
-            .HasForeignKey(x => x.AmenityId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .WithMany(a => a.RoomAmenities)
+            .HasForeignKey(x => x.AmenityId);
     }
 }

@@ -549,395 +549,101 @@ body {
     align-items: center;
     justify-content: space-between;
 }
+/* =========================
+   Notification Toast
+========================= */
 
-/* ===== Amenities Page ===== */
-
-.amenity-page {
-    max-width: 1100px;
-    margin: 0 auto;
-}
-
-.amenity-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow);
-}
-
-/* header */
-
-.amenity-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 22px;
-    border-bottom: 1px solid var(--border);
-}
-
-.header-left h2 {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 900;
-}
-
-.header-left p {
-    margin: 4px 0 0;
-    color: var(--muted);
-    font-size: 13px;
-}
-
-/* add button */
-
-.btn-add {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--blue);
-    color: #fff;
-    text-decoration: none;
-    padding: 10px 16px;
-    border-radius: 999px;
-    font-weight: 800;
+.notification-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #4e73df, #1cc88a);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+    z-index: 9999;
+    min-width: 260px;
+    max-width: 320px;
     font-size: 14px;
+    animation: slideIn 0.4s ease;
 }
 
-    .btn-add:hover {
-        filter: brightness(.95);
+@keyframes slideIn {
+    from {
+        transform: translateX(120%);
+        opacity: 0;
     }
 
-/* table */
-
-.table-wrapper {
-    overflow-x: auto;
-}
-
-.amenity-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-    .amenity-table thead th {
-        text-align: left;
-        padding: 14px 22px;
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: .08em;
-        color: var(--muted);
-        background: #fbfdff;
+    to {
+        transform: translateX(0);
+        opacity: 1;
     }
+}
+/* =========================
+   Shared Form Controls
+========================= */
 
-    .amenity-table tbody td {
-        padding: 16px 22px;
-        border-top: 1px solid #f1f5ff;
-    }
-
-/* id */
-
-.id {
-    font-weight: 900;
-    color: #334155;
+.form-section {
+    padding: 18px;
 }
 
-/* amenity chip */
-
-.amenity-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--greenSoft);
-    color: var(--green);
-    padding: 6px 12px;
-    border-radius: 999px;
-    font-size: 13px;
-    font-weight: 800;
-}
-
-/* actions */
-
-.actions {
-    display: flex;
-    gap: 8px;
-}
-
-.btn-edit {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--blueSoft);
-    color: var(--blue);
-    border: none;
-    padding: 8px 12px;
-    border-radius: 10px;
-    text-decoration: none;
-    font-size: 13px;
-    font-weight: 800;
-}
-
-    .btn-edit:hover {
-        filter: brightness(.96);
-    }
-
-.btn-delete {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--redSoft);
-    color: var(--red);
-    border: none;
-    padding: 8px 12px;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 800;
-    cursor: pointer;
-}
-
-    .btn-delete:hover {
-        filter: brightness(.96);
-    }
-
-/* empty state */
-
-.empty-state {
-    padding: 40px 0;
-}
-
-.empty-box {
+.form-group {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    color: var(--muted);
-}
-
-    .empty-box i {
-        font-size: 28px;
-    }
-/* ===== Create Amenity ===== */
-
-.container h3 {
-    font-weight: 900;
-    margin-bottom: 18px;
-}
-
-/* form box */
-
-.container form {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow);
-    padding: 22px;
-    max-width: 520px;
-}
-
-/* label */
-
-.form-label {
-    font-weight: 800;
-    font-size: 13px;
-    color: #64748b;
-    margin-bottom: 6px;
-    display: block;
-}
-
-/* input */
-
-.form-control {
-    width: 100%;
-    height: 42px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    padding: 0 14px;
-    outline: none;
-    font-size: 14px;
-}
-
-    .form-control:focus {
-        border-color: #bfdbfe;
-        box-shadow: 0 0 0 3px rgba(59,130,246,.1);
-    }
-
-/* spacing */
-
-.mb-3 {
+    gap: 8px;
     margin-bottom: 16px;
 }
 
-/* buttons */
-
-.btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px 16px;
-    border-radius: 10px;
-    font-weight: 800;
-    font-size: 14px;
-    text-decoration: none;
-    border: none;
-    cursor: pointer;
-}
-
-/* save */
-
-.btn-success {
-    background: #16a34a;
-    color: white;
-}
-
-    .btn-success:hover {
-        filter: brightness(.95);
-    }
-
-/* back */
-
-.btn-secondary {
-    background: #e2e8f0;
-    color: #334155;
-    margin-left: 8px;
-}
-
-    .btn-secondary:hover {
-        filter: brightness(.96);
-    }
-
-/* validation */
-
-.text-danger {
-    color: #ef4444;
-    font-size: 12px;
-}
-
-/* ===== Amenity Form Pages ===== */
-
-.container h3 {
-    font-weight: 900;
-    margin-bottom: 18px;
-}
-
-/* form / delete card */
-
-.container form,
-.container dl {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow);
-    padding: 22px;
-    max-width: 520px;
-}
-
-/* spacing */
-
-.mb-3 {
-    margin-bottom: 16px;
-}
-
-/* label */
-
 .form-label {
-    font-weight: 800;
     font-size: 13px;
+    font-weight: 900;
     color: var(--muted);
-    margin-bottom: 6px;
-    display: block;
 }
-
-/* input */
 
 .form-control {
-    width: 100%;
-    height: 42px;
-    border-radius: 12px;
+    min-height: 44px;
+    border-radius: var(--radius-lg);
     border: 1px solid var(--border);
-    padding: 0 14px;
-    outline: none;
+    padding: 10px 14px;
+    background: #fff;
     font-size: 14px;
+    transition: .15s ease;
 }
 
     .form-control:focus {
+        outline: none;
         border-color: #bfdbfe;
-        box-shadow: 0 0 0 3px rgba(59,130,246,.1);
+        box-shadow: 0 0 0 4px rgba(59,130,246,.08);
     }
 
-/* buttons */
+    .form-control[multiple] {
+        min-height: 180px;
+    }
 
-.btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px 16px;
-    border-radius: 10px;
-    font-weight: 800;
-    font-size: 14px;
-    border: none;
-    cursor: pointer;
-    text-decoration: none;
-}
-
-/* update */
-
+/* Primary button style (non-gradient) */
 .btn-primary {
-    background: #2563eb;
-    color: white;
+    background: var(--blue);
+    color: #fff;
+    border: 0;
+    border-radius: 14px;
+    padding: 12px 16px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: .15s ease;
 }
 
     .btn-primary:hover {
         filter: brightness(.95);
+        transform: translateY(-1px);
     }
 
-/* delete */
-
-.btn-danger {
-    background: #ef4444;
-    color: white;
-}
-
-    .btn-danger:hover {
-        filter: brightness(.95);
-    }
-
-/* cancel / back */
-
-.btn-secondary {
-    background: #e2e8f0;
-    color: #334155;
-    margin-left: 8px;
-}
-
-    .btn-secondary:hover {
-        filter: brightness(.96);
-    }
-
-/* validation */
-
-.text-danger {
-    color: #ef4444;
-    font-size: 12px;
-}
-
-/* delete warning */
-
-.alert-danger {
-    background: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
+/* Success alert */
+.alert-success {
+    background: var(--greenSoft);
+    color: var(--green);
+    border: 1px solid #bbf7d0;
     padding: 12px 14px;
-    border-radius: 12px;
-    max-width: 520px;
-    margin-bottom: 16px;
-}
-
-/* description list */
-
-dl.row {
-    margin-bottom: 16px;
-}
-
-dt {
-    font-weight: 900;
-}
-
-dd {
-    margin: 0;
+    border-radius: 14px;
+    margin-bottom: 18px;
 }

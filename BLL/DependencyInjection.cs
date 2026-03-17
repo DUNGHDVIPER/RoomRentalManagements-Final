@@ -16,8 +16,6 @@ public static class DependencyInjection
         });
 
         // Register services
-        services.AddScoped<IBlockService, BlockService>();
-        services.AddScoped<IFloorService, FloorService>();
         services.AddScoped<IRoomService, RoomService>();
         services.AddScoped<IAuthService, AuthService>();
 

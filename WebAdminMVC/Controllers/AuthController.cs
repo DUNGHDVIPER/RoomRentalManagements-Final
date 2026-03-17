@@ -85,54 +85,38 @@ public class AuthController : Controller
         try
         {
             var user = await _userManager.FindByEmailAsync(model.Email);
-            if (user == null)
+            if (user != null)
             {
-                _logger.LogWarning("Login attempt for non-existent user: {Email}", model.Email);
-                model.ErrorMessage = "Invalid login attempt or insufficient permissions.";
-                return View(model);
+                var roles = await _userManager.GetRolesAsync(user);
+                if (!roles.Contains("Admin") && !roles.Contains("SuperAdmin"))
+                {
+                    model.ErrorMessage = "Access denied. Admin role required.";
+                    return View(model);
+                }
+
+                var result = await _signInManager.PasswordSignInAsync(
+     user.UserName, model.Password, model.RememberMe, lockoutOnFailure: true);
+
+                if (result.Succeeded)
+                {
+                    _logger.LogInformation("Admin user logged in");
+                    return LocalRedirect(returnUrl ?? Url.Action("Index", "Dashboard")!);
+                }
+
+                if (result.IsLockedOut)
+                {
+                    model.ErrorMessage = "This account has been locked out.";
+                    return View(model);
+                }
             }
 
-            // Check if user has admin privileges
-            var roles = await _userManager.GetRolesAsync(user);
-            if (!roles.Contains("Admin") && !roles.Contains("SuperAdmin") && !roles.Contains("Host"))
-            {
-                _logger.LogWarning("User {Email} attempted login without admin privileges. Roles: {Roles}",
-                    model.Email, string.Join(", ", roles));
-                model.ErrorMessage = "Access denied. Admin role required.";
-                return View(model);
-            }
-
-            var result = await _signInManager.PasswordSignInAsync(
-                user, model.Password, model.RememberMe, lockoutOnFailure: true);
-
-            if (result.Succeeded)
-            {
-                _logger.LogInformation("User {Email} logged in successfully", model.Email);
-                return LocalRedirect(returnUrl ?? Url.Action("Index", "Dashboard")!);
-            }
-
-            if (result.IsLockedOut)
-            {
-                _logger.LogWarning("User {Email} is locked out", model.Email);
-                model.ErrorMessage = "This account has been locked out. Please try again later.";
-                return View(model);
-            }
-
-            if (result.RequiresTwoFactor)
-            {
-                _logger.LogInformation("User {Email} requires two-factor authentication", model.Email);
-                model.ErrorMessage = "Two-factor authentication required.";
-                return View(model);
-            }
-
-            _logger.LogWarning("Invalid password for user: {Email}", model.Email);
             model.ErrorMessage = "Invalid login attempt or insufficient permissions.";
             return View(model);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during login for user: {Email}", model.Email);
-            model.ErrorMessage = "An error occurred during login. Please try again.";
+            _logger.LogError(ex, "Error during login");
+            model.ErrorMessage = "An error occurred during login.";
             return View(model);
         }
     }
@@ -143,7 +127,7 @@ public class AuthController : Controller
     public async Task<IActionResult> Logout()
     {
         await _signInManager.SignOutAsync();
-        _logger.LogInformation("User logged out");
+        _logger.LogInformation("Admin user logged out");
         return RedirectToAction("Login");
     }
 

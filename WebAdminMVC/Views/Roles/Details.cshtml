@@ -1,79 +1,416 @@
-﻿@model WebAdminMVC.Models.Roles.RoleDetailsVm;
+﻿@model WebAdminMVC.Models.Roles.RoleDetailsVm
 @{
     ViewData["Title"] = "Role Details";
     Layout = "_Layout";
 }
 
+<style>
+    /* Enhanced card styling */
+    .details-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow);
+        max-width: 900px;
+        margin: 0 auto;
+        overflow: hidden;
+    }
+
+    /* Enhanced header styling */
+    .details-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 32px 28px;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .details-header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            opacity: 0.3;
+        }
+
+    .details-title {
+        font-size: 2rem;
+        font-weight: 800;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .details-subtitle {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 16px;
+        font-weight: 500;
+        margin-top: 8px;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Content section styling */
+    .details-content {
+        padding: 40px 28px;
+    }
+
+    /* Role info section */
+    .role-info-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: var(--radius-lg);
+        padding: 32px;
+        margin-bottom: 32px;
+        border-left: 5px solid #667eea;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+        .section-title::before {
+            content: "📋";
+            font-size: 1.3rem;
+        }
+
+    /* Info grid styling */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 24px;
+    }
+
+    .info-item {
+        background: white;
+        padding: 24px;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease;
+    }
+
+        .info-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+    .info-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .info-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    /* Users section styling */
+    .users-section {
+        background: white;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .users-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 24px 28px;
+        border-bottom: 2px solid var(--border);
+    }
+
+    .users-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+        .users-title::before {
+            content: "👥";
+            font-size: 1.3rem;
+        }
+
+    /* Enhanced table styling */
+    .users-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+    }
+
+        .users-table thead th {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            color: var(--text);
+            font-weight: 700;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 20px 24px;
+            border-bottom: 2px solid var(--border);
+            text-align: left;
+        }
+
+        .users-table tbody td {
+            padding: 20px 24px;
+            border-bottom: 1px solid #f1f3f5;
+            vertical-align: middle;
+        }
+
+        .users-table tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+            .users-table tbody tr:hover {
+                background: linear-gradient(135deg, #f8f9fa 0%, #f1f3f5 100%);
+            }
+
+            .users-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+    /* User info styling */
+    .user-email {
+        font-weight: 600;
+        color: var(--text);
+        font-size: 15px;
+    }
+
+    .user-name {
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    /* Enhanced badge styling */
+    .count-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    }
+
+        .count-badge::before {
+            content: "👤";
+            font-size: 16px;
+        }
+
+    /* View User button styling */
+    .btn-view-user {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        color: white;
+        padding: 8px 16px;
+        border-radius: var(--radius-md);
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+        border: none;
+        box-shadow: 0 2px 6px rgba(23, 162, 184, 0.3);
+    }
+
+        .btn-view-user:hover {
+            background: linear-gradient(135deg, #138496 0%, #117a8b 100%);
+            color: white;
+            text-decoration: none;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(23, 162, 184, 0.4);
+        }
+
+    /* Empty state styling */
+    .empty-state {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border: 2px dashed #2196f3;
+        border-radius: var(--radius-lg);
+        padding: 48px 32px;
+        text-align: center;
+        margin: 24px;
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        color: #2196f3;
+        margin-bottom: 16px;
+        display: block;
+    }
+
+    .empty-state-text {
+        color: #1976d2;
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    /* Responsive design */
+    @@media (max-width: 768px) {
+        .details-content
+
+    {
+        padding: 24px 20px;
+    }
+
+    .role-info-section {
+        padding: 24px 20px;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .users-table thead th,
+    .users-table tbody td {
+        padding: 16px 20px;
+    }
+
+    .details-title {
+        font-size: 1.6rem;
+    }
+
+    .section-title {
+        font-size: 1.3rem;
+    }
+
+    }
+
+    /* Animation for content */
+    .details-card {
+        animation: fadeInUp 0.5s ease;
+    }
+
+    @@keyframes fadeInUp {
+        from
+
+    {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    }</style>
+
 <div class="container">
-    <div class="card">
-        <div class="card-head">
-            <div class="card-title">🔍 Role Details</div>
-            <div class="btn-group">
-                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
-                    <i class="fas fa-edit"></i> Edit
-                </a>
-                <a asp-action="Index" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Back to List
-                </a>
+    <div class="details-card">
+        <!-- Header Section -->
+        <div class="details-header">
+            <h1 class="details-title">
+                🔍 Role Details
+            </h1>
+            <div class="details-subtitle">
+                Comprehensive information about the <strong>@Model.Name</strong> role
             </div>
         </div>
 
-        <div class="p-4">
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <h5>Role Information</h5>
-                    <table class="table table-borderless">
-                        <tr>
-                            <td><strong>Role Name:</strong></td>
-                            <td>@Model.Name</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Total Users:</strong></td>
-                            <td><span class="badge bg-info">@Model.Users.Count users</span></td>
-                        </tr>
-                    </table>
+        <!-- Content Section -->
+        <div class="details-content">
+            <!-- Role Information Section -->
+            <div class="role-info-section">
+                <h2 class="section-title">Role Information</h2>
+
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Role Name</div>
+                        <div class="info-value">
+                            <strong>@Model.Name</strong>
+                            @if (new[] { "SuperAdmin", "Admin", "Host", "Tenant" }.Contains(Model.Name))
+                            {
+                                <span class="badge" style="background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%); color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px;">System Role</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="info-item">
+                        <div class="info-label">Total Users</div>
+                        <div class="info-value">
+                            <span class="count-badge">@Model.Users.Count users</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="row">
-                <div class="col-12">
-                    <h5>Users in this Role</h5>
-                    @if (Model.Users.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Email</th>
-                                        <th>Username</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var user in Model.Users)
-                                    {
-                                        <tr>
-                                            <td>@user.Email</td>
-                                            <td>@user.UserName</td>
-                                            <td>
-                                                <a asp-controller="Users" asp-action="Details" asp-route-id="@user.Id" 
-                                                   class="btn btn-sm btn-outline-info">
-                                                    <i class="fas fa-user"></i> View User
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> No users are currently assigned to this role.
-                        </div>
-                    }
+            <!-- Users Section -->
+            <div class="users-section">
+                <div class="users-header">
+                    <h3 class="users-title">Assigned Users</h3>
                 </div>
+
+                @if (Model.Users.Any())
+                {
+                    <div style="overflow-x: auto;">
+                        <table class="users-table">
+                            <thead>
+                                <tr>
+                                    <th>Email Address</th>
+                                    <th>Username</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var user in Model.Users)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="user-email">@user.Email</div>
+                                        </td>
+                                        <td>
+                                            <div class="user-name">@user.UserName</div>
+                                        </td>
+                                        <td>
+                                            <a asp-controller="Users" asp-action="Details" asp-route-id="@user.Id"
+                                               class="btn-view-user">
+                                                <i class="fas fa-user"></i>
+                                                View Profile
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👥</div>
+                        <p class="empty-state-text">
+                            No users are currently assigned to this role
+                        </p>
+                    </div>
+                }
             </div>
         </div>
     </div>

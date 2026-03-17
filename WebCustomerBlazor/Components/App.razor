@@ -1,21 +1,43 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using WebCustomerBlazor.Services
+
+<!DOCTYPE html>
 <html lang="en">
+
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
 
     <link rel="icon" type="image/png" href="favicon.png" />
+
+    <!-- Bootstrap nếu dùng -->
     <link href="bootstrap/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- CSS chính -->
     <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
     <link rel="stylesheet" href="css/theme.css" />
 
-    <HeadOutlet @rendermode="@(new InteractiveServerRenderMode(prerender: false))" />
+    <HeadOutlet />
 </head>
 
 <body>
-    <Routes @rendermode="@(new InteractiveServerRenderMode(prerender: false))" />
+  <CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    <RedirectToLogin />
+                </NotAuthorized>
+            </AuthorizeRouteView>
+        </Found>
+        <NotFound>
+            <h3>Page not found</h3>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>
 
-    <script src="_framework/blazor.web.js"></script>
+    <script src="_framework/blazor.server.js"></script>
 </body>
 </html>

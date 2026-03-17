@@ -18,7 +18,7 @@ public static class ContractPdfExporter
             : c.ContractCode.Trim();
 
         var roomLine = c.Room != null
-            ? $"{(string.IsNullOrWhiteSpace(c.Room.RoomCode) ? "" : c.Room.RoomCode + " - ")}{c.Room.RoomCode} (Id={c.RoomId})"
+            ? $"{(string.IsNullOrWhiteSpace(c.Room.RoomNo) ? "" : c.Room.RoomNo + " - ")}{c.Room.RoomNo} (Id={c.RoomId})"
             : $"RoomId = {c.RoomId}";
 
         var tenantLine = c.Tenant != null

@@ -18,8 +18,8 @@ public class Step1Model : PageModel
     public async Task OnGet()
     {
         Rooms = await _db.Rooms.AsNoTracking()
-            .OrderBy(r => r.RoomCode)
-            .Select(r => new ValueTuple<int, string>(r.RoomId, r.RoomCode))
+            .OrderBy(r => r.RoomNo)
+            .Select(r => new ValueTuple<int, string>(r.Id, r.RoomNo))
             .ToListAsync();
 
         Tenants = await _db.Tenants.AsNoTracking()

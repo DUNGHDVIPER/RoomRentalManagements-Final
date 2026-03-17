@@ -4,38 +4,21 @@
     ViewData["Title"] = "Upload Attachment";
 }
 
-<div class="contract-page">
-    <partial name="/Pages/Host/Shared/_ToastPopup.cshtml" />
+<h2>Upload Attachment</h2>
 
-    <div class="contract-hero">
-        <div>
-            <div class="contract-breadcrumb">Host / Contracts / Attachment</div>
-            <h1>Upload Attachment</h1>
-            <p>Upload contract file here. Admin will see it in the contract details page and tenant can open it from My Contract.</p>
-        </div>
-
-        <a class="btn btn-soft" asp-page="./Details" asp-route-id="@RouteData.Values["id"]">Back</a>
+<form method="post" enctype="multipart/form-data">
+    <div class="mb-3">
+        <input class="form-control" asp-for="File" type="file" />
+        <span class="text-danger" asp-validation-for="File"></span>
     </div>
 
-    <div class="contract-card">
-        <form method="post" enctype="multipart/form-data" class="contract-form">
-            <div class="mb-3">
-                <label class="form-label fw-semibold">Select contract file</label>
-                <input class="form-control" asp-for="File" type="file" />
-                <span class="text-danger" asp-validation-for="File"></span>
-            </div>
+    <button class="btn btn-info" type="submit">Upload</button>
+    <a class="btn btn-secondary" asp-page="/Contracts/Details" asp-route-id="@RouteData.Values["id"]">Cancel</a>
 
-            <div class="d-flex gap-2">
-                <button class="btn btn-gradient-primary" type="submit">Upload Contract</button>
-                <a class="btn btn-soft" asp-page="./Details" asp-route-id="@RouteData.Values["id"]">Cancel</a>
-            </div>
-
-            <div class="text-danger mt-3">
-                @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                {
-                    <div>@err.ErrorMessage</div>
-                }
-            </div>
-        </form>
+    <div class="text-danger mt-2">
+        @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div>@err.ErrorMessage</div>
+        }
     </div>
-</div>
+</form>

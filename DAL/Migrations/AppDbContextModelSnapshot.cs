@@ -17,8 +17,7 @@ namespace DAL.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasDefaultSchema("dbo")
-                .HasAnnotation("ProductVersion", "8.0.23")
+                .HasAnnotation("ProductVersion", "8.0.25")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -60,7 +59,7 @@ namespace DAL.Migrations
                     b.HasIndex("ContractId", "Period")
                         .IsUnique();
 
-                    b.ToTable("Bills", "dbo");
+                    b.ToTable("Bills", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.Billing.BillItem", b =>
@@ -98,7 +97,7 @@ namespace DAL.Migrations
 
                     b.HasIndex("ExtraFeeId");
 
-                    b.ToTable("BillItems", "dbo");
+                    b.ToTable("BillItems", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.Billing.BillStatusHistory", b =>
@@ -134,7 +133,7 @@ namespace DAL.Migrations
 
                     b.HasIndex("BillId");
 
-                    b.ToTable("BillStatusHistories", "dbo");
+                    b.ToTable("BillStatusHistories");
                 });
 
             modelBuilder.Entity("DAL.Entities.Billing.ExtraFee", b =>
@@ -168,7 +167,7 @@ namespace DAL.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("ExtraFees", "dbo");
+                    b.ToTable("ExtraFees", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.Billing.Payment", b =>
@@ -211,7 +210,7 @@ namespace DAL.Migrations
 
                     b.HasIndex("BillId", "CreatedAt");
 
-                    b.ToTable("Payments", "dbo");
+                    b.ToTable("Payments", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.Billing.UtilityPrice", b =>
@@ -244,7 +243,7 @@ namespace DAL.Migrations
                     b.HasIndex("EffectiveFrom")
                         .IsUnique();
 
-                    b.ToTable("UtilityPrices", "dbo");
+                    b.ToTable("UtilityPrices", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.Billing.UtilityReading", b =>
@@ -283,7 +282,7 @@ namespace DAL.Migrations
                     b.HasIndex("RoomId", "Period")
                         .IsUnique();
 
-                    b.ToTable("UtilityReadings", "dbo");
+                    b.ToTable("UtilityReadings", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.Contracts.Contract", b =>
@@ -362,7 +361,7 @@ namespace DAL.Migrations
 
                     b.HasIndex("TenantId", "StartDate");
 
-                    b.ToTable("Contracts", "dbo");
+                    b.ToTable("Contracts", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.Contracts.ContractAttachment", b =>
@@ -395,7 +394,7 @@ namespace DAL.Migrations
 
                     b.HasIndex("ContractId");
 
-                    b.ToTable("ContractAttachments", "dbo");
+                    b.ToTable("ContractAttachments");
                 });
 
             modelBuilder.Entity("DAL.Entities.Contracts.ContractReminder", b =>
@@ -427,7 +426,7 @@ namespace DAL.Migrations
 
                     b.HasIndex("ContractId", "RemindAt");
 
-                    b.ToTable("ContractReminders", "dbo");
+                    b.ToTable("ContractReminders", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.Contracts.ContractReminderLog", b =>
@@ -456,7 +455,7 @@ namespace DAL.Migrations
 
                     b.HasIndex("ContractId");
 
-                    b.ToTable("ContractReminderLogs", "dbo");
+                    b.ToTable("ContractReminderLogs");
                 });
 
             modelBuilder.Entity("DAL.Entities.Contracts.ContractVersion", b =>
@@ -494,7 +493,7 @@ namespace DAL.Migrations
                     b.HasIndex("ContractId", "VersionNumber")
                         .IsUnique();
 
-                    b.ToTable("ContractVersions", "dbo");
+                    b.ToTable("ContractVersions", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.Contracts.Deposit", b =>
@@ -506,7 +505,6 @@ namespace DAL.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("DepositId"));
 
                     b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("ContractId")
@@ -516,17 +514,19 @@ namespace DAL.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Note")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("Type")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.HasKey("DepositId");
 
                     b.HasIndex("ContractId");
 
-                    b.ToTable("Deposits", "dbo");
+                    b.ToTable("Deposits");
                 });
 
             modelBuilder.Entity("DAL.Entities.Maintenance.Ticket", b =>
@@ -572,7 +572,7 @@ namespace DAL.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("Tickets", "dbo");
+                    b.ToTable("Tickets", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.Motel.Role", b =>
@@ -597,7 +597,7 @@ namespace DAL.Migrations
 
                     b.HasKey("RoleId");
 
-                    b.ToTable("Role", "dbo");
+                    b.ToTable("Role");
                 });
 
             modelBuilder.Entity("DAL.Entities.Motel.User", b =>
@@ -653,7 +653,7 @@ namespace DAL.Migrations
 
                     b.HasKey("UserId");
 
-                    b.ToTable("User", "dbo");
+                    b.ToTable("User");
                 });
 
             modelBuilder.Entity("DAL.Entities.Motel.UserRole", b =>
@@ -668,7 +668,7 @@ namespace DAL.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("UserRole", "dbo");
+                    b.ToTable("UserRole");
                 });
 
             modelBuilder.Entity("DAL.Entities.Property.Amenity", b =>
@@ -686,27 +686,23 @@ namespace DAL.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("SYSDATETIME()");
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AmenityName")
-                        .IsUnique();
+                    b.HasIndex("AmenityName");
 
-                    b.ToTable("Amenities", "dbo");
+                    b.ToTable("Amenities", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.Property.Block", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("BlockId");
+                        .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
@@ -714,41 +710,27 @@ namespace DAL.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
-                    b.Property<string>("BlockName")
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("SYSDATETIME()");
-
-                    b.Property<string>("Note")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
-                        .HasDefaultValue("Active");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Blocks", "dbo");
+                    b.ToTable("Blocks", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.Property.Floor", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("FloorId");
+                        .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
@@ -756,11 +738,12 @@ namespace DAL.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("SYSDATETIME()");
+                        .HasColumnType("datetime2");
 
-                    b.Property<string>("FloorName")
+                    b.Property<int>("Level")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -770,66 +753,48 @@ namespace DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BlockId");
+                    b.HasIndex("BlockId", "Level")
+                        .HasDatabaseName("IX_Floors_Block_Level");
 
-                    b.ToTable("Floors", "dbo");
+                    b.ToTable("Floors", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.Property.Room", b =>
                 {
-                    b.Property<int>("RoomId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("RoomId");
+                        .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RoomId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal?>("AreaM2")
+                    b.Property<decimal>("BasePrice")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("SYSDATETIME()");
-
-                    b.Property<decimal>("CurrentBasePrice")
-                        .ValueGeneratedOnAdd()
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)")
-                        .HasDefaultValue(0m);
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("FloorId")
                         .HasColumnType("int");
 
-                    b.Property<int>("MaxOccupants")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(2);
+                    b.Property<string>("Name")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("RoomCode")
+                    b.Property<string>("RoomNo")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<string>("RoomName")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
-                    b.HasKey("RoomId");
+                    b.HasKey("Id");
 
-                    b.HasIndex("FloorId");
-
-                    b.HasIndex("RoomCode")
+                    b.HasIndex("FloorId", "RoomNo")
                         .IsUnique();
 
                     b.ToTable("Rooms", "dbo");
@@ -847,78 +812,76 @@ namespace DAL.Migrations
 
                     b.HasIndex("AmenityId");
 
-                    b.ToTable("RoomAmenities", "dbo");
+                    b.ToTable("RoomAmenities", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.Property.RoomImage", b =>
                 {
-                    b.Property<int>("ImageId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("ImageId");
+                        .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ImageId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("SYSDATETIME()");
+                        .HasColumnType("datetime2");
 
-                    b.Property<string>("ImageUrl")
+                    b.Property<bool>("IsCover")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("RoomId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Url")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<bool>("IsPrimary")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
+                    b.HasKey("Id");
 
-                    b.Property<int>("RoomId")
-                        .HasColumnType("int");
+                    b.HasIndex("RoomId", "SortOrder");
 
-                    b.HasKey("ImageId");
-
-                    b.HasIndex("RoomId");
-
-                    b.ToTable("RoomImages", "dbo");
+                    b.ToTable("RoomImages", (string)null);
                 });
 
-            modelBuilder.Entity("DAL.Entities.Property.RoomPricingHistory", b =>
+            modelBuilder.Entity("DAL.Entities.Property.RoomPriceHistory", b =>
                 {
-                    b.Property<long>("PriceId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("PriceId");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("PriceId"));
-
-                    b.Property<DateTime>("ChangedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("SYSDATETIME()");
-
-                    b.Property<int?>("ChangedByUserId")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("NewPrice")
-                        .HasColumnType("decimal(18,2)");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Note")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<decimal>("OldPrice")
+                    b.Property<DateTime>("FromDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("RoomId")
                         .HasColumnType("int");
 
-                    b.HasKey("PriceId");
+                    b.Property<DateTime?>("ToDate")
+                        .HasColumnType("datetime2");
 
-                    b.HasIndex("RoomId");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
-                    b.ToTable("RoomPriceHistories", "dbo");
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoomId", "FromDate");
+
+                    b.ToTable("RoomPriceHistories", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.System.AuditLog", b =>
@@ -968,7 +931,7 @@ namespace DAL.Migrations
 
                     b.HasIndex("ActorUserId", "Action", "CreatedAt");
 
-                    b.ToTable("AuditLogs", "dbo");
+                    b.ToTable("AuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.System.Notification", b =>
@@ -981,8 +944,7 @@ namespace DAL.Migrations
 
                     b.Property<string>("Content")
                         .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("ContractId")
                         .HasColumnType("int");
@@ -1004,8 +966,7 @@ namespace DAL.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -1016,9 +977,7 @@ namespace DAL.Migrations
 
                     b.HasIndex("ReceiverUserId");
 
-                    b.HasIndex("IsRead", "CreatedAt");
-
-                    b.ToTable("Notifications", "dbo");
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("DAL.Entities.System.NotificationRecipient", b =>
@@ -1051,7 +1010,7 @@ namespace DAL.Migrations
 
                     b.HasIndex("NotificationId");
 
-                    b.ToTable("NotificationRecipients", "dbo");
+                    b.ToTable("NotificationRecipients");
                 });
 
             modelBuilder.Entity("DAL.Entities.Tenanting.RoomResident", b =>
@@ -1083,7 +1042,7 @@ namespace DAL.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("RoomResidents", "dbo");
+                    b.ToTable("RoomResidents");
                 });
 
             modelBuilder.Entity("DAL.Entities.Tenanting.StayHistory", b =>
@@ -1121,7 +1080,7 @@ namespace DAL.Migrations
 
                     b.HasIndex("RoomId", "CheckInAt");
 
-                    b.ToTable("StayHistories", "dbo");
+                    b.ToTable("StayHistories", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.Tenanting.Tenant", b =>
@@ -1176,7 +1135,7 @@ namespace DAL.Migrations
                     b.HasIndex("UserId")
                         .HasDatabaseName("IX_Tenants_IdentityUserId");
 
-                    b.ToTable("Tenants", "dbo");
+                    b.ToTable("Tenants", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.Tenanting.TenantIdDoc", b =>
@@ -1221,7 +1180,7 @@ namespace DAL.Migrations
                     b.HasIndex("TenantId", "DocType", "DocNumber")
                         .HasDatabaseName("IX_TenantIdDocs_Tenant_Doc");
 
-                    b.ToTable("TenantIdDocs", "dbo");
+                    b.ToTable("TenantIdDocs", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -1248,7 +1207,7 @@ namespace DAL.Migrations
                         .HasDatabaseName("RoleNameIndex")
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
-                    b.ToTable("AspNetRoles", "dbo");
+                    b.ToTable("AspNetRoles", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -1273,7 +1232,7 @@ namespace DAL.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("AspNetRoleClaims", "dbo");
+                    b.ToTable("AspNetRoleClaims", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUser", b =>
@@ -1338,7 +1297,7 @@ namespace DAL.Migrations
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
-                    b.ToTable("AspNetUsers", "dbo");
+                    b.ToTable("AspNetUsers", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
@@ -1363,7 +1322,7 @@ namespace DAL.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AspNetUserClaims", "dbo");
+                    b.ToTable("AspNetUserClaims", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
@@ -1385,7 +1344,7 @@ namespace DAL.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AspNetUserLogins", "dbo");
+                    b.ToTable("AspNetUserLogins", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
@@ -1400,7 +1359,7 @@ namespace DAL.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("AspNetUserRoles", "dbo");
+                    b.ToTable("AspNetUserRoles", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
@@ -1419,7 +1378,7 @@ namespace DAL.Migrations
 
                     b.HasKey("UserId", "LoginProvider", "Name");
 
-                    b.ToTable("AspNetUserTokens", "dbo");
+                    b.ToTable("AspNetUserTokens", (string)null);
                 });
 
             modelBuilder.Entity("DAL.Entities.Billing.Bill", b =>
@@ -1491,7 +1450,7 @@ namespace DAL.Migrations
                         .HasForeignKey("CreatedByUserId");
 
                     b.HasOne("DAL.Entities.Property.Room", "Room")
-                        .WithMany()
+                        .WithMany("Contracts")
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1659,10 +1618,10 @@ namespace DAL.Migrations
                     b.Navigation("Room");
                 });
 
-            modelBuilder.Entity("DAL.Entities.Property.RoomPricingHistory", b =>
+            modelBuilder.Entity("DAL.Entities.Property.RoomPriceHistory", b =>
                 {
                     b.HasOne("DAL.Entities.Property.Room", "Room")
-                        .WithMany("RoomPricingHistories")
+                        .WithMany("RoomPriceHistories")
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1852,11 +1811,13 @@ namespace DAL.Migrations
 
             modelBuilder.Entity("DAL.Entities.Property.Room", b =>
                 {
+                    b.Navigation("Contracts");
+
                     b.Navigation("RoomAmenities");
 
                     b.Navigation("RoomImages");
 
-                    b.Navigation("RoomPricingHistories");
+                    b.Navigation("RoomPriceHistories");
                 });
 
             modelBuilder.Entity("DAL.Entities.Tenanting.Tenant", b =>

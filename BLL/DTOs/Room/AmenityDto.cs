@@ -2,6 +2,7 @@
 
 public class AmenityDto
 {
-    public int AmenityId { get; set; }
-    public string AmenityName { get; set; } = null!;
+    public int Id { get; set; }
+    public string Name { get; set; } = null!;
+    public string? Icon { get; set; }
 }

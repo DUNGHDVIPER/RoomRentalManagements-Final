@@ -17,6 +17,9 @@ public class BillsController : Controller
         _billing = billing;
     }
 
+    // =========================
+    // LIST
+    // =========================
     [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [HttpGet]
     public async Task<IActionResult> Index(string? q, string? status, string? month, CancellationToken ct)
@@ -29,12 +32,15 @@ public class BillsController : Controller
             RoomName = b.RoomName ?? "-",
             Month = PeriodToMonth(b.Period),
             Total = b.TotalAmount,
-            Status = ToUiStatus(b.Status, b.DueDate)
+            Status = ToUiStatus((BillStatus)b.Status, b.DueDate)
         }).ToList();
 
         return View(list);
     }
 
+    // =========================
+    // DETAILS
+    // =========================
     [HttpGet]
     public async Task<IActionResult> Details(int id, CancellationToken ct)
     {
@@ -47,7 +53,9 @@ public class BillsController : Controller
             RoomName = dto.RoomName ?? "-",
             Month = PeriodToMonth(dto.Period),
             Total = dto.TotalAmount,
-            Status = ToUiStatus(dto.Status, dto.DueDate),
+            Status = ToUiStatus((BillStatus)dto.Status, dto.DueDate),
+
+            // bạn có thể đổi IssuedAt -> CreatedAtUtc nếu VM muốn
             CreatedAtUtc = dto.IssuedAt,
 
             Items = (dto.Items ?? new List<BillItemDto>()).Select(i => new BillItemLineVm
@@ -63,7 +71,7 @@ public class BillsController : Controller
                 Id = p.Id,
                 Amount = p.Amount,
                 Method = p.Method,
-                Status = p.Status,
+                Status = ((PaymentStatus)p.Status).ToString(),
                 PaidAtUtc = p.PaidAt,
                 TransactionRef = p.TransactionRef
             }).ToList()
@@ -72,6 +80,9 @@ public class BillsController : Controller
         return View(vm);
     }
 
+    // =========================
+    // CREATE
+    // =========================
     [HttpGet]
     public async Task<IActionResult> Create(CancellationToken ct)
     {
@@ -88,6 +99,7 @@ public class BillsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(BillCreateVm vm, CancellationToken ct)
     {
+        // Validate basic (UI)
         if (!TryParseMonth(vm.Month, out _))
             ModelState.AddModelError(nameof(vm.Month), "Month phải theo định dạng yyyy-MM (vd: 2026-02).");
 
@@ -115,6 +127,9 @@ public class BillsController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    // =========================
+    // EDIT
+    // =========================
     [HttpGet]
     public async Task<IActionResult> Edit(int id, CancellationToken ct)
     {
@@ -127,7 +142,7 @@ public class BillsController : Controller
             RoomName = dto.RoomName ?? "-",
             Month = PeriodToMonth(dto.Period),
             Total = dto.TotalAmount,
-            Status = ToUiStatus(dto.Status, dto.DueDate)
+            Status = ToUiStatus((BillStatus)dto.Status, dto.DueDate)
         };
 
         return View(vm);
@@ -156,6 +171,9 @@ public class BillsController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    // =========================
+    // DELETE
+    // =========================
     [HttpGet]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
@@ -168,7 +186,7 @@ public class BillsController : Controller
             RoomName = dto.RoomName ?? "-",
             Month = PeriodToMonth(dto.Period),
             Total = dto.TotalAmount,
-            Status = ToUiStatus(dto.Status, dto.DueDate),
+            Status = ToUiStatus((BillStatus)dto.Status, dto.DueDate),
             CreatedAtUtc = dto.IssuedAt
         };
 
@@ -190,6 +208,9 @@ public class BillsController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    // =========================
+    // RECORD PAYMENT
+    // =========================
     [HttpGet]
     public async Task<IActionResult> RecordPayment(int id, CancellationToken ct)
     {
@@ -197,7 +218,7 @@ public class BillsController : Controller
         if (dto == null) return NotFound();
 
         var paidSoFar = (dto.Payments ?? new List<PaymentDto>())
-            .Where(p => string.Equals(p.Status, "Completed", StringComparison.OrdinalIgnoreCase))
+            .Where(p => (PaymentStatus)p.Status == PaymentStatus.Completed)
             .Sum(p => p.Amount);
 
         var vm = new PaymentCreateVm
@@ -242,11 +263,15 @@ public class BillsController : Controller
         return RedirectToAction(nameof(Details), new { id = vm.BillId });
     }
 
+    // =========================
+    // GENERATE BILLS
+    // =========================
     [HttpGet]
     public async Task<IActionResult> GenerateBatch(string? month, CancellationToken ct)
     {
         ViewBag.ExtraFees = await _billing.GetActiveExtraFeesAsync(ct);
 
+        // default month
         var m = string.IsNullOrWhiteSpace(month) ? DateTime.Today.ToString("yyyy-MM") : month;
         var period = TryParseMonth(m, out var p) ? p : (DateTime.Today.Year * 100 + DateTime.Today.Month);
 
@@ -279,6 +304,7 @@ public class BillsController : Controller
 
         if (!ModelState.IsValid) return View(vm);
 
+        // validate due date in month
         var y = period / 100;
         var m = period % 100;
         var firstDay = new DateTime(y, m, 1);
@@ -313,6 +339,10 @@ public class BillsController : Controller
         return RedirectToAction(nameof(Index), new { month = vm.Month, t = DateTime.UtcNow.Ticks });
     }
 
+    // =========================
+    // Helpers (MVC)
+    // =========================
+
     private static bool TryParseMonth(string? month, out int period)
     {
         period = 0;
@@ -345,17 +375,13 @@ public class BillsController : Controller
         return "Unpaid";
     }
 
-    private static string ToUiStatus(string? status, DateTime dueDateUtc)
+    private static string ToUiStatus(BillStatus status, DateTime dueDateUtc)
     {
-        if (string.Equals(status, "Paid", StringComparison.OrdinalIgnoreCase))
-            return "Paid";
-
-        if (string.Equals(status, "Overdue", StringComparison.OrdinalIgnoreCase))
-            return "Overdue";
-
-        if (dueDateUtc < DateTime.UtcNow)
-            return "Overdue";
-
+        if (status == BillStatus.Paid) return "Paid";
+        if (dueDateUtc < DateTime.UtcNow) return "Overdue";
         return "Unpaid";
     }
+
+    
+   
 }

@@ -31,14 +31,13 @@ namespace BLL.Services
         {
             // 1️⃣ Validate Room tồn tại
             var room = await _context.Rooms
-                .FirstOrDefaultAsync(r => r.RoomId == roomId, ct);
+                .FirstOrDefaultAsync(r => r.Id == roomId, ct);
 
             if (room == null)
                 throw new Exception("Room not found.");
 
             // 2️⃣ Room phải AVAILABLE
-            if (
-                room.Status != RoomStatus.Available)
+            if (room.Status != RoomStatus.Available)
                 throw new Exception("Room is not available.");
 
             // 3️⃣ Validate Tenant tồn tại
@@ -110,7 +109,7 @@ namespace BLL.Services
         {
             // 1️⃣ Validate room tồn tại
             var room = await _context.Rooms
-                .FirstOrDefaultAsync(r => r.RoomId == roomId, ct);
+                .FirstOrDefaultAsync(r => r.Id == roomId, ct);
 
             if (room == null)
                 throw new Exception("Room not found.");
@@ -150,7 +149,7 @@ namespace BLL.Services
         {
             // Validate room tồn tại
             var roomExists = await _context.Rooms
-                .AnyAsync(r => r.RoomId == roomId, ct);
+                .AnyAsync(r => r.Id == roomId, ct);
 
             if (!roomExists)
                 throw new Exception("Room not found.");

@@ -1,22 +1,12 @@
-﻿using DAL.Entities.Common;
+﻿namespace BLL.DTOs.Room;
 
 public class CreateRoomDto
 {
     public int FloorId { get; set; }
-
-    public string RoomCode { get; set; }
-
-    public string? RoomName { get; set; }
-
-    public decimal? AreaM2 { get; set; }
-
-    public int MaxOccupants { get; set; }
-
-    public RoomStatus Status { get; set; }
-
-    public decimal CurrentBasePrice { get; set; }
-
-    public string? Description { get; set; }
-
-    public int[] AmenityIds { get; set; }
+    public string RoomNo { get; set; } = null!;
+    public string? Name { get; set; }
+    public decimal BasePrice { get; set; }
+    public int Status { get; set; }
+    public int[] AmenityIds { get; set; } = Array.Empty<int>();
+    public string[] ImageUrls { get; set; } = Array.Empty<string>();
 }

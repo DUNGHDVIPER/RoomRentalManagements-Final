@@ -1,8 +1,91 @@
-﻿@model List< WebAdminMVC.Models.Roles.RoleListItemVm>
+﻿@model List<WebAdminMVC.Models.Roles.RoleListItemVm>
 @{
     ViewData["Title"] = "Roles Management";
     Layout = "_Layout";
 }
+
+<style>
+    /* Custom styles for action buttons and modal */
+    .actions-column {
+        min-width: 150px;
+        white-space: nowrap;
+    }
+
+    .btn-action {
+        margin: 0 2px;
+        padding: 6px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+        .btn-action i {
+            font-size: 12px;
+        }
+
+    /* Modal overlay */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        z-index: 1000;
+    }
+
+        .modal-overlay.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+    .modal-dialog {
+        background: white;
+        border-radius: 8px;
+        padding: 24px;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .modal-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 0;
+        color: #666;
+    }
+
+    .modal-body {
+        margin-bottom: 20px;
+    }
+
+    .modal-footer {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+</style>
 
 <div class="container">
     <div class="card">
@@ -17,7 +100,7 @@
         {
             <div class="alert alert-success alert-dismissible fade show" role="alert">
                 @TempData["Success"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'">&times;</button>
             </div>
         }
 
@@ -25,7 +108,14 @@
         {
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                 @TempData["Error"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <button type="button" class="btn-close" onclick="this.parentElement.style.display='none'">&times;</button>
+            </div>
+        }
+
+        @if (ViewData["UserEmail"] != null)
+        {
+            <div class="alert alert-info">
+                <small>Logged in as: @ViewData["UserEmail"] (@ViewData["LoginSource"])</small>
             </div>
         }
 
@@ -38,7 +128,7 @@
                             <th>@Html.DisplayNameFor(model => model[0].Name)</th>
                             <th>@Html.DisplayNameFor(model => model[0].UserCount)</th>
                             <th>@Html.DisplayNameFor(model => model[0].CreatedAt)</th>
-                            <th>Actions</th>
+                            <th class="actions-column">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -47,29 +137,37 @@
                             <tr>
                                 <td>
                                     <strong>@role.Name</strong>
+                                    @if (new[] { "SuperAdmin", "Admin", "Host", "Tenant" }.Contains(role.Name))
+                                    {
+                                        <span class="badge bg-secondary ms-1">System</span>
+                                    }
                                 </td>
                                 <td>
                                     <span class="badge bg-info">@role.UserCount users</span>
                                 </td>
                                 <td>@role.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <a asp-action="Details" asp-route-id="@role.Id"
-                                           class="btn btn-sm btn-outline-info" title="Details">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <a asp-action="Edit" asp-route-id="@role.Id"
-                                           class="btn btn-sm btn-outline-primary" title="Edit">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        @if (!new[] { "SuperAdmin", "Admin", "Host", "Tenant" }.Contains(role.Name))
-                                        {
-                                            <button type="button" class="btn btn-sm btn-outline-danger"
-                                                    onclick="confirmDelete('@role.Id', '@role.Name')" title="Delete">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        }
-                                    </div>
+                                <td class="actions-column">
+                                    <a asp-action="Details" asp-route-id="@role.Id"
+                                       class="btn btn-action btn-outline-info" title="Details">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@role.Id"
+                                       class="btn btn-action btn-outline-warning" title="Edit">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                    @if (!new[] { "SuperAdmin", "Admin", "Host", "Tenant" }.Contains(role.Name))
+                                    {
+                                        <button type="button" class="btn btn-action btn-outline-danger"
+                                                onclick="confirmDelete('@role.Id', '@role.Name')" title="Delete">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="btn btn-action btn-outline-secondary" disabled title="System role cannot be deleted">
+                                            <i class="fas fa-lock"></i> Protected
+                                        </span>
+                                    }
                                 </td>
                             </tr>
                         }
@@ -86,25 +184,24 @@
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
+<!-- Custom Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteModal">
     <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Confirm Delete</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to delete the role <strong id="roleNameToDelete"></strong>?</p>
-                <p class="text-danger">This action cannot be undone.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form asp-action="Delete" method="post" style="display: inline;">
-                    <input type="hidden" id="roleIdToDelete" name="id" />
-                    <button type="submit" class="btn btn-danger">Delete</button>
-                </form>
-            </div>
+        <div class="modal-header">
+            <h5 class="modal-title">Confirm Delete</h5>
+            <button type="button" class="modal-close" onclick="closeDeleteModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete the role <strong id="roleNameToDelete"></strong>?</p>
+            <p style="color: #dc3545; font-size: 14px;">This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+            <form asp-action="Delete" method="post" style="display: inline;" id="deleteForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="roleIdToDelete" name="id" />
+                <button type="submit" class="btn btn-danger">Delete Role</button>
+            </form>
         </div>
     </div>
 </div>
@@ -112,11 +209,50 @@
 @section Scripts {
     <script>
         function confirmDelete(roleId, roleName) {
+            // Set values
             document.getElementById('roleIdToDelete').value = roleId;
             document.getElementById('roleNameToDelete').textContent = roleName;
 
-            var modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-            modal.show();
+            // Show modal
+            document.getElementById('deleteModal').classList.add('show');
+
+            // Prevent body scroll
+            document.body.style.overflow = 'hidden';
         }
+
+        function closeDeleteModal() {
+            // Hide modal
+            document.getElementById('deleteModal').classList.remove('show');
+
+            // Restore body scroll
+            document.body.style.overflow = '';
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeDeleteModal();
+            }
+        });
+
+        // Auto-hide alerts
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                if (alert.style.display !== 'none') {
+                    alert.style.opacity = '0';
+                    setTimeout(function() {
+                        alert.style.display = 'none';
+                    }, 300);
+                }
+            });
+        }, 5000);
     </script>
 }

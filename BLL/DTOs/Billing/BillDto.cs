@@ -7,7 +7,7 @@ public class BillDto
     public int Period { get; set; }
     public DateTime IssuedAt { get; set; }
     public DateTime DueDate { get; set; }
-    public String Status { get; set; }
+    public int Status { get; set; }
     public decimal TotalAmount { get; set; }
     public string? RoomName { get; set; }
     public List<BillItemDto> Items { get; set; } = new();

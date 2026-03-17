@@ -58,7 +58,7 @@ public class IndexModel : PageModel
             query = query.Where(t =>
                 t.Title.Contains(SearchString) ||
                 t.Id.ToString().Contains(SearchString) ||
-                t.Room.RoomName.Contains(SearchString));
+                t.Room.Name.Contains(SearchString));
         }
 
         // 🎯 CATEGORY ENUM
