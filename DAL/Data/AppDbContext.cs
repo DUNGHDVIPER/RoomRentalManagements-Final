@@ -32,6 +32,7 @@ public class AppDbContext : IdentityDbContext<IdentityUser, IdentityRole, string
     // =========================
     // PROPERTY
     // =========================
+    public DbSet<Booking> Bookings { get; set; }
     public DbSet<BlockEntity> Blocks => Set<BlockEntity>();
     public DbSet<FloorEntity> Floors => Set<FloorEntity>();
     public DbSet<RoomEntity> Rooms => Set<RoomEntity>();

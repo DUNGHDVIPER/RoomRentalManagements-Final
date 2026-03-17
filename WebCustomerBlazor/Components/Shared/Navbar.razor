@@ -1,61 +1,87 @@
 ﻿@using BLL.Services
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Routing
 @using System.Security.Claims
+
 @inject NavigationManager Nav
 @inject TokenAuthenticationStateProvider AuthProvider
 
 <header class="header glass">
     <div class="container">
         <div class="header-inner">
-            <a class="brand" href="/">
+
+            <NavLink class="brand" href="/">
                 <div class="brand-badge">R</div>
                 <div>
                     <div class="brand-title">Roomy <span style="color:var(--blue)">Customer</span></div>
                     <div class="brand-sub">Modern rental portal • FE-only</div>
                 </div>
-            </a>
+            </NavLink>
 
             <nav class="nav">
-                <a class="@(IsActive("/") ? "active" : "")" href="/">Home</a>
-                <a class="@(IsActive("/rooms") ? "active" : "")" href="/rooms">Rooms</a>
-                <a class="@(IsActive("/my-room") ? "active" : "")" href="/my-room">My Room</a>
-                <a class="@(IsActive("/tickets") ? "active" : "")" href="/tickets">Ticket Center</a>
-                <a class="@(IsActive("/profile") ? "active" : "")" href="/profile">Profile</a>
-                <a class="@(IsActive("/notifications") ? "active" : "")" href="/notifications">Thông báo</a>
+
+                <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
+                    Home
+                </NavLink>
+
+                <NavLink class="nav-link" href="/rooms">
+                    Rooms
+                </NavLink>
+
+                <NavLink class="nav-link" href="/my-room">
+                    My Room
+                </NavLink>
+
+                <NavLink class="nav-link" href="/tickets">
+                    Ticket Center
+                </NavLink>
+
+                <NavLink class="nav-link" href="/profile">
+                    Profile
+                </NavLink>
+
+                <NavLink class="nav-link" href="/notifications">
+                    Thông báo
+                </NavLink>
 
                 <AuthorizeView>
                     <Authorized>
+
                         <span style="font-weight:600;">
                             @context.User.FindFirst(ClaimTypes.Email)?.Value
                         </span>
+
                         <button class="btn-grad"
                                 style="padding:10px 14px;border:none;cursor:pointer;"
                                 @onclick="Logout">
                             Logout
                         </button>
+
                     </Authorized>
+
                     <NotAuthorized>
-                        <a class="btn-grad" href="/login" style="padding:10px 14px;">Login</a>
+
+                        <NavLink class="btn-grad"
+                                 href="/login"
+                                 style="padding:10px 14px;">
+                            Login
+                        </NavLink>
+
                     </NotAuthorized>
                 </AuthorizeView>
+
             </nav>
+
         </div>
     </div>
 </header>
 
 @code {
-    private bool IsActive(string path)
-    {
-        var p = Nav.ToBaseRelativePath(Nav.Uri);
-        if (string.IsNullOrEmpty(p)) p = "/";
-        if (!path.StartsWith("/")) path = "/" + path;
-        if (p == "" && path == "/") return true;
-        return ("/" + p).StartsWith(path, StringComparison.OrdinalIgnoreCase);
-    }
 
     private async Task Logout()
     {
         await AuthProvider.NotifyUserLogoutAsync();
-        Nav.NavigateTo("/login", forceLoad: false);
+        Nav.NavigateTo("/login");
     }
+
 }

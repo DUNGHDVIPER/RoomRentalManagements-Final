@@ -1,35 +1,57 @@
 ﻿@model BLL.DTOs.Property.FloorDto
 
-<h2>Edit Floor</h2>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Edit Floor";
+}
 
-<form asp-action="Edit" method="post">
+<div class="container">
 
-    @Html.AntiForgeryToken()
+    <div class="card">
 
-    <input type="hidden" asp-for="Id" />
-    <input type="hidden" asp-for="BlockId" />
+        <div class="card-head">
+            <div class="card-title">Edit Floor</div>
+        </div>
 
-    <div class="mb-3">
+        <form asp-action="Edit" method="post" class="form-grid">
 
-        <label asp-for="FloorName" class="form-label"></label>
+            @Html.AntiForgeryToken()
 
-        <input asp-for="FloorName" class="form-control" />
+            <div asp-validation-summary="All" class="err"></div>
 
-        <span asp-validation-for="FloorName" class="text-danger"></span>
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="BlockId" />
+
+            <div class="fg">
+                <label class="lbl">Block</label>
+                <input class="inp" value="@Model.BlockName" readonly />
+            </div>
+
+            <div class="fg">
+                <label asp-for="FloorName" class="lbl"></label>
+                <input asp-for="FloorName" class="inp" />
+                <span asp-validation-for="FloorName" class="err"></span>
+            </div>
+
+            <div class="form-actions">
+
+                <button class="btn-gradient">
+                    Update
+                </button>
+
+                <a asp-action="Index"
+                   asp-route-blockId="@Model.BlockId"
+                   class="btn">
+                    Cancel
+                </a>
+
+            </div>
+
+        </form>
 
     </div>
 
-    <button class="btn btn-primary">
-        Update
-    </button>
-
-    <a asp-action="Index"
-       asp-route-blockId="@Model.BlockId"
-       class="btn btn-secondary">
-        Back
-    </a>
-
-</form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

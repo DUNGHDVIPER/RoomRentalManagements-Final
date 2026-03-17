@@ -1,95 +1,156 @@
 ﻿@page "/"
+
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
+
 @inject NavigationManager Nav
 @inject AuthenticationStateProvider Auth
 
 <div class="bg-grad">
     <div class="section">
         <div class="container">
+
             <div class="hero">
+
+                <!-- LEFT -->
                 <div class="card glass p-22">
+
                     <div class="kicker">ROOM SEARCH</div>
-                    <h1 class="h1" style="margin-top:10px;">Find your next room</h1>
-                    <p class="muted" style="margin-top:12px; max-width:620px;">
-                        Modern rental portal UI (Customer). Filter by location, price, amenities.
+
+                    <h1 class="h1 mt-2">
+                        Find your next room
+                    </h1>
+
+                    <p class="muted mt-2" style="max-width:620px;">
+                        Modern rental portal UI (Customer). Filter by location,
+                        price, amenities.
                     </p>
 
                     @if (isAuthenticated)
                     {
-                        <div class="card glass p-16" style="margin-top:16px; border:1px solid #dbeafe;">
-                            <div style="font-weight:700;">Xin chào, @userEmail</div>
-                            <div class="muted">Role hiện tại: <b>@userRole</b></div>
+                        <div class="card glass p-16 mt-3 border-blue">
+                            <div class="fw-bold">
+                                Xin chào, @userEmail
+                            </div>
+
+                            <div class="muted">
+                                Role hiện tại: <b>@userRole</b>
+                            </div>
                         </div>
                     }
                     else
                     {
-                        <div class="card glass p-16" style="margin-top:16px; border:1px solid #fde68a;">
-                            <div style="font-weight:700;">Bạn chưa đăng nhập</div>
-                            <div class="muted">Đăng nhập để xem My Room, Profile và Ticket Center đầy đủ.</div>
+                        <div class="card glass p-16 mt-3 border-yellow">
+                            <div class="fw-bold">
+                                Bạn chưa đăng nhập
+                            </div>
+
+                            <div class="muted">
+                                Đăng nhập để xem My Room, Profile
+                                và Ticket Center đầy đủ.
+                            </div>
                         </div>
                     }
 
-                    <div class="card glass p-16 hero-search" style="margin-top:16px;">
-                        <input class="input" placeholder="Try: District 1, studio..." @bind="kw" />
-                        <button class="btn-grad" @onclick="GoRooms">Search</button>
+                    <!-- SEARCH -->
+                    <div class="card glass p-16 hero-search mt-3">
+
+                        <input class="input"
+                               placeholder="Try: District 1, studio..."
+                               @bind="kw" />
+
+                        <button class="btn-grad"
+                                @onclick="GoRooms">
+                            Search
+                        </button>
+
                     </div>
 
-                    <div class="chips">
+                    <!-- CITY CHIPS -->
+                    <div class="chips mt-2">
+
                         @foreach (var c in cities)
                         {
-                            <button class="chip" @onclick="() => GoCity(c)">@c</button>
+                            <button class="chip"
+                                    @onclick="() => GoCity(c)">
+                                @c
+                            </button>
                         }
+
                     </div>
 
                     <hr class="hr" />
+
                     <div class="muted small">
                         Tip: Click a city chip to pre-filter your listing.
                     </div>
+
                 </div>
 
+                <!-- RIGHT -->
                 <div class="card glass p-22">
+
                     <h2 class="h2">Quick actions</h2>
-                    <p class="muted" style="margin-top:10px;">
-                        Jump into room browsing or sign in to manage your profile.
+
+                    <p class="muted mt-2">
+                        Jump into room browsing or sign in
+                        to manage your profile.
                     </p>
 
-                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
-                        <a class="btn-grad" href="/rooms">Browse Rooms</a>
+                    <div class="flex-wrap mt-3">
+
+                        <a class="btn-grad" href="/rooms">
+                            Browse Rooms
+                        </a>
 
                         @if (isAuthenticated)
                         {
-                            <a class="btn-ghost" href="/profile">My Profile</a>
-                            <a class="btn-ghost" href="/my-room">My Room</a>
+                            <a class="btn-ghost" href="/profile">
+                                My Profile
+                            </a>
+
+                            <a class="btn-ghost" href="/my-room">
+                                My Room
+                            </a>
                         }
                         else
                         {
-                            <a class="btn-ghost" href="/login">Login</a>
+                            <a class="btn-ghost" href="/login">
+                                Login
+                            </a>
                         }
 
-                        <a class="btn-ghost" href="/tickets">Support Center</a>
+                        <a class="btn-ghost" href="/tickets">
+                            Support Center
+                        </a>
+
                     </div>
 
                     <hr class="hr" />
+
                     <div class="muted small">
                         Theme: gradient + glass • Responsive layout
                     </div>
+
                 </div>
+
             </div>
 
-            <div class="footer">
-                <div class="footer-inner">
-                    <div>© 2026 Roomy Customer</div>
-                    <div>Theme: gradient + glass</div>
-                </div>
-            </div>
         </div>
     </div>
 </div>
 
 @code {
+
     private string kw = "";
-    private string[] cities = new[] { "Hồ Chí Minh", "Hà Nội", "Đà Nẵng", "Bình Dương" };
+
+    private readonly string[] cities =
+    {
+        "Hồ Chí Minh",
+        "Hà Nội",
+        "Đà Nẵng",
+        "Bình Dương"
+    };
 
     private bool isAuthenticated;
     private string userEmail = "";
@@ -101,10 +162,25 @@
         var user = state.User;
 
         isAuthenticated = user.Identity?.IsAuthenticated ?? false;
+
         userEmail = user.FindFirst(ClaimTypes.Email)?.Value ?? "";
         userRole = user.FindFirst(ClaimTypes.Role)?.Value ?? "";
     }
 
-    private void GoRooms() => Nav.NavigateTo($"/rooms?kw={Uri.EscapeDataString(kw)}");
-    private void GoCity(string c) => Nav.NavigateTo($"/rooms?city={Uri.EscapeDataString(c)}");
+    private void GoRooms()
+    {
+        if (string.IsNullOrWhiteSpace(kw))
+        {
+            Nav.NavigateTo("/rooms");
+            return;
+        }
+
+        Nav.NavigateTo($"/rooms?kw={Uri.EscapeDataString(kw)}");
+    }
+
+    private void GoCity(string city)
+    {
+        Nav.NavigateTo($"/rooms?city={Uri.EscapeDataString(city)}");
+    }
+
 }

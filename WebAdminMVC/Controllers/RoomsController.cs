@@ -1,4 +1,5 @@
-﻿using BLL.DTOs.Room;
+﻿using BLL.DTOs.Property;
+using BLL.DTOs.Room;
 using BLL.Services.Interfaces;
 using DAL.Data;
 using DAL.Entities.Common;
@@ -64,7 +65,7 @@ public class RoomsController : Controller
             Id = r.RoomId,
             Name = r.RoomName ?? r.RoomCode,
             Block = r.BlockName ?? "",
-            Floor = r.FloorNumber?.ToString() ?? "",
+            Floor = r.FloorName ?? "",
             Price = r.CurrentBasePrice,
             Status = r.Status.ToString()
         }).ToList();
@@ -78,7 +79,10 @@ public class RoomsController : Controller
     public IActionResult Create()
     {
         var amenities = _context.Amenities.ToList();
-        var floors = _context.Floors.ToList();
+
+        var floors = _context.Floors
+            .Include(f => f.Block)
+            .ToList();
 
         var vm = new RoomCreateVm
         {
@@ -91,7 +95,7 @@ public class RoomsController : Controller
             Floors = floors.Select(f => new SelectListItem
             {
                 Value = f.Id.ToString(),
-                Text = f.FloorName
+                Text = $"{f.Block.BlockName} - {f.FloorName}"
             }).ToList()
         };
 
@@ -103,6 +107,7 @@ public class RoomsController : Controller
     public async Task<IActionResult> Create(RoomCreateVm vm)
     {
         var floorExists = await _context.Floors.AnyAsync(x => x.Id == vm.FloorId);
+
         if (!floorExists)
         {
             ModelState.AddModelError(nameof(vm.FloorId), "Floor không tồn tại.");
@@ -116,29 +121,73 @@ public class RoomsController : Controller
                 Text = a.AmenityName
             }).ToList();
 
-            vm.Floors = _context.Floors.Select(f => new SelectListItem
-            {
-                Value = f.Id.ToString(),
-                Text = f.FloorName
-            }).ToList();
+            vm.Floors = _context.Floors
+                .Include(f => f.Block)
+                .Select(f => new SelectListItem
+                {
+                    Value = f.Id.ToString(),
+                    Text = $"{f.Block.BlockName} - {f.FloorName}"
+                }).ToList();
 
             return View(vm);
         }
 
         var dto = new CreateRoomDto
         {
-            FloorId = vm.FloorId,
-            RoomCode = vm.RoomCode,
-            RoomName = vm.RoomName,
+            FloorId = vm.FloorId.Value,
+            RoomCode = vm.RoomCode.Trim(),
+            RoomName = vm.RoomName?.Trim(),
             AreaM2 = vm.AreaM2,
             MaxOccupants = vm.MaxOccupants,
             CurrentBasePrice = vm.Price,
-            Status = Enum.Parse<RoomStatus>(vm.Status),
+            Status = Enum.TryParse<RoomStatus>(vm.Status, out var status)
+                ? status
+                : RoomStatus.Available,
             Description = vm.Description,
             AmenityIds = vm.AmenityIds?.ToArray() ?? Array.Empty<int>()
         };
 
-        await _roomService.CreateRoomAsync(dto);
+        RoomDto room;
+
+        try
+        {
+            room = await _roomService.CreateRoomAsync(dto);
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError("RoomCode", ex.Message);
+
+            vm.Amenities = _context.Amenities.Select(a => new SelectListItem
+            {
+                Value = a.Id.ToString(),
+                Text = a.AmenityName
+            }).ToList();
+
+            vm.Floors = _context.Floors
+                .Include(f => f.Block)
+                .Select(f => new SelectListItem
+                {
+                    Value = f.Id.ToString(),
+                    Text = $"{f.Block.BlockName} - {f.FloorName}"
+                }).ToList();
+
+            return View(vm);
+        }
+
+        var roomId = room.RoomId;
+
+        if (vm.Images != null && vm.Images.Any())
+        {
+            var urls = new List<string>();
+
+            foreach (var file in vm.Images)
+            {
+                var url = await _cloudinaryService.UploadImageAsync(file);
+                urls.Add(url);
+            }
+
+            await _roomService.AddRoomImagesAsync(roomId, urls.ToArray());
+        }
 
         return RedirectToAction(nameof(Index));
     }
@@ -153,7 +202,11 @@ public class RoomsController : Controller
         if (room == null)
             return NotFound();
 
-        var amenities = _context.Amenities.ToList();
+        var amenities = await _context.Amenities.ToListAsync();
+
+        var images = await _context.RoomImages
+            .Where(x => x.RoomId == id)
+            .ToListAsync();
 
         var vm = new RoomEditVm
         {
@@ -173,6 +226,13 @@ public class RoomsController : Controller
                 Value = a.Id.ToString(),
                 Text = a.AmenityName,
                 Selected = room.AmenityIds != null && room.AmenityIds.Contains(a.Id)
+            }).ToList(),
+
+            Images = images.Select(i => new RoomImageVm
+            {
+                ImageId = i.ImageId,
+                ImageUrl = i.ImageUrl,
+                IsPrimary = i.IsPrimary
             }).ToList()
         };
 
@@ -185,19 +245,21 @@ public class RoomsController : Controller
     {
         if (!ModelState.IsValid)
         {
-            vm.Amenities = _context.Amenities.Select(a => new SelectListItem
-            {
-                Value = a.Id.ToString(),
-                Text = a.AmenityName
-            }).ToList();
+            vm.Amenities = await _context.Amenities
+                .Select(a => new SelectListItem
+                {
+                    Value = a.Id.ToString(),
+                    Text = a.AmenityName
+                })
+                .ToListAsync();
 
             return View(vm);
         }
 
         var dto = new UpdateRoomDto
         {
-            RoomCode = vm.RoomCode,
-            RoomName = vm.RoomName,
+            RoomCode = vm.RoomCode.Trim(),
+            RoomName = vm.RoomName?.Trim(),
             AreaM2 = vm.AreaM2,
             MaxOccupants = vm.MaxOccupants,
             CurrentBasePrice = vm.CurrentBasePrice,
@@ -207,6 +269,19 @@ public class RoomsController : Controller
         };
 
         await _roomService.UpdateRoomAsync(vm.Id, dto);
+
+        if (vm.NewImages != null && vm.NewImages.Any())
+        {
+            var urls = new List<string>();
+
+            foreach (var file in vm.NewImages)
+            {
+                var url = await _cloudinaryService.UploadImageAsync(file);
+                urls.Add(url);
+            }
+
+            await _roomService.AddRoomImagesAsync(vm.Id, urls.ToArray());
+        }
 
         return RedirectToAction(nameof(Index));
     }
@@ -220,18 +295,18 @@ public class RoomsController : Controller
         if (room == null)
             return NotFound();
 
-        var images = _context.RoomImages
+        var images = await _context.RoomImages
             .Where(x => x.RoomId == id)
-            .ToList();
+            .ToListAsync();
 
         var amenities = new List<string>();
 
         if (room.AmenityIds != null && room.AmenityIds.Any())
         {
-            amenities = _context.Amenities
+            amenities = await _context.Amenities
                 .Where(a => room.AmenityIds.Contains(a.Id))
                 .Select(a => a.AmenityName)
-                .ToList();
+                .ToListAsync();
         }
 
         var vm = new RoomDetailsVm
@@ -239,65 +314,20 @@ public class RoomsController : Controller
             Id = room.RoomId,
             RoomCode = room.RoomCode,
             RoomName = room.RoomName,
+            Block = room.BlockName,
+            Floor = room.FloorName,
             Price = room.CurrentBasePrice,
             Status = room.Status.ToString(),
             Amenities = amenities,
-            Images = images
-                .Select(i => new RoomImageVm
-                {
-                    ImageId = i.ImageId,
-                    ImageUrl = i.ImageUrl,
-                    IsPrimary = i.IsPrimary
-                })
-                .ToList()
+            Images = images.Select(i => new RoomImageVm
+            {
+                ImageId = i.ImageId,
+                ImageUrl = i.ImageUrl,
+                IsPrimary = i.IsPrimary
+            }).ToList()
         };
 
         return View(vm);
-    }
-
-    // ===================== UPLOAD IMAGE =====================
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UploadImage(int roomId, IFormFile file)
-    {
-        if (file == null || file.Length == 0)
-            return RedirectToAction("Details", new { id = roomId });
-
-        var imageUrl = await _cloudinaryService.UploadImageAsync(file);
-
-        if (string.IsNullOrEmpty(imageUrl))
-            return RedirectToAction("Details", new { id = roomId });
-
-        var image = new RoomImage
-        {
-            RoomId = roomId,
-            ImageUrl = imageUrl,
-            IsPrimary = false,
-            CreatedAt = DateTime.Now
-        };
-
-        _context.RoomImages.Add(image);
-        await _context.SaveChangesAsync();
-
-        return RedirectToAction("Details", new { id = roomId });
-    }
-
-    // ===================== DELETE IMAGE =====================
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteImage(int imageId, int roomId)
-    {
-        var image = await _context.RoomImages.FindAsync(imageId);
-
-        if (image != null)
-        {
-            _context.RoomImages.Remove(image);
-            await _context.SaveChangesAsync();
-        }
-
-        return RedirectToAction("Details", new { id = roomId });
     }
 
     // ===================== DELETE ROOM =====================
@@ -307,26 +337,33 @@ public class RoomsController : Controller
     public async Task<IActionResult> Delete(int id)
     {
         await _roomService.DeleteRoomAsync(id);
-
         return RedirectToAction(nameof(Index));
     }
 
-    // ===================== PRICE HISTORY =====================
+    // ===================== UPLOAD IMAGE =====================
 
-    public async Task<IActionResult> PriceHistory(int id)
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadImage(int roomId, IFormFile file)
     {
-        var history = await _roomService.GetRoomPriceHistoryAsync(id);
+        if (file == null || file.Length == 0)
+            return RedirectToAction(nameof(Details), new { id = roomId });
 
-        var vm = history.Select(x => new RoomPriceHistoryVm
-        {
-            OldPrice = x.OldPrice,
-            NewPrice = x.NewPrice,
-            ChangedAt = x.ChangedAt,
-            Note = x.Note
-        }).ToList();
+        var url = await _cloudinaryService.UploadImageAsync(file);
 
-        ViewBag.RoomId = id;
+        await _roomService.AddRoomImagesAsync(roomId, new[] { url });
 
-        return View(vm);
+        return RedirectToAction(nameof(Details), new { id = roomId });
+    }
+
+    // ===================== DELETE IMAGE =====================
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteImage(int imageId, int roomId)
+    {
+        await _roomService.RemoveRoomImageAsync(imageId);
+
+        return RedirectToAction(nameof(Details), new { id = roomId });
     }
 }

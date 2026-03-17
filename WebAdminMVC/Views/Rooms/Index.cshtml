@@ -14,12 +14,13 @@
 
         <div class="card-head">
 
-            <h2 class="card-title">Rooms</h2>
+            <h2>Rooms</h2>
 
-            <a class="btn btn-primary"
-               asp-controller="Rooms"
-               asp-action="Create">
+            <a asp-action="Create"
+               class="btn btn-primary">
+
                 + Create Room
+
             </a>
 
         </div>
@@ -32,27 +33,25 @@
             <input type="text"
                    name="search"
                    value="@currentSearch"
-                   placeholder="Search room..."
-                   class="form-control" />
+                   placeholder="Search room..." />
 
-            <select name="status" class="form-select">
+            <select name="status">
 
                 <option value="">All Status</option>
 
-                <option value="Available" selected="@(currentStatus=="Available")">
+                <option value="Available"
+                        selected="@(currentStatus == "Available")">
                     Available
                 </option>
 
-                <option value="Occupied" selected="@(currentStatus=="Occupied")">
+                <option value="Occupied"
+                        selected="@(currentStatus == "Occupied")">
                     Occupied
                 </option>
 
-                <option value="Maintenance" selected="@(currentStatus=="Maintenance")">
+                <option value="Maintenance"
+                        selected="@(currentStatus == "Maintenance")">
                     Maintenance
-                </option>
-
-                <option value="Disabled" selected="@(currentStatus=="Disabled")">
-                    Disabled
                 </option>
 
             </select>
@@ -64,180 +63,109 @@
         </form>
 
 
-        <div class="table-wrap">
+        <!-- TABLE -->
 
-            <table class="table">
+        <table class="table">
 
-                <thead>
+            <thead>
+
+                <tr>
+
+                    <th>Room</th>
+                    <th>Block</th>
+                    <th>Floor</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th style="width:200px">Actions</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                @foreach (var r in Model)
+                {
+
                     <tr>
-                        <th>ROOM</th>
-                        <th>BLOCK</th>
-                        <th>FLOOR</th>
-                        <th>PRICE</th>
-                        <th>STATUS</th>
-                        <th class="text-end">ACTIONS</th>
-                    </tr>
-                </thead>
 
-                <tbody>
+                        <td>@r.Name</td>
 
-                    @foreach (var r in Model)
-                    {
-                        string chipClass;
-                        string statusText = r.Status?.ToUpper() ?? "UNKNOWN";
+                        <td>@r.Block</td>
 
-                        switch (statusText)
-                        {
-                            case "AVAILABLE":
-                                chipClass = "success";
-                                break;
+                        <td>@r.Floor</td>
 
-                            case "OCCUPIED":
-                                chipClass = "info";
-                                break;
+                        <td>@r.Price.ToString("N0")</td>
 
-                            case "MAINTENANCE":
-                                chipClass = "warning";
-                                break;
+                        <td>@r.Status</td>
 
-                            case "DISABLED":
-                                chipClass = "danger";
-                                break;
+                        <td>
 
-                            default:
-                                chipClass = "muted";
-                                break;
-                        }
+                            <a asp-action="Details"
+                               asp-route-id="@r.Id"
+                               class="btn btn-sm btn-info">
 
-                        <tr>
+                                Details
 
-                            <td>@r.Name</td>
-                            <td>@r.Block</td>
-                            <td>@r.Floor</td>
-                            <td>@r.Price.ToString("N0")</td>
+                            </a>
 
-                            <td>
-                                <span class="chip @chipClass">
-                                    @statusText
-                                </span>
-                            </td>
+                            <a asp-action="Edit"
+                               asp-route-id="@r.Id"
+                               class="btn btn-sm btn-warning">
 
-                            <td class="text-end">
+                                Edit
 
-                                <a class="link"
-                                   asp-controller="Rooms"
-                                   asp-action="Details"
-                                   asp-route-id="@r.Id">
-                                    Details
-                                </a>
+                            </a>
 
-                                <a class="link"
-                                   asp-controller="Rooms"
-                                   asp-action="Edit"
-                                   asp-route-id="@r.Id">
-                                    Edit
-                                </a>
+                            <form asp-action="Delete"
+                                  asp-route-id="@r.Id"
+                                  method="post"
+                                  style="display:inline">
 
-                                <button class="link text-danger"
-                                        onclick="confirmDelete(@r.Id,'@r.Name')">
+                                @Html.AntiForgeryToken()
+
+                                <button type="submit"
+                                        class="btn btn-sm btn-danger"
+                                        onclick="return confirm('Delete room @r.Name ?')">
+
                                     Delete
+
                                 </button>
 
-                            </td>
+                            </form>
 
-                        </tr>
-                    }
+                        </td>
 
-                </tbody>
+                    </tr>
 
-            </table>
+                }
 
-        </div>
+            </tbody>
+
+        </table>
 
 
         <!-- PAGINATION -->
 
         <div class="pagination">
 
-            <a asp-action="Index"
-               asp-route-page="1"
-               asp-route-search="@currentSearch"
-               asp-route-status="@currentStatus"
-               class="page-link">1</a>
+            @for (int i = 1; i <= ViewBag.TotalPages; i++)
+            {
 
-            <a asp-action="Index"
-               asp-route-page="2"
-               asp-route-search="@currentSearch"
-               asp-route-status="@currentStatus"
-               class="page-link">2</a>
+                <a asp-action="Index"
+                   asp-route-page="@i"
+                   asp-route-search="@currentSearch"
+                   asp-route-status="@currentStatus"
+                   class="page-link @(i == ViewBag.Page ? "active" : "")">
 
-            <a asp-action="Index"
-               asp-route-page="3"
-               asp-route-search="@currentSearch"
-               asp-route-status="@currentStatus"
-               class="page-link">3</a>
+                    @i
+
+                </a>
+
+            }
 
         </div>
 
-
     </div>
 
 </div>
-
-
-
-<!-- DELETE MODAL -->
-
-<div id="deleteModal" class="modal-overlay" style="display:none">
-
-    <div class="modal-box">
-
-        <h3>Delete Room</h3>
-
-        <p id="deleteMessage"></p>
-
-        <form id="deleteForm" method="post">
-
-            @Html.AntiForgeryToken()
-
-            <div class="modal-actions">
-
-                <button type="button"
-                        class="btn"
-                        onclick="closeDelete()">
-                    Cancel
-                </button>
-
-                <button type="submit"
-                        class="btn btn-danger">
-                    Delete
-                </button>
-
-            </div>
-
-        </form>
-
-    </div>
-
-</div>
-
-
-
-<script>
-
-    function confirmDelete(id,name){
-
-    document.getElementById("deleteMessage").innerText =
-    "Are you sure you want to delete room: " + name + "?";
-
-    document.getElementById("deleteForm").action =
-    "/Rooms/Delete/" + id;
-
-    document.getElementById("deleteModal").style.display = "flex";
-    }
-
-    function closeDelete(){
-    document.getElementById("deleteModal").style.display = "none";
-    }
-
-</script>

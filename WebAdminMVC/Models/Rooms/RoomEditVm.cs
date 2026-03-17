@@ -36,4 +36,9 @@ public class RoomEditVm
     public List<int> AmenityIds { get; set; } = new();
 
     public List<SelectListItem> Amenities { get; set; } = new();
+    public List<RoomImageVm> Images { get; set; } = new();
+
+    public List<IFormFile>? NewImages { get; set; }
+
+
 }

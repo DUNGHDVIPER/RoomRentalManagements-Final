@@ -1,5 +1,6 @@
 ﻿using BLL.DTOs.Property;
 using BLL.Services.Interfaces;
+using DAL.Entities.Common;
 using DAL.Entities.Property;
 using DAL.Repositories.Interfaces;
 
@@ -28,7 +29,9 @@ public class BlockService : IBlockService
             Status = x.Status,
 
             TotalFloors = x.Floors?.Count ?? 0,
-            TotalRooms = x.Floors?.SelectMany(f => f.Rooms).Count() ?? 0
+            TotalRooms = x.Floors?
+                .SelectMany(f => f.Rooms ?? Enumerable.Empty<Room>())
+                .Count() ?? 0
         }).ToList();
     }
 
@@ -46,16 +49,28 @@ public class BlockService : IBlockService
             BlockName = block.BlockName,
             Address = block.Address,
             Note = block.Note,
-            Status = block.Status
+            Status = block.Status,
+
+            TotalFloors = block.Floors?.Count ?? 0,
+            TotalRooms = block.Floors?
+                .SelectMany(f => f.Rooms ?? Enumerable.Empty<Room>())
+                .Count() ?? 0
         };
     }
 
     // ================= CREATE =================
     public async Task<int> CreateAsync(BlockDto dto, CancellationToken ct = default)
     {
+        var name = dto.BlockName!.Trim();
+
+        var exists = await _repo.ExistsByNameAsync(name, null, ct);
+
+        if (exists)
+            throw new InvalidOperationException("Block name already exists");
+
         var block = new Block
         {
-            BlockName = dto.BlockName,
+            BlockName = name,
             Address = dto.Address,
             Note = dto.Note,
             Status = "Active"
@@ -74,7 +89,14 @@ public class BlockService : IBlockService
         if (block == null)
             throw new KeyNotFoundException($"Block {id} not found");
 
-        block.BlockName = dto.BlockName;
+        var name = dto.BlockName!.Trim();
+
+        var exists = await _repo.ExistsByNameAsync(name, id, ct);
+
+        if (exists)
+            throw new InvalidOperationException("Block name already exists");
+
+        block.BlockName = name;
         block.Address = dto.Address;
         block.Note = dto.Note;
 
@@ -89,11 +111,33 @@ public class BlockService : IBlockService
         if (block == null)
             throw new KeyNotFoundException($"Block {id} not found");
 
-        // Nếu đã đóng rồi thì bỏ qua
         if (block.Status == "Closed")
             return;
 
+        var hasOccupiedRooms = block.Floors?
+            .SelectMany(f => f.Rooms ?? Enumerable.Empty<Room>())
+            .Any(r => r.Status == RoomStatus.Occupied) ?? false;
+
+        if (hasOccupiedRooms)
+            throw new InvalidOperationException("Cannot close block with occupied rooms");
+
         block.Status = "Closed";
+
+        await _repo.UpdateAsync(block, ct);
+    }
+
+    // ================= REOPEN BLOCK =================
+    public async Task ReopenAsync(int id, CancellationToken ct = default)
+    {
+        var block = await _repo.GetByIdAsync(id, ct);
+
+        if (block == null)
+            throw new KeyNotFoundException($"Block {id} not found");
+
+        if (block.Status == "Active")
+            return;
+
+        block.Status = "Active";
 
         await _repo.UpdateAsync(block, ct);
     }

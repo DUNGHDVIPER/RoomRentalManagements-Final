@@ -1,33 +1,58 @@
 ﻿@model BLL.DTOs.Room.AmenityDto
 
 @{
+    Layout = "_Layout";
     ViewData["Title"] = "Create Amenity";
 }
 
-<div class="container mt-4">
+<div class="container">
 
-    <h3>Create Amenity</h3>
+    <div class="card">
 
-    <form asp-action="Create" method="post">
-
-        <div class="mb-3">
-            <label class="form-label">Amenity Name</label>
-
-            <input asp-for="AmenityName"
-                   class="form-control" />
-
-            <span asp-validation-for="AmenityName"
-                  class="text-danger"></span>
+        <div class="card-head">
+            <div class="card-title">Create Amenity</div>
         </div>
 
-        <button type="submit" class="btn btn-success">
-            Save
-        </button>
+        <form asp-action="Create" method="post" class="form-grid">
 
-        <a asp-action="Index" class="btn btn-secondary">
-            Back
-        </a>
+            @Html.AntiForgeryToken()
 
-    </form>
+            @if (TempData["Error"] != null)
+            {
+                <div class="err">
+                    @TempData["Error"]
+                </div>
+            }
+
+            <div class="fg">
+                <label asp-for="AmenityName" class="lbl"></label>
+
+                <input asp-for="AmenityName"
+                       class="inp"
+                       placeholder="Enter amenity name..." />
+
+                <span asp-validation-for="AmenityName" class="err"></span>
+            </div>
+
+            <div class="form-actions">
+
+                <button class="btn-gradient">
+                    Save
+                </button>
+
+                <a asp-action="Index"
+                   class="btn">
+                    Cancel
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
 
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

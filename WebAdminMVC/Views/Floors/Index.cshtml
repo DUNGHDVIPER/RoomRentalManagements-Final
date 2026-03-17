@@ -1,69 +1,99 @@
 ﻿@model List<BLL.DTOs.Property.FloorListVm>
 
-<h2>Floor List</h2>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Floors";
+}
 
-<a asp-action="Create"
-   asp-route-blockId="@ViewBag.BlockId"
-   class="btn btn-primary mb-3">
-    Create Floor
-</a>
+<div class="container">
 
-<table class="table table-bordered table-hover">
+    <div class="card">
 
-    <thead>
-        <tr>
-            <th>Id</th>
-            <th>Floor Name</th>
-            <th>Total Rooms</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
+        <div class="card-head">
+            <div class="card-title">
+                Floors - Block @ViewBag.BlockName
 
-    <tbody>
+            </div>
 
-        @foreach (var floor in Model)
-        {
-            <tr>
+            <a asp-action="Create"
+               asp-route-blockId="@ViewBag.BlockId"
+               class="btn-gradient">
+                + Create Floor
+            </a>
+        </div>
 
-                <td>@floor.Id</td>
-                <td>@floor.FloorName</td>
-                <td>@floor.TotalRooms</td>
+        <div class="table-wrap">
 
-                <td>
+            <table class="table">
 
-                    <a asp-action="Details"
-                       asp-route-id="@floor.Id"
-                       class="btn btn-info btn-sm">
-                        Details
-                    </a>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>FLOOR NAME</th>
+                        <th>TOTAL ROOMS</th>
+                        <th class="th-right">ACTIONS</th>
+                    </tr>
+                </thead>
 
-                    <a asp-action="Edit"
-                       asp-route-id="@floor.Id"
-                       class="btn btn-warning btn-sm">
-                        Edit
-                    </a>
+                <tbody>
 
-                    <form asp-action="Delete"
-                          method="post"
-                          style="display:inline">
+                    @foreach (var floor in Model)
+                    {
+                        <tr>
 
-                        @Html.AntiForgeryToken()
+                            <td>@floor.Id</td>
 
-                        <input type="hidden" name="id" value="@floor.Id" />
-                        <input type="hidden" name="blockId" value="@ViewBag.BlockId" />
+                            <td class="user-email">
+                                @floor.FloorName
+                            </td>
 
-                        <button class="btn btn-danger btn-sm"
-                                onclick="return confirm('Delete this floor?')">
-                            Delete
-                        </button>
+                            <td>
+                                <span class="badge bg-success">
+                                    @floor.TotalRooms Rooms
+                                </span>
+                            </td>
 
-                    </form>
+                            <td class="td-right">
 
-                </td>
+                                <a asp-action="Details"
+                                   asp-route-id="@floor.Id"
+                                   class="link">
+                                    Details
+                                </a>
 
-            </tr>
-        }
+                                <a asp-action="Edit"
+                                   asp-route-id="@floor.Id"
+                                   class="link">
+                                    Edit
+                                </a>
 
-    </tbody>
+                                <form asp-action="Delete"
+                                      method="post"
+                                      style="display:inline">
 
-</table>
+                                    @Html.AntiForgeryToken()
+
+                                    <input type="hidden" name="id" value="@floor.Id" />
+                                    <input type="hidden" name="blockId" value="@ViewBag.BlockId" />
+
+                                    <button class="link danger"
+                                            onclick="return confirm('Delete this floor?')">
+                                        Delete
+                                    </button>
+
+                                </form>
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>

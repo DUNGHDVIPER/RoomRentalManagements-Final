@@ -1,0 +1,139 @@
+﻿@page "/booking/{RoomId:int}"
+
+@using BLL.DTOs
+@using BLL.Services
+@using Microsoft.AspNetCore.Components.Authorization
+
+@inject BookingService BookingService
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager Nav
+
+<div class="container-booking">
+
+    <div class="booking-card">
+
+        <h2 class="booking-title">Rental Request</h2>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        @if (!string.IsNullOrEmpty(successMessage))
+        {
+            <div class="alert alert-success">@successMessage</div>
+        }
+
+        @if (RoomId == 0)
+        {
+            <p>Room not found</p>
+        }
+        else
+        {
+            <div class="room-info">
+
+                <div class="info-row">
+                    <span class="label">Room ID</span>
+                    <span class="value">@RoomId</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="label">Booking Date</span>
+                    <span class="value">@DateTime.Now.ToShortDateString()</span>
+                </div>
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Move-in Date</label>
+
+                <input type="date"
+                       class="form-control"
+                       @bind="moveInDate" />
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Message to landlord</label>
+
+                <textarea class="form-control"
+                          rows="4"
+                          placeholder="Introduce yourself or ask about the room..."
+                          @bind="message">
+                        </textarea>
+
+            </div>
+
+            <div class="btn-wrapper">
+
+                <button class="btn-book"
+                        @onclick="SendRequest">
+                    Send Request
+                </button>
+
+                <button class="btn-cancel"
+                        @onclick="@(()=>Nav.NavigateTo("/rooms"))">
+                    Cancel
+                </button>
+
+            </div>
+        }
+
+    </div>
+
+</div>
+
+@code {
+
+    [Parameter]
+    public int RoomId { get; set; }
+
+    DateTime moveInDate = DateTime.Today.AddDays(1);
+
+    string? message;
+
+    string? errorMessage;
+
+    string? successMessage;
+
+    async Task SendRequest()
+    {
+        try
+        {
+            var authState = await AuthProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            var customerId = user.FindFirst("sub")?.Value
+                              ?? user.Identity?.Name;
+
+            if (customerId == null)
+            {
+                errorMessage = "Please login first";
+                return;
+            }
+
+            var dto = new BLL.DTOs.Room.Public.BookingCreateDTO
+                {
+                    RoomId = RoomId,
+              
+                    Note = message
+                };
+
+            await BookingService.CreateBooking(customerId, dto);
+
+            successMessage = "Booking request sent successfully";
+            errorMessage = null;
+
+            await Task.Delay(1500);
+
+            Nav.NavigateTo("/rooms");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+}

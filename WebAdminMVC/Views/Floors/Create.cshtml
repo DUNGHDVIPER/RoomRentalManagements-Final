@@ -1,37 +1,61 @@
 ﻿@model BLL.DTOs.Property.FloorDto
 
 @{
+    Layout = "_Layout";
     ViewData["Title"] = "Create Floor";
 }
 
-<h2>Create Floor</h2>
+<div class="container">
 
-<form asp-action="Create" method="post">
-    @Html.AntiForgeryToken()
+    <div class="card">
 
-    <input type="hidden" asp-for="BlockId" />
+        <div class="card-head">
+            <div class="card-title">Create Floor</div>
+        </div>
 
-    <div asp-validation-summary="All" class="text-danger mb-3"></div>
+        <form asp-action="Create" method="post" class="form-grid">
 
-    <div class="mb-2">
-        <strong>BlockId:</strong> @Model.BlockId
+            @Html.AntiForgeryToken()
+
+            <!-- HIỂN THỊ LỖI MODEL -->
+            <div asp-validation-summary="All" class="err"></div>
+
+            <!-- BlockId gửi về server -->
+            <input type="hidden" asp-for="BlockId" />
+
+            <!-- Block name chỉ hiển thị -->
+            <div class="fg">
+                <label class="lbl">Block</label>
+                <input class="inp" value="@Model.BlockName" readonly />
+            </div>
+
+            <!-- Floor name -->
+            <div class="fg">
+                <label asp-for="FloorName" class="lbl"></label>
+                <input asp-for="FloorName" class="inp" />
+                <span asp-validation-for="FloorName" class="err"></span>
+            </div>
+
+            <!-- BUTTON -->
+            <div class="form-actions">
+
+                <button type="submit" class="btn-gradient">
+                    Create
+                </button>
+
+                <a asp-action="Index"
+                   asp-route-blockId="@Model.BlockId"
+                   class="btn">
+                    Cancel
+                </a>
+
+            </div>
+
+        </form>
+
     </div>
 
-    <div class="mb-3">
-        <label asp-for="FloorName" class="form-label"></label>
-        <input asp-for="FloorName" class="form-control" placeholder="Enter floor name" />
-        <span asp-validation-for="FloorName" class="text-danger"></span>
-        <span asp-validation-for="BlockId" class="text-danger"></span>
-    </div>
-
-    <button type="submit" class="btn btn-success">Create</button>
-
-    <a asp-action="Index"
-       asp-route-blockId="@Model.BlockId"
-       class="btn btn-secondary">
-        Back
-    </a>
-</form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

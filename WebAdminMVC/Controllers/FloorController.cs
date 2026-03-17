@@ -17,17 +17,24 @@ namespace WebAdminMVC.Controllers
             _context = context;
         }
 
-        // LIST
+        // ================= LIST =================
         public async Task<IActionResult> Index(int blockId)
         {
             ViewBag.BlockId = blockId;
+
+            var blockName = await _context.Blocks
+                .Where(x => x.Id == blockId)
+                .Select(x => x.BlockName)
+                .FirstOrDefaultAsync();
+
+            ViewBag.BlockName = blockName;
 
             var floors = await _service.GetByBlockAsync(blockId);
 
             return View(floors);
         }
 
-        // DETAILS
+        // ================= DETAILS =================
         public async Task<IActionResult> Details(int id)
         {
             var floor = await _service.GetByIdAsync(id);
@@ -38,23 +45,32 @@ namespace WebAdminMVC.Controllers
             return View(floor);
         }
 
-        // CREATE GET
+        // ================= CREATE GET =================
         [HttpGet]
         public async Task<IActionResult> Create(int blockId)
         {
-            var blockExists = await _context.Blocks.AnyAsync(x => x.Id == blockId);
-            if (!blockExists)
-                return BadRequest("Block không tồn tại hoặc thiếu blockId.");
+            var block = await _context.Blocks
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == blockId);
 
-            return View(new FloorDto { BlockId = blockId });
+            if (block == null)
+                return BadRequest("Block không tồn tại.");
+
+            return View(new FloorDto
+            {
+                BlockId = block.Id,
+                BlockName = block.BlockName
+            });
         }
 
-        // CREATE POST
+        // ================= CREATE POST =================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(FloorDto dto)
         {
-            var blockExists = await _context.Blocks.AnyAsync(x => x.Id == dto.BlockId);
+            var blockExists = await _context.Blocks
+                .AnyAsync(x => x.Id == dto.BlockId);
+
             if (!blockExists)
             {
                 ModelState.AddModelError(nameof(dto.BlockId), "Block không tồn tại.");
@@ -63,12 +79,20 @@ namespace WebAdminMVC.Controllers
             if (!ModelState.IsValid)
                 return View(dto);
 
-            await _service.CreateAsync(dto);
+            try
+            {
+                await _service.CreateAsync(dto);
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("FloorName", ex.Message);
+                return View(dto);
+            }
 
             return RedirectToAction(nameof(Index), new { blockId = dto.BlockId });
         }
 
-        // EDIT GET
+        // ================= EDIT GET =================
         public async Task<IActionResult> Edit(int id)
         {
             var floor = await _service.GetByIdAsync(id);
@@ -79,7 +103,7 @@ namespace WebAdminMVC.Controllers
             return View(floor);
         }
 
-        // EDIT POST
+        // ================= EDIT POST =================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(FloorDto dto)
@@ -87,12 +111,20 @@ namespace WebAdminMVC.Controllers
             if (!ModelState.IsValid)
                 return View(dto);
 
-            await _service.UpdateAsync(dto);
+            try
+            {
+                await _service.UpdateAsync(dto);
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("FloorName", ex.Message);
+                return View(dto);
+            }
 
             return RedirectToAction(nameof(Index), new { blockId = dto.BlockId });
         }
 
-        // DELETE
+        // ================= DELETE =================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id, int blockId)

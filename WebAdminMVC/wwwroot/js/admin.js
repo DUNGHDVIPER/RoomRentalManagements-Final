@@ -23,13 +23,22 @@
 // ==========================
 function confirmDelete(id, name) {
     document.getElementById("deleteId").value = id;
-
     document.getElementById("amenityName").innerText = name;
-
-    document.getElementById("deleteForm").action = "/Amenities/Delete";
 
     document.getElementById("deleteModal").style.display = "flex";
 }
+
+function closeModal() {
+    document.getElementById("deleteModal").style.display = "none";
+}
+
+window.onclick = function (e) {
+    const modal = document.getElementById("deleteModal");
+
+    if (e.target === modal)
+        modal.style.display = "none";
+}
+
 
 function closeModal() {
     document.getElementById("deleteModal").style.display = "none";

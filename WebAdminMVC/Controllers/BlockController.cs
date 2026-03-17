@@ -32,24 +32,37 @@ public class BlocksController : Controller
         return View(vm);
     }
 
-    // ================= CREATE =================
 
+
+    // ================= CREATE GET =================
     [HttpGet]
     public IActionResult Create()
     {
         return View(new BlockDto());
     }
 
+    // ================= CREATE POST =================
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(BlockDto dto)
     {
+        // kiểm tra validation DTO
         if (!ModelState.IsValid)
             return View(dto);
 
-        await _service.CreateAsync(dto);
+        try
+        {
+            await _service.CreateAsync(dto);
 
-        return RedirectToAction(nameof(Index));
+            // quay về danh sách block
+            return RedirectToAction(nameof(Index));
+        }
+        catch (InvalidOperationException ex)
+        {
+            // lỗi nghiệp vụ: block trùng tên
+            ModelState.AddModelError(nameof(dto.BlockName), ex.Message);
+            return View(dto);
+        }
     }
 
     // ================= EDIT =================
@@ -72,10 +85,19 @@ public class BlocksController : Controller
         if (!ModelState.IsValid)
             return View(dto);
 
-        await _service.UpdateAsync(id, dto);
-
-        return RedirectToAction(nameof(Index));
+        try
+        {
+            await _service.UpdateAsync(id, dto);
+            return RedirectToAction(nameof(Index));
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError("BlockName", ex.Message);
+            return View(dto);
+        }
     }
+
+
 
     // ================= CLOSE =================
 
@@ -87,4 +109,15 @@ public class BlocksController : Controller
 
         return RedirectToAction(nameof(Index));
     }
+    // ================= REOPEN =================
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Reopen(int id)
+    {
+        await _service.ReopenAsync(id);
+
+        return RedirectToAction(nameof(Index));
+    }
+
 }

@@ -1,76 +1,144 @@
 ﻿@page "/rooms"
-@using Microsoft.AspNetCore.Components.Authorization
-@using System.Security.Claims
-@inject AuthenticationStateProvider Auth
+
+@using BLL.DTOs.Room.Public
+@using BLL.Services
+
+@inject CustomerRoomService RoomService
+@inject NavigationManager Nav
 
 <div class="section">
-    <div class="container">
-        <div class="card glass p-22" style="max-width:900px;margin:0 auto;">
-            <h2 class="h2">Rooms Page</h2>
-            <p class="muted" style="margin-top:8px;">
-                Đây là trang danh sách phòng. Sau khi login, thông tin tài khoản sẽ hiện ở đây.
-            </p>
+	<div class="container">
 
-            <hr class="hr" />
+		<h1 class="h1">Find Your Room</h1>
 
-            @if (isAuthenticated)
-            {
-                <div class="card glass p-16" style="border:1px solid #bbf7d0;">
-                    <div style="font-size:18px;font-weight:700;">Login thành công rồi 🎉</div>
-                    <div class="muted" style="margin-top:8px;">Email: <b>@userEmail</b></div>
-                    <div class="muted">Role: <b>@userRole</b></div>
-                </div>
-            }
-            else
-            {
-                <div class="card glass p-16" style="border:1px solid #fecaca;">
-                    <div style="font-size:18px;font-weight:700;">Bạn chưa đăng nhập</div>
-                    <div class="muted" style="margin-top:8px;">
-                        Bạn vẫn có thể xem phòng, nhưng hãy đăng nhập để dùng đầy đủ chức năng.
-                    </div>
-                    <div style="margin-top:12px;">
-                        <a class="btn-grad" href="/login">Đi tới Login</a>
-                    </div>
-                </div>
-            }
+		<div class="card filter-card">
 
-            <hr class="hr" />
+			<div class="filter-grid">
 
-            <div class="grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;">
-                <div class="card glass p-16">
-                    <div style="font-weight:700;">Studio Quận 1</div>
-                    <div class="muted" style="margin-top:8px;">Giá: 5.500.000 VNĐ</div>
-                    <div class="muted">Nội thất cơ bản • 22m²</div>
-                </div>
+				<!-- SEARCH -->
+				<div>
+					<div class="label">Search</div>
+					<input class="input"
+						   placeholder="Room name..."
+						   @bind="search" />
+				</div>
 
-                <div class="card glass p-16">
-                    <div style="font-weight:700;">Phòng có gác Bình Thạnh</div>
-                    <div class="muted" style="margin-top:8px;">Giá: 4.200.000 VNĐ</div>
-                    <div class="muted">Có máy lạnh • 18m²</div>
-                </div>
+				<!-- MAX PRICE -->
+				<div>
+					<div class="label">Max Price</div>
+					<input class="input"
+						   type="number"
+						   @bind="maxPrice" />
+				</div>
 
-                <div class="card glass p-16">
-                    <div style="font-weight:700;">Căn hộ mini Thủ Đức</div>
-                    <div class="muted" style="margin-top:8px;">Giá: 6.800.000 VNĐ</div>
-                    <div class="muted">Full nội thất • 28m²</div>
-                </div>
-            </div>
-        </div>
-    </div>
+				<!-- MIN AREA -->
+				<div>
+					<div class="label">Min Area</div>
+					<input class="input"
+						   type="number"
+						   @bind="minArea" />
+				</div>
+
+				<!-- BLOCK -->
+				<div>
+					<div class="label">Block</div>
+					<select class="select" @bind="block">
+
+						<option value="">All</option>
+
+						@foreach (var b in blocks)
+						{
+							<option value="@b">@b</option>
+						}
+
+					</select>
+				</div>
+
+				<!-- FLOOR -->
+				<div>
+					<div class="label">Floor</div>
+					<select class="select" @bind="floor">
+
+						<option value="">All</option>
+
+						@foreach (var f in floors)
+						{
+							<option value="@f">@f</option>
+						}
+
+					</select>
+				</div>
+
+				<!-- BUTTON -->
+				<button class="btn-grad"
+						@onclick="LoadRooms">
+					Search
+				</button>
+
+			</div>
+		</div>
+
+		<hr class="hr" />
+
+		@if (rooms == null)
+		{
+			<p class="muted">Loading rooms...</p>
+		}
+		else if (!rooms.Any())
+		{
+			<p class="muted">No rooms found</p>
+		}
+		else
+		{
+			<div class="room-grid">
+
+				@foreach (var r in rooms)
+				{
+					<RoomCard Room="r" />
+				}
+
+			</div>
+		}
+
+	</div>
 </div>
 
 @code {
-    private bool isAuthenticated;
-    private string userEmail = "";
-    private string userRole = "";
 
-    protected override async Task OnInitializedAsync()
-    {
-        var state = await Auth.GetAuthenticationStateAsync();
-        var user = state.User;
+	List<RoomPublicDto>? rooms;
 
-        isAuthenticated = user.Identity?.IsAuthenticated ?? false;
-        userEmail = user.FindFirst(ClaimTypes.Email)?.Value ?? "";
-        userRole = user.FindFirst(ClaimTypes.Role)?.Value ?? "";
-    }
+	List<string> blocks = new();
+	List<string> floors = new();
+
+	string? search;
+	decimal? maxPrice;
+	double? minArea;
+
+	string? block;
+	string? floor;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await LoadFilters();
+		await LoadRooms();
+	}
+
+	async Task LoadFilters()
+	{
+		var filters = await RoomService.GetRoomFiltersAsync();
+
+		blocks = filters.Blocks;
+		floors = filters.Floors;
+	}
+
+	async Task LoadRooms()
+	{
+		rooms = await RoomService.GetRoomsAsync(
+			search,
+			maxPrice,
+			minArea,
+			block,
+			floor);
+	}
+
 }

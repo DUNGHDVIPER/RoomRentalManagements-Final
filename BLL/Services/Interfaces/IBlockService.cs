@@ -13,4 +13,6 @@ public interface IBlockService
     Task UpdateAsync(int id, BlockDto dto, CancellationToken ct = default);
 
     Task CloseAsync(int id, CancellationToken ct = default);
+    Task ReopenAsync(int id, CancellationToken ct = default);
+
 }

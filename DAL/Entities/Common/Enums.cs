@@ -60,3 +60,10 @@ public enum SourceType
     System = 4
 }
 
+
+    public enum BookingStatus
+    {
+        Pending = 0,
+        Approved = 1,
+        Rejected = 2
+    }

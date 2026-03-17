@@ -43,14 +43,23 @@ public class AmenityService : IAmenityService
     // ===================== CREATE =====================
     public async Task CreateAsync(AmenityDto dto)
     {
+        var name = dto.AmenityName.Trim();
+
+        var exists = await _context.Amenities
+            .AnyAsync(x => x.AmenityName.ToLower() == name.ToLower());
+
+        if (exists)
+            throw new Exception("Amenity already exists.");
+
         var amenity = new Amenity
         {
-            AmenityName = dto.AmenityName
+            AmenityName = name
         };
 
         _context.Amenities.Add(amenity);
         await _context.SaveChangesAsync();
     }
+
 
     // ===================== UPDATE =====================
     public async Task UpdateAsync(AmenityDto dto)
@@ -58,12 +67,23 @@ public class AmenityService : IAmenityService
         var amenity = await _context.Amenities.FindAsync(dto.AmenityId);
 
         if (amenity == null)
-            return;
+            throw new Exception("Amenity not found.");
 
-        amenity.AmenityName = dto.AmenityName;
+        var name = dto.AmenityName.Trim();
+
+        var exists = await _context.Amenities
+            .AnyAsync(x =>
+                x.Id != dto.AmenityId &&
+                x.AmenityName.ToLower() == name.ToLower());
+
+        if (exists)
+            throw new Exception("Amenity already exists.");
+
+        amenity.AmenityName = name;
 
         await _context.SaveChangesAsync();
     }
+
 
     // ===================== DELETE =====================
     public async Task DeleteAsync(int id)
@@ -71,22 +91,17 @@ public class AmenityService : IAmenityService
         var amenity = await _context.Amenities.FindAsync(id);
 
         if (amenity == null)
-            return;
+            throw new Exception("Amenity not found.");
 
-        // Lấy danh sách RoomAmenities đang dùng Amenity này
-        var roomAmenities = await _context.RoomAmenities
-            .Where(x => x.AmenityId == id)
-            .ToListAsync();
+        var isUsed = await _context.RoomAmenities
+            .AnyAsync(x => x.AmenityId == id);
 
-        // Xóa trước
-        if (roomAmenities.Any())
-        {
-            _context.RoomAmenities.RemoveRange(roomAmenities);
-        }
+        if (isUsed)
+            throw new Exception("Cannot delete amenity because it is used by rooms.");
 
-        // Xóa Amenity
         _context.Amenities.Remove(amenity);
 
         await _context.SaveChangesAsync();
     }
+
 }

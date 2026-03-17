@@ -1,61 +1,217 @@
 ﻿@page "/rooms/{Id:int}"
-@using BLL.DTOs.Room.Public
-@using WebCustomerBlazor.Services
-@inject ICustomerRoomCatalog Catalog
 
-@if (room is null)
+@using BLL.DTOs
+@using BLL.DTOs.Room.Public
+@using BLL.Services
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Authorization
+
+@inject CustomerRoomService RoomService
+@inject BookingService BookingService
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager Nav
+
+@if (room == null)
 {
-    <div class="muted">Loading...</div>
+    <div class="muted">Loading room...</div>
 }
 else
 {
-    <div style="display:grid;grid-template-columns:1.2fr .8fr;gap:16px;">
-        <div>
+    <div class="room-detail-layout">
+
+        <!-- LEFT : GALLERY -->
+        <div class="room-gallery">
             <RoomGallery Images="@room.Images" />
+        </div>
 
-            <div class="card" style="padding:16px;margin-top:16px;">
-                <h2 class="h2">@room.Name</h2>
-                <p class="muted">@room.District, @room.City • @room.Area m² • @room.PostedAgo</p>
+        <!-- RIGHT : INFO -->
+        <div class="room-info-panel">
+
+            <!-- ROOM INFO -->
+            <div class="card info-card">
+
+                <h2 class="room-title">@room.Name</h2>
+
+                <p class="room-meta">
+                    Block @room.District •
+                    @room.Area m² •
+                    Posted @room.PostedAgo
+                </p>
 
                 <hr class="hr" />
-                <div class="badges">
-                    @foreach (var b in room.Badges)
-                    {
-                        <span class="badge info">@b</span>
-                    }
-                </div>
 
-                <hr class="hr" />
-                <div class="h2" style="font-size:20px;">Amenities</div>
-                <div class="chips" style="margin-top:10px;">
+                @if (room.Badges.Any())
+                {
+                    <div class="badges">
+                        @foreach (var b in room.Badges)
+                        {
+                            <span class="badge info">@b</span>
+                        }
+                    </div>
+
+                    <hr class="hr" />
+                }
+
+                <h3 class="section-title">
+                    Amenities
+                </h3>
+
+                <div class="chips">
                     @foreach (var a in room.Amenities)
                     {
                         <span class="chip">@a.Name</span>
                     }
                 </div>
+
             </div>
-        </div>
 
-        <div>
-            <div class="card" style="padding:16px;position:sticky;top:16px;">
-                <div class="muted">Price</div>
-                <div class="h2" style="margin-top:6px;">@room.Price.ToString("N0") ₫ / tháng</div>
+            <!-- BOOKING PANEL -->
+            <div class="card booking-card">
 
-                <hr class="hr" />
-                <button class="btn-grad" style="width:100%;">Đặt phòng</button>
+                <div class="price-label">
+                    Monthly Price
+                </div>
+
+                <div class="price-value">
+                    @room.Price.ToString("N0") ₫
+                </div>
+
+                <button class="btn-grad full-btn"
+                        @onclick="OpenBooking">
+                    Book Room
+                </button>
+
                 <div style="height:10px"></div>
-                <button class="btn-ghost" style="width:100%;">Liên hệ</button>
+
+                <button class="btn-ghost full-btn"
+                        @onclick="GoBack">
+                    Back to Rooms
+                </button>
+
             </div>
+
         </div>
+
+    </div>
+}
+
+@if (showBookingPopup)
+{
+    <div class="modal-overlay" @onclick="ClosePopup">
+
+        <div class="confirm-box" @onclick:stopPropagation>
+
+            <h3>Send Rental Request</h3>
+
+            <p>
+                Booking room <b>@room?.Name</b>
+            </p>
+
+            <div class="form-group">
+
+                <label>Check-in Date</label>
+
+                <input type="date"
+                       class="input"
+                       @bind="checkInDate" />
+
+            </div>
+
+            <div class="form-group">
+
+                <label>Note (optional)</label>
+
+                <textarea class="input"
+                          rows="3"
+                          @bind="note"></textarea>
+
+            </div>
+
+            <div class="confirm-actions">
+
+                <button class="btn-confirm"
+                        @onclick="ConfirmBooking">
+                    Send Request
+                </button>
+
+                <button class="btn-cancel"
+                        @onclick="ClosePopup">
+                    Cancel
+                </button>
+
+            </div>
+
+        </div>
+
     </div>
 }
 
 @code {
-    [Parameter] public int Id { get; set; }
+
+    [Parameter]
+    public int Id { get; set; }
+
     RoomPublicDto? room;
+
+    bool showBookingPopup = false;
+
+    DateTime checkInDate = DateTime.Today.AddDays(1);
+
+    string? note;
 
     protected override async Task OnParametersSetAsync()
     {
-        room = await Catalog.GetByIdAsync(Id);
+        room = await RoomService.GetRoomAsync(Id);
     }
+
+    void OpenBooking()
+    {
+        showBookingPopup = true;
+    }
+
+    void ClosePopup()
+    {
+        showBookingPopup = false;
+    }
+
+    async Task ConfirmBooking()
+    {
+        try
+        {
+            var authState = await AuthProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            var customerId = user.FindFirst("sub")?.Value
+                              ?? user.Identity?.Name;
+
+            if (customerId == null)
+            {
+                Nav.NavigateTo("/login");
+                return;
+            }
+
+            var dto = new BookingCreateDTO
+                {
+                    RoomId = Id,
+                 
+                    Note = note
+                };
+
+            await BookingService.CreateBooking(customerId, dto);
+
+            showBookingPopup = false;
+
+            Nav.NavigateTo("/rooms", true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+        }
+    }
+
+    void GoBack()
+    {
+        Nav.NavigateTo("/rooms");
+    }
+
 }

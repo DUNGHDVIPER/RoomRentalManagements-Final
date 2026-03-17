@@ -5,6 +5,7 @@ using BLL.DTOs.Room;
 using BLL.Services.Interfaces;
 using DAL.Data;
 using DAL.Entities.Property;
+using DocumentFormat.OpenXml.Drawing.Spreadsheet;
 using Microsoft.EntityFrameworkCore;
 
 namespace BLL.Services;
@@ -23,46 +24,103 @@ public class RoomService : IRoomService
     public async Task<List<RoomDto>> GetAllAsync(CancellationToken ct = default)
     {
         return await _context.Rooms
-            .Include(r => r.RoomAmenities)
-            .AsNoTracking()
-            .Select(r => MapToDto(r))
-            .ToListAsync(ct);
+    .Include(r => r.Floor)
+        .ThenInclude(f => f.Block)
+    .Include(r => r.RoomAmenities)
+    .AsNoTracking()
+    .Select(r => new RoomDto
+    {
+        RoomId = r.RoomId,
+        FloorId = r.FloorId,
+        RoomCode = r.RoomCode,
+        RoomName = r.RoomName,
+        AreaM2 = r.AreaM2,
+        MaxOccupants = r.MaxOccupants,
+        Status = r.Status,
+        CurrentBasePrice = r.CurrentBasePrice,
+
+        BlockName = r.Floor.Block.BlockName,
+        FloorName = r.Floor.FloorName,
+
+        AmenityIds = r.RoomAmenities
+            .Select(x => x.AmenityId)
+            .ToList()
+    })
+    .ToListAsync(ct);
+
     }
 
-    public async Task<RoomDto> GetRoomDetailAsync(int roomId, CancellationToken ct = default)
+    public async Task<RoomDto?> GetRoomDetailAsync(int roomId, CancellationToken ct = default)
     {
         var room = await _context.Rooms
+            .Include(r => r.Floor)
+                .ThenInclude(f => f.Block)
             .Include(r => r.RoomAmenities)
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.RoomId == roomId, ct);
 
         if (room == null)
-            throw new Exception("Room not found");
+            return null;
 
-        return MapToDto(room);
+        return new RoomDto
+        {
+            RoomId = room.RoomId,
+            FloorId = room.FloorId,
+            RoomCode = room.RoomCode,
+            RoomName = room.RoomName,
+            AreaM2 = room.AreaM2,
+            MaxOccupants = room.MaxOccupants,
+            Status = room.Status,
+            CurrentBasePrice = room.CurrentBasePrice,
+            Description = room.Description,
+
+            FloorName = room.Floor?.FloorName,
+            BlockName = room.Floor?.Block?.BlockName,
+
+            AmenityIds = room.RoomAmenities
+                .Select(x => x.AmenityId)
+                .ToList()
+        };
     }
 
     public async Task<RoomDto> CreateRoomAsync(CreateRoomDto dto, CancellationToken ct = default)
     {
+        var code = dto.RoomCode.Trim().ToLower();
+
+        var exists = await _context.Rooms
+            .AnyAsync(x => x.RoomCode.ToLower() == code, ct);
+
+        if (exists)
+            throw new Exception("Room code already exists.");
+
         var room = new Room
         {
             FloorId = dto.FloorId,
-            RoomCode = dto.RoomCode,
+            RoomCode = dto.RoomCode.Trim(),
             RoomName = dto.RoomName,
             AreaM2 = dto.AreaM2,
             MaxOccupants = dto.MaxOccupants,
-            Status = dto.Status,
             CurrentBasePrice = dto.CurrentBasePrice,
+            Status = dto.Status,
             Description = dto.Description
         };
 
         _context.Rooms.Add(room);
+
         await _context.SaveChangesAsync(ct);
 
-        // set amenities nếu có
-        if (dto.AmenityIds?.Any() == true)
+        if (dto.AmenityIds != null && dto.AmenityIds.Any())
         {
-            await SetRoomAmenitiesAsync(room.RoomId, dto.AmenityIds.ToArray(), ct);
+            await ValidateAmenities(dto.AmenityIds, ct);
+
+            var amenities = dto.AmenityIds.Select(a => new RoomAmenity
+            {
+                RoomId = room.RoomId,
+                AmenityId = a
+            });
+
+            await _context.RoomAmenities.AddRangeAsync(amenities, ct);
+            await _context.SaveChangesAsync(ct);
         }
 
         return MapToDto(room);
@@ -74,10 +132,14 @@ public class RoomService : IRoomService
             .Include(r => r.RoomAmenities)
             .FirstOrDefaultAsync(r => r.RoomId == roomId, ct);
 
-        if (room == null)
-            throw new Exception("Room not found");
+        var code = dto.RoomCode.Trim().ToLower();
 
-        // Detect price change
+        var exists = await _context.Rooms
+            .AnyAsync(x => x.RoomCode.ToLower() == code, ct);
+
+        if (exists)
+            throw new Exception("Room code already exists.");
+
         if (room.CurrentBasePrice != dto.CurrentBasePrice)
         {
             var history = new RoomPricingHistory
@@ -92,6 +154,8 @@ public class RoomService : IRoomService
             _context.RoomPricingHistories.Add(history);
         }
 
+        // FIX
+        room.RoomCode = dto.RoomCode;
         room.RoomName = dto.RoomName;
         room.AreaM2 = dto.AreaM2;
         room.MaxOccupants = dto.MaxOccupants;
@@ -101,18 +165,25 @@ public class RoomService : IRoomService
 
         await _context.SaveChangesAsync(ct);
 
-        // update amenities
         if (dto.AmenityIds != null)
         {
+            await ValidateAmenities(dto.AmenityIds, ct);
             await SetRoomAmenitiesAsync(roomId, dto.AmenityIds.ToArray(), ct);
         }
 
         return MapToDto(room);
     }
-
     public async Task DeleteRoomAsync(int roomId, CancellationToken ct = default)
     {
-        var room = await _context.Rooms.FirstOrDefaultAsync(r => r.RoomId == roomId, ct);
+        // ===== Check contract =====
+        var hasContract = await _context.Contracts
+            .AnyAsync(x => x.RoomId == roomId, ct);
+
+        if (hasContract)
+            throw new Exception("Cannot delete room with contract.");
+
+        var room = await _context.Rooms
+            .FirstOrDefaultAsync(r => r.RoomId == roomId, ct);
 
         if (room == null)
             return;
@@ -153,6 +224,17 @@ public class RoomService : IRoomService
         await _context.RoomAmenities.AddRangeAsync(newAmenities, ct);
 
         await _context.SaveChangesAsync(ct);
+    }
+
+    private async Task ValidateAmenities(IEnumerable<int> amenityIds, CancellationToken ct)
+    {
+        var valid = await _context.Amenities
+            .Where(x => amenityIds.Contains(x.Id))
+            .Select(x => x.Id)
+            .ToListAsync(ct);
+
+        if (valid.Count != amenityIds.Count())
+            throw new Exception("Some amenities are invalid.");
     }
 
     // ================== PRICE HISTORY ==================
@@ -209,12 +291,33 @@ public class RoomService : IRoomService
 
     public Task<PagedResultDto<RoomDto>> GetRoomsAsync(FilterRoomDto filter, CancellationToken ct = default)
         => throw new NotImplementedException();
+    public async Task AddRoomImagesAsync(int roomId, string[] imageUrls, CancellationToken ct = default)
+    {
+        var images = imageUrls.Select((url, index) => new RoomImage
+        {
+            RoomId = roomId,
+            ImageUrl = url,
+            IsPrimary = index == 0,
+         
+        });
 
-    public Task AddRoomImagesAsync(int roomId, string[] imageUrls, CancellationToken ct = default)
-        => throw new NotImplementedException();
+        await _context.RoomImages.AddRangeAsync(images, ct);
+        await _context.SaveChangesAsync(ct);
+    }
 
-    public Task RemoveRoomImageAsync(int imageId, CancellationToken ct = default)
-        => throw new NotImplementedException();
+
+    public async Task RemoveRoomImageAsync(int imageId, CancellationToken ct = default)
+    {
+        var image = await _context.RoomImages
+            .FirstOrDefaultAsync(x => x.ImageId == imageId, ct);
+
+        if (image == null)
+            return;
+
+        _context.RoomImages.Remove(image);
+
+        await _context.SaveChangesAsync(ct);
+    }
 
     // ================== MAPPER ==================
 
@@ -230,8 +333,9 @@ public class RoomService : IRoomService
         CurrentBasePrice = r.CurrentBasePrice,
         Description = r.Description,
 
-        AmenityIds = r.RoomAmenities
-            .Select(x => x.AmenityId)
-            .ToList()
+        AmenityIds = r.RoomAmenities?
+    .Select(x => x.AmenityId)
+    .ToList() ?? new List<int>()
     };
+
 }

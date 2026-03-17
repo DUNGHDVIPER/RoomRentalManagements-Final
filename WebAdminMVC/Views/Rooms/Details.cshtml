@@ -1,167 +1,90 @@
 ﻿@model WebAdmin.MVC.Models.Rooms.RoomDetailsVm
 
-@{
-    ViewData["Title"] = "Room Details";
-}
+<div class="container">
 
-<h2 class="mb-4">Room Details</h2>
+    
+    <div class="card">
 
-<div class="card mb-4 shadow-sm">
-    <div class="card-body">
+        <!-- HEADER -->
 
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <strong>Room Code:</strong> @Model.RoomCode
-            </div>
-
-            <div class="col-md-6">
-                <strong>Room Name:</strong> @Model.RoomName
-            </div>
+        <div class="card-head">
+            <div class="card-title">Room Details</div>
         </div>
 
-        <div class="row mb-3">
-            <div class="col-md-4">
-                <strong>Block:</strong> @Model.Block
-            </div>
+        <!-- ROOM INFO -->
 
-            <div class="col-md-4">
-                <strong>Floor:</strong> @Model.Floor
-            </div>
+        <div class="card-body">
 
-            <div class="col-md-4">
-                <strong>Price:</strong> @Model.Price.ToString("N0") $
-            </div>
-        </div>
+            <p><b>Room Code:</b> @Model.RoomCode</p>
+            <p><b>Room Name:</b> @Model.RoomName</p>
+            <p><b>Block:</b> @Model.Block</p>
+            <p><b>Floor:</b> @Model.Floor</p>
 
-        <div class="row mb-3">
-            <div class="col-md-4">
-                <strong>Status:</strong> @Model.Status
-            </div>
-        </div>
+            <p>
+                <b>Status:</b>
 
-        <!-- ===== AMENITIES ===== -->
-        <div class="row mb-3">
-            <div class="col-md-12">
-                <strong>Amenities:</strong>
-
-                @if (Model.Amenities != null && Model.Amenities.Any())
+                @if (Model.Status == "Available")
                 {
-                    <div class="mt-2">
-                        @foreach (var amenity in Model.Amenities)
-                        {
-                            <span class="badge bg-primary me-2 mb-2 p-2">
-                                @amenity
-                            </span>
-                        }
-                    </div>
+                    <span class="room-status status-available">Available</span>
+                }
+                else if (Model.Status == "Occupied")
+                {
+                    <span class="room-status status-occupied">Occupied</span>
                 }
                 else
                 {
-                    <div class="text-muted mt-2">
-                        No amenities available
-                    </div>
+                    <span class="room-status status-maintenance">Maintenance</span>
                 }
-            </div>
+
+            </p>
+
+            <p><b>Price:</b> @Model.Price.ToString("N0")</p>
+
         </div>
 
-        <div class="mt-3">
-            <a asp-action="PriceHistory"
-               asp-route-id="@Model.Id"
-               class="btn btn-info btn-sm">
-                View Price History
-            </a>
+        <!-- ROOM IMAGES -->
+
+        <div class="card-head">
+            <div class="card-title">Room Images</div>
         </div>
 
-    </div>
-</div>
+        <div class="card-body">
 
-<h4 class="mb-3">Room Images</h4>
+            @if (Model.Images != null && Model.Images.Any())
+            {
 
-@if (Model.Images != null && Model.Images.Any())
-{
-    <div class="row">
+                <div class="row">
 
-        @foreach (var img in Model.Images)
-        {
-            <div class="col-md-3 mb-3">
+                    @foreach (var img in Model.Images)
+                    {
 
-                <div class="card shadow-sm h-100">
+                        <div>
+                            <img src="@img.ImageUrl" />
+                        </div>
 
-                    <img src="@(img.ImageUrl ?? "/images/no-image.png")"
-                         class="card-img-top"
-                         style="height:180px; object-fit:cover;" />
-
-                    <div class="card-body text-center">
-
-                        @if (img.IsPrimary)
-                        {
-                            <span class="badge bg-success mb-2">
-                                Primary
-                            </span>
-                        }
-
-                        <form asp-action="DeleteImage" method="post">
-
-                            @Html.AntiForgeryToken()
-
-                            <input type="hidden" name="imageId" value="@img.ImageId" />
-                            <input type="hidden" name="roomId" value="@Model.Id" />
-
-                            <button type="submit"
-                                    class="btn btn-sm btn-danger">
-                                Delete
-                            </button>
-
-                        </form>
-
-                    </div>
+                    }
 
                 </div>
 
-            </div>
-        }
+            }
+            else
+            {
+                <p>No images available.</p>
+            }
+
+        </div>
+
+        <!-- BACK BUTTON -->
+
+        <div class="card-body">
+
+            <a asp-action="Index"
+               class="btn btn-secondary">
+                Back
+            </a>
+
+        </div>
 
     </div>
-}
-else
-{
-    <div class="alert alert-light border">
-        No images uploaded yet.
-    </div>
-}
-
-<hr />
-
-<h4 class="mt-4">Upload New Image</h4>
-
-<form asp-action="UploadImage"
-      method="post"
-      enctype="multipart/form-data"
-      class="card card-body shadow-sm">
-
-    @Html.AntiForgeryToken()
-
-    <input type="hidden" name="roomId" value="@Model.Id" />
-
-    <div class="mb-3">
-
-        <input type="file"
-               name="file"
-               class="form-control"
-               accept="image/*"
-               required />
-
-    </div>
-
-    <button type="submit" class="btn btn-primary">
-        Upload Image
-    </button>
-
-</form>
-
-<div class="mt-4">
-    <a asp-action="Index"
-       class="btn btn-secondary">
-        Back to List
-    </a>
+   
 </div>

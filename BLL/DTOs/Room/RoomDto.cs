@@ -17,7 +17,7 @@ public class RoomDto
     public decimal CurrentBasePrice { get; set; }
     public string? Description { get; set; }
 
-    public int? FloorNumber { get; set; }
+    public string? FloorName { get; set; }
     public string? BlockName { get; set; }
 
     // ===== ADD THIS =====

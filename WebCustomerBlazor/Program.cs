@@ -62,7 +62,8 @@ builder.Services.AddScoped<IRoomService, RoomService>();
 builder.Services.AddScoped<IStayHistoryService, StayHistoryService>();
 builder.Services.AddScoped<IBillingService, BillingService>();
 builder.Services.AddScoped<IUtilityService, UtilityService>();
-
+builder.Services.AddScoped<CustomerRoomService>();
+builder.Services.AddScoped<BookingService>();
 // REPOSITORIES
 builder.Services.AddScoped<ITenantRepository, TenantRepository>();
 

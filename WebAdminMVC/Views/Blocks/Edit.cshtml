@@ -18,11 +18,15 @@
 
             @Html.AntiForgeryToken()
 
+            <div asp-validation-summary="ModelOnly" class="err"></div>
+
+
             <input type="hidden" asp-for="BlockId" />
 
             <div class="fg">
                 <label class="lbl">Block Name</label>
                 <input class="inp" asp-for="BlockName" />
+                <span asp-validation-for="BlockName" class="err"></span>
             </div>
 
             <div class="fg">

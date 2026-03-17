@@ -33,28 +33,36 @@ namespace BLL.Services
         // ================= GET FLOOR BY ID =================
         public async Task<FloorDto?> GetByIdAsync(int id)
         {
-            var floor = await _context.Floors
+            return await _context.Floors
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == id);
-
-            if (floor == null)
-                return null;
-
-            return new FloorDto
-            {
-                Id = floor.Id,
-                BlockId = floor.BlockId,
-                FloorName = floor.FloorName
-            };
+                .Where(x => x.Id == id)
+                .Select(x => new FloorDto
+                {
+                    Id = x.Id,
+                    BlockId = x.BlockId, // ⭐ FIX QUAN TRỌNG
+                    BlockName = x.Block.BlockName,
+                    FloorName = x.FloorName,
+                    TotalRooms = x.Rooms.Count()
+                })
+                .FirstOrDefaultAsync();
         }
 
         // ================= CREATE FLOOR =================
         public async Task CreateAsync(FloorDto dto)
         {
+            var name = dto.FloorName.Trim();
+
+            var exists = await _context.Floors
+                .AnyAsync(x => x.BlockId == dto.BlockId &&
+                               x.FloorName.ToLower() == name.ToLower());
+
+            if (exists)
+                throw new Exception("Floor name already exists in this block.");
+
             var floor = new Floor
             {
                 BlockId = dto.BlockId,
-                FloorName = dto.FloorName
+                FloorName = name
             };
 
             await _context.Floors.AddAsync(floor);
@@ -68,9 +76,20 @@ namespace BLL.Services
                 .FirstOrDefaultAsync(x => x.Id == dto.Id);
 
             if (floor == null)
-                return;
+                throw new Exception("Floor not found.");
 
-            floor.FloorName = dto.FloorName;
+            var name = dto.FloorName.Trim();
+
+            var exists = await _context.Floors
+                .AnyAsync(x =>
+                    x.BlockId == dto.BlockId &&
+                    x.Id != dto.Id &&
+                    x.FloorName.ToLower() == name.ToLower());
+
+            if (exists)
+                throw new Exception("Floor name already exists in this block.");
+
+            floor.FloorName = name;
 
             await _context.SaveChangesAsync();
         }

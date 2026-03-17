@@ -1,4 +1,8 @@
-﻿:root {
+﻿/* =========================================================
+ROOT VARIABLES
+========================================================= */
+
+:root {
     --bg: #f6f8fc;
     --card: #ffffff;
     --text: #0f172a;
@@ -10,28 +14,37 @@
     --greenSoft: #dcfce7;
     --red: #ef4444;
     --redSoft: #fee2e2;
-    --shadow: 0 10px 30px rgba(15, 23, 42, .06);
+    --purple: #7c3aed;
+    --purpleSoft: #f3e8ff;
+    --shadow: 0 10px 30px rgba(15,23,42,.06);
     --radius-xl: 18px;
     --radius-lg: 16px;
     --radius-md: 12px;
 }
 
+/* =========================================================
+GLOBAL RESET
+========================================================= */
+
 * {
-    box-sizing: border-box;
+    box-sizing: border-box
 }
 
 html, body {
-    height: 100%;
+    height: 100%
 }
 
 body {
     margin: 0;
-    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;
     background: var(--bg);
     color: var(--text);
 }
 
-/* ====== shell ====== */
+/* =========================================================
+LAYOUT
+========================================================= */
+
 .app-shell {
     display: flex;
     height: 100vh;
@@ -49,7 +62,6 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
 }
 
 .topbar {
@@ -68,7 +80,10 @@ body {
     padding: 22px;
 }
 
-/* ====== sidebar ====== */
+/* =========================================================
+SIDEBAR
+========================================================= */
+
 .brand-row {
     display: flex;
     align-items: center;
@@ -84,7 +99,7 @@ body {
     place-items: center;
     font-weight: 900;
     color: #fff;
-    background: linear-gradient(135deg, #3b82f6, #a855f7, #22c55e);
+    background: linear-gradient(135deg,#3b82f6,#a855f7,#22c55e);
 }
 
 .brand-title {
@@ -111,7 +126,7 @@ body {
     color: #64748b;
     padding: 12px 14px;
     border-radius: 14px;
-    transition: .15s ease;
+    transition: .15s;
 }
 
     .nav-item:hover {
@@ -125,72 +140,14 @@ body {
         font-weight: 800;
     }
 
-.nav-icon {
-    display: inline-grid;
-    width: 18px;
-    opacity: .75;
-}
-
-/* ====== topbar ====== */
-.sim-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    border-radius: 999px;
-    background: #1f2937;
-    color: #fff;
-    font-weight: 700;
-    font-size: 13px;
-    box-shadow: 0 10px 25px rgba(0,0,0,.12);
-}
-
-    .sim-badge .dot {
-        width: 9px;
-        height: 9px;
-        border-radius: 999px;
-        background: #22c55e;
-        display: inline-block;
-    }
-
-.topbar-right {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-}
-
-.icon-btn {
-    width: 42px;
-    height: 42px;
-    border-radius: 14px;
-    border: 1px solid var(--border);
-    background: #fff;
-    cursor: pointer;
-}
-
-    .icon-btn:hover {
-        filter: brightness(.98);
-    }
+/* =========================================================
+PROFILE
+========================================================= */
 
 .profile {
     display: flex;
     align-items: center;
     gap: 12px;
-}
-
-.profile-text {
-    text-align: right;
-}
-
-.profile-name {
-    font-weight: 900;
-    font-size: 14px;
-}
-
-.profile-role {
-    color: var(--muted);
-    font-size: 12px;
-    font-weight: 700;
 }
 
 .profile-avatar {
@@ -203,10 +160,23 @@ body {
     font-weight: 900;
 }
 
-/* ====== cards ====== */
+.profile-name {
+    font-weight: 900;
+    font-size: 14px;
+}
+
+.profile-role {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+/* =========================================================
+CARD
+========================================================= */
+
 .container {
     max-width: 1100px;
-    margin: 0 auto;
+    margin: auto;
 }
 
 .card {
@@ -220,101 +190,19 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 18px 18px;
+    padding: 18px;
     border-bottom: 1px solid #f1f5ff;
 }
 
 .card-title {
-    font-weight: 900;
     font-size: 18px;
-}
-
-.mt-24 {
-    margin-top: 24px;
-}
-
-/* ====== KPI ====== */
-.kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 16px;
-}
-
-.kpi-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow);
-    padding: 18px;
-}
-
-.kpi-label {
-    color: var(--muted);
-    font-weight: 700;
-    font-size: 13px;
-}
-
-.kpi-row {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    margin-top: 8px;
-}
-
-.kpi-value {
-    font-size: 26px;
-    font-weight: 950;
-    letter-spacing: -0.02em;
-}
-
-/* ====== pills/chips ====== */
-.pill {
-    font-size: 12px;
     font-weight: 900;
-    padding: 6px 10px;
-    border-radius: 999px;
 }
 
-    .pill.success {
-        background: var(--greenSoft);
-        color: var(--green);
-    }
+/* =========================================================
+BUTTONS
+========================================================= */
 
-    .pill.danger {
-        background: var(--redSoft);
-        color: var(--red);
-    }
-
-.chip {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 6px 10px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 900;
-    border: 1px solid transparent;
-}
-
-    .chip.info {
-        background: #eaf2ff;
-        color: #1d4ed8;
-        border-color: #dbeafe;
-    }
-
-    .chip.success {
-        background: var(--greenSoft);
-        color: var(--green);
-        border-color: #bbf7d0;
-    }
-
-    .chip.danger {
-        background: var(--redSoft);
-        color: var(--red);
-        border-color: #fecaca;
-    }
-
-/* ====== button ====== */
 .btn-gradient {
     display: inline-flex;
     align-items: center;
@@ -324,17 +212,29 @@ body {
     color: #fff;
     text-decoration: none;
     font-weight: 900;
-    background: linear-gradient(135deg, #3b82f6 0%, #a855f7 50%, #22c55e 100%);
+    background: linear-gradient(135deg,#3b82f6,#a855f7,#22c55e);
     box-shadow: 0 14px 30px rgba(37,99,235,.20);
 }
 
-    .btn-gradient:hover {
-        filter: brightness(.98);
-    }
+.btn {
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-weight: 800;
+    border: none;
+    cursor: pointer;
+}
 
-/* ====== table ====== */
+.btn-danger {
+    background: var(--red);
+    color: white;
+}
+
+/* =========================================================
+TABLE
+========================================================= */
+
 .table-wrap {
-    overflow: auto;
+    overflow: auto
 }
 
 .table {
@@ -346,7 +246,7 @@ body {
         text-align: left;
         padding: 14px 18px;
         font-size: 12px;
-        color: #64748b;
+        color: var(--muted);
         letter-spacing: .08em;
         text-transform: uppercase;
         background: #fbfdff;
@@ -357,204 +257,104 @@ body {
         border-top: 1px solid #f1f5ff;
     }
 
-.th-right, .td-right {
-    text-align: right;
+    .table tbody tr:hover {
+        background: #f8fafc;
+    }
+
+/* =========================================================
+BADGES
+========================================================= */
+
+.badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
 }
 
-.user-cell {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+.bg-success {
+    background: #16a34a;
+    color: white;
 }
 
-.avatar-box {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    background: #e2e8f0;
-    display: grid;
-    place-items: center;
-    font-weight: 900;
-    color: #334155;
+.bg-secondary {
+    background: #64748b;
+    color: white;
 }
 
-.user-email {
-    font-weight: 900;
-}
+/* =========================================================
+ACTION LINKS
+========================================================= */
 
 .link {
-    color: var(--blue);
-    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    margin-left: 6px;
+    font-size: 13px;
+    font-weight: 800;
+    border-radius: 8px;
     text-decoration: none;
-    margin-left: 10px;
-    background: transparent;
-    border: 0;
-    cursor: pointer;
-    padding: 0;
-    font-size: 14px;
+    border: 1px solid transparent;
 }
 
-    .link:hover {
-        text-decoration: underline;
+    .link[href*="Edit"] {
+        color: var(--purple);
+        background: var(--purpleSoft);
     }
 
     .link.danger {
-        color: var(--red);
+        color: #dc2626;
+        background: #fee2e2;
     }
 
-.inline {
-    display: inline;
-}
-
-/* responsive */
-@media (max-width: 1100px) {
-    .kpi-grid {
-        grid-template-columns: repeat(2, minmax(0,1fr));
-    }
-}
-
-@media (max-width: 720px) {
-    .sidebar {
-        display: none;
-    }
-
-    .kpi-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .sim-badge {
-        display: none;
-    }
-}
-/* ===== shared form / auth ===== */
-.pad-20 {
-    padding: 18px;
-}
+/* =========================================================
+FORM
+========================================================= */
 
 .form-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0,1fr));
-    gap: 14px;
-    padding: 18px;
+    grid-template-columns: repeat(2,1fr);
+    gap: 18px;
+    padding: 20px;
 }
 
-.fg {
+.form-group {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
-.lbl {
-    font-size: 12px;
-    font-weight: 900;
-    color: #64748b;
-}
-
-.inp {
-    height: 44px;
-    border-radius: 14px;
-    border: 1px solid var(--border);
-    padding: 0 14px;
-    background: #fff;
-    outline: none;
-}
-
-    .inp:focus {
-        border-color: #bfdbfe;
-        box-shadow: 0 0 0 4px rgba(59,130,246,.08);
+    .form-group label {
+        font-size: 13px;
+        font-weight: 800;
     }
 
-.form-actions {
-    grid-column: 1 / -1;
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    padding: 0 18px 18px;
-}
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        height: 42px;
+        padding: 0 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+    }
 
-.detail-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0,1fr));
-    gap: 14px;
-    padding: 18px;
-}
+    .form-group textarea {
+        height: auto;
+        padding: 10px;
+    }
 
-.detail-item {
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 14px;
-    background: #fff;
-}
+    .form-group.full {
+        grid-column: 1/-1;
+    }
 
-.err {
-    border: 1px solid #fecaca;
-    background: #fff1f2;
-    color: #b91c1c;
-    border-radius: 14px;
-    padding: 12px 14px;
-}
-
-.mt12 {
-    margin-top: 12px;
-}
-
-.w100 {
-    width: 100%;
-}
-
-/* login */
-.auth-wrap {
-    min-height: calc(100vh - 68px);
-    display: grid;
-    place-items: center;
-    padding: 24px;
-}
-
-.auth-card {
-    width: 520px;
-    max-width: calc(100vw - 24px);
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 22px;
-    box-shadow: var(--shadow);
-    padding: 22px;
-}
-
-.auth-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 14px;
-}
-
-.auth-title {
-    font-size: 30px;
-    font-weight: 950;
-    letter-spacing: -0.03em;
-    margin-top: 6px;
-}
-
-.auth-sub {
-    margin-top: 6px;
-}
-
-.auth-form {
-    margin-top: 16px;
-    display: grid;
-    gap: 12px;
-}
-
-.auth-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-/* ===== Amenities Page ===== */
+/* =========================================================
+AMENITY PAGE
+========================================================= */
 
 .amenity-page {
     max-width: 1100px;
-    margin: 0 auto;
+    margin: auto;
 }
 
 .amenity-card {
@@ -562,382 +362,356 @@ body {
     border: 1px solid var(--border);
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow);
+    overflow: hidden;
 }
-
-/* header */
 
 .amenity-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 22px;
-    border-bottom: 1px solid var(--border);
+    padding: 20px 22px;
+    border-bottom: 1px solid #f1f5ff;
 }
 
-.header-left h2 {
+.btn-add {
+    padding: 10px 16px;
+    border-radius: 999px;
+    text-decoration: none;
+    font-weight: 800;
+    color: #fff;
+    background: linear-gradient(135deg,#3b82f6,#a855f7,#22c55e);
+}
+
+.amenity-chip {
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--blueSoft);
+    color: var(--blue);
+    font-weight: 700;
+}
+
+/* =========================================================
+ROOM TOOLBAR
+========================================================= */
+
+.toolbar {
+    display: flex;
+    gap: 10px;
+    padding: 16px 18px;
+    border-bottom: 1px solid #f1f5ff;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+    .toolbar input,
+    .toolbar select {
+        height: 40px;
+        padding: 0 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+    }
+
+/* =========================================================
+ROOM STATUS
+========================================================= */
+
+.room-status {
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.status-available {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.status-occupied {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.status-maintenance {
+    background: #fef9c3;
+    color: #92400e;
+}
+
+/* =========================================================
+IMAGE PREVIEW
+========================================================= */
+
+#previewContainer img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+}
+
+/* =========================================================
+ROOM IMAGE GRID
+========================================================= */
+
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+    .row img {
+        width: 220px;
+        height: 160px;
+        object-fit: cover;
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+    }
+
+/* =========================================================
+PAGINATION
+========================================================= */
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 18px;
+}
+
+.page-link {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    text-decoration: none;
+    font-weight: 700;
+}
+
+    .page-link.active {
+        background: var(--blue);
+        color: white;
+    }
+
+/* =========================================================
+RESPONSIVE
+========================================================= */
+
+@media(max-width:720px) {
+
+    .sidebar {
+        display: none
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr
+    }
+}
+/* =========================================================
+BOOTSTRAP CLASS COMPATIBILITY (FOR ROOM PAGES)
+========================================================= */
+
+/* HEADINGS */
+
+h2 {
     margin: 0;
     font-size: 20px;
     font-weight: 900;
 }
 
-.header-left p {
-    margin: 4px 0 0;
-    color: var(--muted);
-    font-size: 13px;
-}
-
-/* add button */
-
-.btn-add {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--blue);
-    color: #fff;
-    text-decoration: none;
-    padding: 10px 16px;
-    border-radius: 999px;
-    font-weight: 800;
-    font-size: 14px;
-}
-
-    .btn-add:hover {
-        filter: brightness(.95);
-    }
-
-/* table */
-
-.table-wrapper {
-    overflow-x: auto;
-}
-
-.amenity-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-    .amenity-table thead th {
-        text-align: left;
-        padding: 14px 22px;
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: .08em;
-        color: var(--muted);
-        background: #fbfdff;
-    }
-
-    .amenity-table tbody td {
-        padding: 16px 22px;
-        border-top: 1px solid #f1f5ff;
-    }
-
-/* id */
-
-.id {
+h3 {
+    margin-top: 24px;
     font-weight: 900;
-    color: #334155;
 }
 
-/* amenity chip */
-
-.amenity-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--greenSoft);
-    color: var(--green);
-    padding: 6px 12px;
-    border-radius: 999px;
-    font-size: 13px;
-    font-weight: 800;
+h4 {
+    margin-top: 20px;
+    font-weight: 900;
 }
 
-/* actions */
+/* =========================================================
+FORM CARD
+========================================================= */
 
-.actions {
+.form-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    max-width: 900px;
+    margin: auto;
+}
+
+.form-title {
+    font-size: 20px;
+    font-weight: 900;
+    margin-bottom: 16px;
+}
+
+/* =========================================================
+BUTTON ROW
+========================================================= */
+
+.btn-row {
     display: flex;
-    gap: 8px;
+    gap: 10px;
+    margin-top: 20px;
 }
 
-.btn-edit {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+/* =========================================================
+BOOTSTRAP BUTTON OVERRIDE
+========================================================= */
+/* =========================================================
+BUTTON THEME FIX
+========================================================= */
+
+.btn-primary {
+    background: linear-gradient(135deg,#2563eb,#7c3aed);
+    border: none;
+    color: white;
+    font-weight: 800;
+    border-radius: 999px;
+    padding: 10px 16px;
+}
+
+.btn-secondary {
+    background: #e2e8f0;
+    color: #334155;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+}
+
+.btn-info {
     background: var(--blueSoft);
     color: var(--blue);
     border: none;
-    padding: 8px 12px;
-    border-radius: 10px;
-    text-decoration: none;
-    font-size: 13px;
-    font-weight: 800;
+    font-weight: 700;
 }
 
-    .btn-edit:hover {
-        filter: brightness(.96);
-    }
+.btn-warning {
+    background: var(--purpleSoft);
+    color: var(--purple);
+    border: none;
+    font-weight: 700;
+}
 
-.btn-delete {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+.btn-danger {
     background: var(--redSoft);
     color: var(--red);
     border: none;
-    padding: 8px 12px;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 800;
-    cursor: pointer;
+    font-weight: 700;
 }
 
-    .btn-delete:hover {
-        filter: brightness(.96);
+.btn-sm {
+    padding: 6px 10px;
+    font-size: 12px;
+}
+
+/* =========================================================
+CARD BODY (DETAIL PAGE)
+========================================================= */
+
+.card-body {
+    padding: 20px;
+}
+
+    .card-body p {
+        margin: 6px 0;
+        font-size: 14px;
     }
 
-/* empty state */
+/* =========================================================
+VALIDATION
+========================================================= */
 
-.empty-state {
-    padding: 40px 0;
+.validation {
+    color: var(--red);
+    font-size: 13px;
+    margin-bottom: 10px;
 }
 
-.empty-box {
+/* =========================================================
+IMAGE DELETE BUTTON
+========================================================= */
+
+.row form {
+    margin-top: 6px;
+}
+
+/* =========================================================
+FILE INPUT
+========================================================= */
+
+input[type="file"] {
+    border: 1px dashed var(--border);
+    padding: 10px;
+    border-radius: 10px;
+    background: #fafcff;
+}
+
+.actions {
     display: flex;
-    flex-direction: column;
-    align-items: center;
     gap: 10px;
-    color: var(--muted);
+    align-items: center;
 }
 
-    .empty-box i {
-        font-size: 28px;
-    }
-/* ===== Create Amenity ===== */
-
-.container h3 {
-    font-weight: 900;
-    margin-bottom: 18px;
-}
-
-/* form box */
-
-.container form {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow);
-    padding: 22px;
-    max-width: 520px;
-}
-
-/* label */
-
-.form-label {
-    font-weight: 800;
+.btn-edit {
+    background: #eee6ff;
+    color: #6d4aff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 8px;
     font-size: 13px;
-    color: #64748b;
-    margin-bottom: 6px;
-    display: block;
+    font-weight: 600;
 }
 
-/* input */
-
-.form-control {
-    width: 100%;
-    height: 42px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    padding: 0 14px;
-    outline: none;
-    font-size: 14px;
+.btn-delete {
+    background: #ffe5e5;
+    color: #e03131;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
 }
 
-    .form-control:focus {
-        border-color: #bfdbfe;
-        box-shadow: 0 0 0 3px rgba(59,130,246,.1);
-    }
-
-/* spacing */
-
-.mb-3 {
-    margin-bottom: 16px;
-}
-
-/* buttons */
-
-.btn {
-    display: inline-flex;
+/* =========================================================
+TEXTAREA FIX
+========================================================= */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,.35);
+    display: none;
     align-items: center;
     justify-content: center;
-    padding: 10px 16px;
-    border-radius: 10px;
-    font-weight: 800;
-    font-size: 14px;
-    text-decoration: none;
-    border: none;
-    cursor: pointer;
+    z-index: 9999;
 }
 
-/* save */
-
-.btn-success {
-    background: #16a34a;
-    color: white;
+.modal-box {
+    background: white;
+    padding: 24px;
+    border-radius: 16px;
+    width: 360px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.15);
 }
 
-    .btn-success:hover {
-        filter: brightness(.95);
+
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.room-images {
+    margin-top: 20px;
+}
+
+    .room-images h3 {
+        font-size: 16px;
+        font-weight: 900;
+        margin-bottom: 12px;
     }
-
-/* back */
-
-.btn-secondary {
-    background: #e2e8f0;
-    color: #334155;
-    margin-left: 8px;
-}
-
-    .btn-secondary:hover {
-        filter: brightness(.96);
-    }
-
-/* validation */
-
-.text-danger {
-    color: #ef4444;
-    font-size: 12px;
-}
-
-/* ===== Amenity Form Pages ===== */
-
-.container h3 {
-    font-weight: 900;
-    margin-bottom: 18px;
-}
-
-/* form / delete card */
-
-.container form,
-.container dl {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow);
-    padding: 22px;
-    max-width: 520px;
-}
-
-/* spacing */
-
-.mb-3 {
-    margin-bottom: 16px;
-}
-
-/* label */
-
-.form-label {
-    font-weight: 800;
-    font-size: 13px;
-    color: var(--muted);
-    margin-bottom: 6px;
-    display: block;
-}
-
-/* input */
-
-.form-control {
-    width: 100%;
-    height: 42px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    padding: 0 14px;
-    outline: none;
-    font-size: 14px;
-}
-
-    .form-control:focus {
-        border-color: #bfdbfe;
-        box-shadow: 0 0 0 3px rgba(59,130,246,.1);
-    }
-
-/* buttons */
-
-.btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px 16px;
-    border-radius: 10px;
-    font-weight: 800;
-    font-size: 14px;
-    border: none;
-    cursor: pointer;
-    text-decoration: none;
-}
-
-/* update */
-
-.btn-primary {
-    background: #2563eb;
-    color: white;
-}
-
-    .btn-primary:hover {
-        filter: brightness(.95);
-    }
-
-/* delete */
-
-.btn-danger {
-    background: #ef4444;
-    color: white;
-}
-
-    .btn-danger:hover {
-        filter: brightness(.95);
-    }
-
-/* cancel / back */
-
-.btn-secondary {
-    background: #e2e8f0;
-    color: #334155;
-    margin-left: 8px;
-}
-
-    .btn-secondary:hover {
-        filter: brightness(.96);
-    }
-
-/* validation */
-
-.text-danger {
-    color: #ef4444;
-    font-size: 12px;
-}
-
-/* delete warning */
-
-.alert-danger {
-    background: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
-    padding: 12px 14px;
-    border-radius: 12px;
-    max-width: 520px;
-    margin-bottom: 16px;
-}
-
-/* description list */
-
-dl.row {
-    margin-bottom: 16px;
-}
-
-dt {
-    font-weight: 900;
-}
-
-dd {
-    margin: 0;
-}

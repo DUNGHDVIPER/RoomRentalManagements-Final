@@ -7,4 +7,6 @@ public interface IBlockRepository
     Task AddAsync(Block block, CancellationToken ct = default);
     Task UpdateAsync(Block block, CancellationToken ct = default);
     Task CloseAsync(Block block, CancellationToken ct = default);
+    Task<bool> ExistsByNameAsync(string name, int? ignoreId = null, CancellationToken ct = default);
+
 }

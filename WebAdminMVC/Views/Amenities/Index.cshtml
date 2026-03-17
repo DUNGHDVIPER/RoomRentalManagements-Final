@@ -5,33 +5,32 @@
     ViewData["Title"] = "Amenities";
 }
 
-<div class="amenity-page">
+<div class="container">
 
-    <div class="amenity-card">
+    <div class="card">
 
         <!-- HEADER -->
-        <div class="amenity-header">
+        <div class="card-head">
 
-            <div class="header-left">
-                <h2>Room Amenities</h2>
-                <p>Manage all amenities available for rooms</p>
+            <div>
+                <div class="card-title">Room Amenities</div>
+                <div style="font-size:13px;color:var(--muted)">
+                    Manage amenities available for rooms
+                </div>
             </div>
 
-            <div class="header-right">
-                <a class="btn-add"
-                   asp-controller="Amenities"
-                   asp-action="Create">
-                    Add Amenity
-                </a>
-            </div>
+            <a class="btn-gradient"
+               asp-controller="Amenities"
+               asp-action="Create">
+                + Add Amenity
+            </a>
 
         </div>
 
-
         <!-- TABLE -->
-        <div class="table-wrapper">
+        <div class="table-wrap">
 
-            <table class="amenity-table">
+            <table class="table">
 
                 <thead>
                     <tr>
@@ -45,10 +44,8 @@
                     @if (!Model.Any())
                     {
                         <tr>
-                            <td colspan="2" class="empty-state">
-                                <div class="empty-box">
-                                    <p>No amenities found</p>
-                                </div>
+                            <td colspan="2" style="text-align:center;padding:40px">
+                                No amenities found
                             </td>
                         </tr>
                     }
@@ -66,13 +63,13 @@
 
                                 <td class="actions">
 
-                                    <a class="btn-edit"
+                                    <a class="link"
                                        asp-action="Edit"
                                        asp-route-id="@a.AmenityId">
                                         Edit
                                     </a>
 
-                                    <button class="btn-delete"
+                                    <button class="link danger"
                                             onclick="confirmDelete(@a.AmenityId,'@a.AmenityName')">
                                         Delete
                                     </button>
@@ -95,11 +92,9 @@
 
 
 
-<!-- =========================
-        DELETE MODAL
-========================= -->
+<!-- DELETE MODAL -->
 
-<div id="deleteModal" class="modal-overlay" style="display:none">
+<div id="deleteModal" class="modal-overlay">
 
     <div class="modal-box">
 
@@ -120,7 +115,7 @@
             <div class="modal-actions">
 
                 <button type="button"
-                        class="btn-cancel"
+                        class="btn-secondary"
                         onclick="closeModal()">
                     Cancel
                 </button>
@@ -146,7 +141,6 @@
     {
         document.getElementById("deleteId").value = id;
         document.getElementById("amenityName").innerText = name;
-
         document.getElementById("deleteModal").style.display = "flex";
     }
 
