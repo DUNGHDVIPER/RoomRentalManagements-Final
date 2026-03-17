@@ -1,57 +1,57 @@
-using BLL.Services;
+﻿using BLL.Services;
 using BLL.Services.Interfaces;
 using DAL.Data;
-using DAL.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection; // ✅ Thêm dòng này
 
 var builder = WebApplication.CreateBuilder(args);
 
+// =====================
+// 1) MVC
+// =====================
 builder.Services.AddControllersWithViews();
 
+// =====================
+// 2) DbContext
+// =====================
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
-{
-    options.Password.RequireDigit = true;
-    options.Password.RequireLowercase = true;
-    options.Password.RequireUppercase = true;
-    options.Password.RequireNonAlphanumeric = true;
-    options.Password.RequiredLength = 8;
+// =====================
+// 3) Identity
+// =====================
+builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddDefaultTokenProviders();
 
-    options.User.RequireUniqueEmail = true;
-
-    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-    options.Lockout.MaxFailedAccessAttempts = 5;
-    options.Lockout.AllowedForNewUsers = true;
-})
-.AddEntityFrameworkStores<AppDbContext>()
-.AddDefaultTokenProviders();
+// ✅ DataProtection riêng biệt cho Admin
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "DataProtection-Keys-Admin")))
+    .SetApplicationName("WebAdminMVC");
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/Auth/Login";
     options.AccessDeniedPath = "/Auth/AccessDenied";
-    options.SlidingExpiration = true;
-    options.ExpireTimeSpan = TimeSpan.FromHours(24);
+    options.Cookie.Name = "AdminAuth"; // ✅ Tên cookie riêng
 });
 
-builder.Services.AddScoped<CloudinaryService>();
-builder.Services.AddScoped<IRoomService, RoomService>();
+// =====================
+// 4) BLL Services
+// =====================
 builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
-builder.Services.AddScoped<IBlockService, BlockService>();
-builder.Services.AddScoped<IBlockRepository, BlockRepository>();
-builder.Services.AddScoped<IFloorService, FloorService>();
-builder.Services.AddScoped<IFloorRepository, FloorRepository>();
-builder.Services.AddScoped<IAmenityService, AmenityService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IBillingService, BillingService>();
 builder.Services.AddScoped<IUtilityService, UtilityService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 
+// =====================
+// 5) Session với tên riêng
+// =====================
 builder.Services.AddDistributedMemoryCache();
 
 builder.Services.AddSession(options =>
@@ -59,16 +59,51 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromHours(8);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+    options.Cookie.Name = "AdminSession"; // ✅ Tên session cookie riêng
 });
 
-builder.Services.AddAuthorizationBuilder()
-    .AddPolicy("AdminOnly", policy => policy.RequireRole("Admin", "SuperAdmin"))
-    .AddPolicy("AdminOrHost", policy => policy.RequireRole("Admin", "SuperAdmin", "Host"));
+// =====================
+// 6) Cookie Authentication
+// =====================
+builder.Services
+    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(opt =>
+    {
+        opt.LoginPath = "/Account/Login";
+        opt.AccessDeniedPath = "/Account/AccessDenied";
+        opt.SlidingExpiration = true;
+        opt.Cookie.Name = "AdminCookieAuth"; // ✅ Tên cookie auth riêng
+    });
+
+// =====================
+// 7) Authorization
+// =====================
+builder.Services.AddAuthorization(opt =>
+{
+    opt.AddPolicy("Host", p => p.RequireRole("Host", "Admin"));
+});
 
 var app = builder.Build();
 
-await InitializeDatabaseAsync(app.Services);
+// =====================
+// RESET ADMIN PASSWORD
+// =====================
+using (var scope = app.Services.CreateScope())
+{
+    var userMgr = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
 
+    var user = await userMgr.FindByEmailAsync("admin@demo.com");
+
+    if (user != null)
+    {
+        var token = await userMgr.GeneratePasswordResetTokenAsync(user);
+        await userMgr.ResetPasswordAsync(user, token, "Admin@12345!");
+    }
+}
+
+// =====================
+// Middleware
+// =====================
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -78,6 +113,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
+// serve SharedUploads as /uploads
 var sharedUploadsPath = Path.GetFullPath(
     Path.Combine(app.Environment.ContentRootPath, "..", "SharedUploads"));
 
@@ -91,89 +127,32 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.UseRouting();
 
+// ✅ Session middleware order đúng
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// =====================
+// Routing
+// =====================
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Dashboard}/{action=Index}/{id?}");
 
-app.Run();
-
-static async Task InitializeDatabaseAsync(IServiceProvider services)
+// =====================
+// Seed Roles
+// =====================
+using (var scope = app.Services.CreateScope())
 {
-    using var scope = services.CreateScope();
-
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-    try
+    string[] roles = { "Admin", "Host", "Tenant" };
+
+    foreach (var role in roles)
     {
-        await db.Database.MigrateAsync();
-
-        // KHÔNG seed toàn bộ role/user ở đây nữa.
-        // Việc seed chỉ để WebHostRazor xử lý để tránh race condition khi chạy 3 app cùng lúc.
-
-        if (!await roleManager.RoleExistsAsync("SuperAdmin"))
-        {
-            try
-            {
-                var createRoleResult = await roleManager.CreateAsync(new IdentityRole("SuperAdmin"));
-
-                if (!createRoleResult.Succeeded && !await roleManager.RoleExistsAsync("SuperAdmin"))
-                {
-                    var msg = string.Join(", ", createRoleResult.Errors.Select(e => $"{e.Code}: {e.Description}"));
-                    throw new InvalidOperationException($"Create role 'SuperAdmin' failed: {msg}");
-                }
-
-                logger.LogInformation("Verified role: SuperAdmin");
-            }
-            catch
-            {
-                if (!await roleManager.RoleExistsAsync("SuperAdmin"))
-                    throw;
-            }
-        }
-
-        var adminUser = await userManager.FindByEmailAsync("admin@demo.com");
-        if (adminUser != null)
-        {
-            var roles = await userManager.GetRolesAsync(adminUser);
-
-            if (!roles.Contains("SuperAdmin"))
-            {
-                var addRoleResult = await userManager.AddToRoleAsync(adminUser, "SuperAdmin");
-
-                if (!addRoleResult.Succeeded)
-                {
-                    var rolesAfter = await userManager.GetRolesAsync(adminUser);
-                    if (!rolesAfter.Contains("SuperAdmin"))
-                    {
-                        var msg = string.Join(", ", addRoleResult.Errors.Select(e => $"{e.Code}: {e.Description}"));
-                        throw new InvalidOperationException($"Grant SuperAdmin to admin@demo.com failed: {msg}");
-                    }
-                }
-
-                logger.LogInformation("Granted SuperAdmin role to admin@demo.com");
-            }
-
-            await userManager.SetLockoutEndDateAsync(adminUser, null);
-            adminUser.AccessFailedCount = 0;
-            await userManager.UpdateAsync(adminUser);
-        }
-        else
-        {
-            logger.LogWarning("admin@demo.com not found. Make sure WebHostRazor has seeded the Identity data first.");
-        }
-
-        logger.LogInformation("WebAdminMVC database initialization completed successfully");
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "Error initializing database");
-        throw;
+        if (!await roleManager.RoleExistsAsync(role))
+            await roleManager.CreateAsync(new IdentityRole(role));
     }
 }
+
+app.Run();

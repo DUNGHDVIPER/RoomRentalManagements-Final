@@ -22,7 +22,7 @@ public class UtilityChargesController : Controller
     {
         var rooms = await _db.Rooms
             .AsNoTracking()
-            .OrderBy(r => r.RoomCode)
+            .OrderBy(r => r.RoomNo)
             .ToListAsync(ct);
 
         var results = new List<UtilityChargeResultDto>();
@@ -31,7 +31,7 @@ public class UtilityChargesController : Controller
         {
             try
             {
-                var charge = await _utility.CalculateChargesAsync(r.RoomId, period, ct);
+                var charge = await _utility.CalculateChargesAsync(r.Id, period, ct);
                 results.Add(charge);
             }
             catch

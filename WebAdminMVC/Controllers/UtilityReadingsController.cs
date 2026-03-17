@@ -26,7 +26,7 @@ public class UtilityReadingsController : Controller
 
         var rooms = await _db.Rooms
             .AsNoTracking()
-            .OrderBy(r => r.RoomCode)
+            .OrderBy(r => r.RoomNo)
             .ToListAsync(ct);
 
         var existing = await _db.UtilityReadings
@@ -41,11 +41,11 @@ public class UtilityReadingsController : Controller
 
         foreach (var r in rooms)
         {
-            var ex = existing.FirstOrDefault(x => x.RoomId == r.RoomId);
+            var ex = existing.FirstOrDefault(x => x.RoomId == r.Id);
 
             dto.Items.Add(new BulkUtilityReadingDto.RoomReadingItem
             {
-                RoomId = r.RoomId,
+                RoomId = r.Id,
                 ElectricKwh = ex?.ElectricKwh ?? 0,
                 WaterM3 = ex?.WaterM3 ?? 0
             });

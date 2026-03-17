@@ -9,12 +9,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebAdmin.MVC.Models.Contracts;
 using System.ComponentModel.DataAnnotations;
-using DAL.Entities.Common;
 
 namespace WebAdmin.MVC.Controllers;
 
-[Authorize(Roles = "Admin,SuperAdmin,Host")]
-[Route("[controller]")]
+[Authorize(Roles = "Admin")]
+[Route("Contracts")]
+[Route("Admin/Contracts")]
 public class ContractsController : Controller
 {
     private readonly AppDbContext _db;
@@ -85,10 +85,10 @@ public class ContractsController : Controller
                 (c.ContractCode ?? "").Contains(kw) ||
                 c.RoomId.ToString().Contains(kw) ||
                 c.TenantId.ToString().Contains(kw) ||
-                (c.Room.RoomCode ?? "").Contains(kw) ||
-                (c.Room.RoomName ?? "").Contains(kw) ||
-                (c.Room.Floor.FloorName ?? "").Contains(kw) ||
-                (c.Room.Floor.Block.BlockName ?? "").Contains(kw));
+                (c.Room.RoomNo ?? "").Contains(kw) ||
+                (c.Room.Name ?? "").Contains(kw) ||
+                (c.Room.Floor.Name ?? "").Contains(kw) ||
+                (c.Room.Floor.Block.Name ?? "").Contains(kw));
         }
 
         if (status.HasValue)
@@ -134,9 +134,9 @@ public class ContractsController : Controller
                          c.Status != null && c.Status.ToUpper() == "TERMINATED" ? 3 :
                          c.Status != null && c.Status.ToUpper() == "RENEWED" ? 4 : 99,
                 IsActive = c.Status != null && c.Status.ToUpper() == "ACTIVE",
-                BlockName = c.Room.Floor.Block.BlockName,
-                FloorName = c.Room.Floor.FloorName,
-                RoomNo = c.Room.RoomCode
+                BlockName = c.Room.Floor.Block.Name,
+                FloorName = c.Room.Floor.Name,
+                RoomNo = c.Room.RoomNo
             })
             .ToListAsync(ct);
 
@@ -432,7 +432,7 @@ public class ContractsController : Controller
         try
         {
             var c = await _contractService.GetByIdAsync(vm.ContractId, ct);
-            vm.CurrentStatus = Enum.Parse<ContractStatus>(c.Status, true);
+            vm.CurrentStatus = c.Status;
             vm.CurrentStartDate = c.StartDate;
             vm.CurrentEndDate = c.EndDate;
             vm.CurrentRent = c.Rent;
@@ -500,7 +500,7 @@ public class ContractsController : Controller
         try
         {
             var c = await _contractService.GetByIdAsync(vm.ContractId, ct);
-            vm.CurrentStatus = Enum.Parse<ContractStatus>(c.Status, true);
+            vm.CurrentStatus = c.Status;
             vm.CurrentStartDate = c.StartDate;
             vm.CurrentEndDate = c.EndDate;
             vm.CurrentRent = c.Rent;

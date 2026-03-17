@@ -1,13 +1,11 @@
 ﻿namespace DAL.Entities.Common;
 
-
 public enum RoomStatus
 {
-    Available,
-    Occupied,
-    Maintenance,
-    Hidden,
-    Disabled
+    Available = 1,
+    Occupied = 2,
+    Maintenance = 3,
+    Disabled = 9
 }
 
 public enum TicketStatus

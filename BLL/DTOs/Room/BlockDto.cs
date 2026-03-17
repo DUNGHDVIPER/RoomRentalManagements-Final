@@ -1,18 +1,8 @@
-﻿namespace BLL.DTOs.Property;
+﻿namespace BLL.DTOs.Room;
 
 public class BlockDto
 {
-    public int BlockId { get; set; }
-
-    public string BlockName { get; set; } = null!;
-
+    public int Id { get; set; }
+    public string Name { get; set; } = null!;
     public string? Address { get; set; }
-
-    public string? Note { get; set; }
-
-    public string Status { get; set; } = "Active";
-
-    public int TotalFloors { get; set; }
-
-    public int TotalRooms { get; set; }
 }

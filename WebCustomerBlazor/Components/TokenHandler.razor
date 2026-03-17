@@ -1,83 +1,238 @@
 ﻿@page "/token-handler"
-@using BLL.Services.Interfaces
-@using BLL.Services
-@using Microsoft.AspNetCore.WebUtilities
-@inject ITokenService TokenService
-@inject TokenAuthenticationStateProvider AuthProvider
 @inject NavigationManager Nav
-@inject IJSRuntime JS
+@inject ICookieService CookieService
+@inject ILogger<TokenHandler> Logger
+@inject IHttpContextAccessor HttpContextAccessor
+@inject CookieAuthenticationStateProvider AuthStateProvider
+@rendermode InteractiveServer
 
-<div class="bg-grad">
-    <div class="container section">
-        <div class="card glass p-22" style="text-align: center;">
-            <h2>Đang xử lý đăng nhập...</h2>
-            <div class="muted">@statusMessage</div>
+<div class="container mt-5">
+    <div class="text-center">
+        <div class="spinner-border" role="status">
+            <span class="sr-only">Processing login...</span>
         </div>
+        <h4 class="mt-3">Processing your login...</h4>
+        <p class="text-muted">Please wait while we complete your authentication.</p>
+
+        @if (!string.IsNullOrEmpty(_debugInfo))
+        {
+            <div class="alert alert-info mt-3">
+                <small>Debug: @_debugInfo</small>
+            </div>
+        }
     </div>
 </div>
 
 @code {
-    private string statusMessage = "Đang xử lý token...";
+    [SupplyParameterFromQuery] public string? Token { get; set; }
+    [SupplyParameterFromQuery] public string? UserId { get; set; }
+    [SupplyParameterFromQuery] public string? Email { get; set; }
+    [SupplyParameterFromQuery] public string? Refresh { get; set; }
+
+    private string _debugInfo = string.Empty;
+    private bool _isRendered = false;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (firstRender && !string.IsNullOrEmpty(Token) && !string.IsNullOrEmpty(UserId))
         {
-            await ProcessToken();
+            _isRendered = true;
+            await ProcessTokenAsync();
+        }
+        else if (firstRender)
+        {
+            _debugInfo = $"Missing parameters - Token: {!string.IsNullOrEmpty(Token)}, UserId: {!string.IsNullOrEmpty(UserId)}";
+            StateHasChanged();
         }
     }
 
-    private async Task ProcessToken()
+    private async Task ProcessTokenAsync()
     {
         try
         {
-            var uri = Nav.ToAbsoluteUri(Nav.Uri);
-            var query = QueryHelpers.ParseQuery(uri.Query);
-
-            if (query.TryGetValue("token", out var token))
+            if (!_isRendered)
             {
-                statusMessage = "Đang xác thực token...";
+                _debugInfo = "Component not fully rendered yet...";
                 StateHasChanged();
-
-                // Validate token using ITokenService
-                var tokenInfo = await TokenService.GetTokenInfoAsync(token!);
-
-                if (tokenInfo.IsValid)
-                {
-                    // Use AuthProvider's method to save token and notify authentication
-                    await AuthProvider.NotifyUserAuthenticationAsync(token!);
-
-                    statusMessage = "Đăng nhập thành công! Đang chuyển hướng...";
-                    StateHasChanged();
-
-                    await Task.Delay(1000);
-
-                    // Redirect to rooms or original destination
-                    var redirectTo = query.TryGetValue("redirect", out var redirect) ? redirect.ToString() : "/rooms";
-                    Nav.NavigateTo(redirectTo, forceLoad: false);
-                }
-                else
-                {
-                    statusMessage = "Token không hợp lệ. Đang chuyển hướng về trang chủ...";
-                    StateHasChanged();
-                    await Task.Delay(2000);
-                    Nav.NavigateTo("/");
-                }
+                return;
             }
-            else
-            {
-                statusMessage = "Không tìm thấy token. Đang chuyển hướng về trang chủ...";
-                StateHasChanged();
-                await Task.Delay(2000);
-                Nav.NavigateTo("/");
-            }
+
+            Logger.LogInformation("TokenHandler: Processing token for userId={UserId}, Token length={TokenLength}", UserId, Token?.Length ?? 0);
+            _debugInfo = $"Processing token for user {UserId}...";
+            StateHasChanged();
+
+            // ✅ Set server-side cookies first (before response starts)
+            var serverSuccess = await SetServerSideCookies(Token!, UserId!);
+
+            // ✅ Small delay to ensure server operations complete
+            await Task.Delay(300);
+
+            // ✅ Set client-side cookies via service
+            var clientSuccess = await SetClientSideCookies(Token!, UserId!);
+
+            Logger.LogInformation("TokenHandler: Cookie setting results - Server: {ServerSuccess}, Client: {ClientSuccess}", serverSuccess, clientSuccess);
+
+            // ✅ Verify cookies were set
+            var cookieVerification = await VerifyCookies();
+            _debugInfo = $"Cookies verified: {cookieVerification}. Updating authentication...";
+            StateHasChanged();
+
+            // ✅ Notify authentication state provider
+            AuthStateProvider.NotifyAuthenticationStateChanged();
+
+            // ✅ Delay before redirect to ensure all operations complete
+            await Task.Delay(1000);
+
+            Logger.LogInformation("TokenHandler: Redirecting to home page");
+            Nav.NavigateTo("/", replace: true);
         }
         catch (Exception ex)
         {
-            statusMessage = $"Lỗi: {ex.Message}";
+            Logger.LogError(ex, "Error processing token in TokenHandler");
+            _debugInfo = $"Error: {ex.Message}";
             StateHasChanged();
-            await Task.Delay(3000);
-            Nav.NavigateTo("/");
+
+            await Task.Delay(2000);
+            Nav.NavigateTo("/auth-error", replace: true);
+        }
+    }
+
+    private async Task<bool> SetServerSideCookies(string token, string userId)
+    {
+        try
+        {
+            var httpContext = HttpContextAccessor.HttpContext;
+            if (httpContext == null || httpContext.Response.HasStarted)
+            {
+                Logger.LogWarning("Cannot set server-side cookies - HttpContext null or response started");
+                return false;
+            }
+
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = false, // Allow JavaScript access
+                Secure = httpContext.Request.IsHttps,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddHours(24),
+                Path = "/",
+                Domain = null
+            };
+
+            httpContext.Response.Cookies.Append("AuthToken", token, cookieOptions);
+            httpContext.Response.Cookies.Append("UserId", userId, cookieOptions);
+
+            if (!string.IsNullOrEmpty(Email))
+            {
+                httpContext.Response.Cookies.Append("UserEmail", Email, cookieOptions);
+            }
+
+            if (!string.IsNullOrEmpty(Refresh))
+            {
+                httpContext.Response.Cookies.Append("RefreshToken", Refresh, cookieOptions);
+            }
+
+            var userEmail = ExtractEmailFromToken(token);
+            if (!string.IsNullOrEmpty(userEmail))
+            {
+                httpContext.Response.Cookies.Append("UserEmail", userEmail, cookieOptions);
+            }
+
+            Logger.LogInformation("Server-side cookies set successfully for user {UserId}", userId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error setting server-side cookies");
+            return false;
+        }
+    }
+
+    private async Task<bool> SetClientSideCookies(string token, string userId)
+    {
+        try
+        {
+            await CookieService.SetCookieAsync("AuthToken", token, 1);
+            await CookieService.SetCookieAsync("UserId", userId, 1);
+
+            if (!string.IsNullOrEmpty(Email))
+            {
+                await CookieService.SetCookieAsync("UserEmail", Email, 1);
+            }
+
+            if (!string.IsNullOrEmpty(Refresh))
+            {
+                await CookieService.SetCookieAsync("RefreshToken", Refresh, 1);
+            }
+
+            var userEmail = ExtractEmailFromToken(token);
+            if (!string.IsNullOrEmpty(userEmail))
+            {
+                await CookieService.SetCookieAsync("UserEmail", userEmail, 1);
+            }
+
+            Logger.LogInformation("Client-side cookies set successfully for user {UserId}", userId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error setting client-side cookies: {Message}", ex.Message);
+            return false;
+        }
+    }
+
+    private async Task<string> VerifyCookies()
+    {
+        try
+        {
+            var hasAuthToken = await CookieService.CookieExistsAsync("AuthToken");
+            var hasUserId = await CookieService.CookieExistsAsync("UserId");
+            var allCookies = await CookieService.GetAllCookiesAsync();
+
+            Logger.LogInformation("Cookie verification - AuthToken: {HasAuthToken}, UserId: {HasUserId}", hasAuthToken, hasUserId);
+            Logger.LogInformation("All cookies count: {CookieCount}", allCookies.Count);
+
+            return $"AuthToken: {hasAuthToken}, UserId: {hasUserId}";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error verifying cookies");
+            return "Verification failed";
+        }
+    }
+
+    private string? ExtractEmailFromToken(string token)
+    {
+        try
+        {
+            var parts = token.Split('.');
+            if (parts.Length != 3) return null;
+
+            var payload = parts[1];
+            switch (payload.Length % 4)
+            {
+                case 2: payload += "=="; break;
+                case 3: payload += "="; break;
+            }
+
+            var jsonBytes = Convert.FromBase64String(payload);
+            var json = System.Text.Encoding.UTF8.GetString(jsonBytes);
+
+            if (json.Contains("\"email\":"))
+            {
+                var emailStart = json.IndexOf("\"email\":\"") + 9;
+                var emailEnd = json.IndexOf("\"", emailStart);
+                if (emailEnd > emailStart)
+                {
+                    return json.Substring(emailStart, emailEnd - emailStart);
+                }
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error extracting email from token");
+            return null;
         }
     }
 }

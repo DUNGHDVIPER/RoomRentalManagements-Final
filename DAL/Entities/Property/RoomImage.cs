@@ -1,17 +1,13 @@
-﻿namespace DAL.Entities.Property
+﻿using DAL.Entities.Common;
+
+namespace DAL.Entities.Property;
+
+public class RoomImage : AuditableEntity<int>
 {
-    public class RoomImage
-    {
-        public int ImageId { get; set; }
+    public int RoomId { get; set; }
+    public string Url { get; set; } = null!;
+    public bool IsCover { get; set; }
+    public int SortOrder { get; set; }
 
-        public int RoomId { get; set; }
-
-        public string ImageUrl { get; set; }
-
-        public bool IsPrimary { get; set; }
-
-        public DateTime CreatedAt { get; set; }
-
-        public Room Room { get; set; }
-    }
+    public Room Room { get; set; } = null!;
 }

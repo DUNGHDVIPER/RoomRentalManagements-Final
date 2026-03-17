@@ -27,6 +27,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BLL\BLL.csproj" />
     <ProjectReference Include="..\DAL\DAL.csproj" />
+    <ProjectReference Include="..\WebCustomerBlazor\WebCustomerBlazor.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -37,19 +38,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Pages\Host\Shared\TMP.cshtml" />
-    <None Include="Seed\IdentitySeedExtensions.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="ClosedXML" Version="0.105.0" />
     <PackageReference Include="QuestPDF" Version="2026.2.1" />
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="Pages\Host\Shared\TMP.cshtml" />
+    <None Include="Seed\IdentitySeedExtensions.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.23" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.23" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
   </ItemGroup>
 
 </Project>

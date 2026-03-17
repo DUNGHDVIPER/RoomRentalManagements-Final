@@ -1,0 +1,1041 @@
+﻿@page "/profile"
+@using Microsoft.AspNetCore.Components.Authorization
+@using WebCustomerBlazor.Services
+@using System.ComponentModel.DataAnnotations
+@using System.Text.RegularExpressions
+@inject ICookieService CookieService
+@inject ILogger<Profile> Logger
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<PageTitle>My Profile - Customer Portal</PageTitle>
+
+<div class="profile-page">
+    <div class="page-header">
+        <div class="header-content">
+            <div class="breadcrumb-nav">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="/"><i class="fas fa-home"></i> Home</a>
+                        </li>
+                        <li class="breadcrumb-item active" aria-current="page">Profile</li>
+                    </ol>
+                </nav>
+            </div>
+            <h1 class="page-title">
+                <i class="fas fa-user-circle"></i>
+                My Profile
+            </h1>
+            <p class="page-subtitle">Manage your personal information</p>
+        </div>
+        <div class="user-avatar">
+            <span>@AvatarLetter</span>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(SuccessMessage))
+    {
+        <div class="alert alert-success" role="alert">
+            <i class="fas fa-check-circle"></i>
+            <span>@SuccessMessage</span>
+            <button type="button" class="btn-close" @onclick="() => SuccessMessage = string.Empty">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="alert alert-error" role="alert">
+            <i class="fas fa-exclamation-circle"></i>
+            <span>@ErrorMessage</span>
+            <button type="button" class="btn-close" @onclick="() => ErrorMessage = string.Empty">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    }
+
+    <div class="profile-content">
+        <!-- 🔥 FORM 1: Profile Information -->
+        <div class="profile-card">
+            <div class="card-header">
+                <div class="card-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="card-title">
+                    <h2>Profile Information</h2>
+                    <p>Update your personal information</p>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <EditForm Model="@profileModel" OnValidSubmit="@UpdateProfile" class="profile-form">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-user"></i> Full Name
+                            </label>
+                            <InputText @bind-value="profileModel.FullName" class="form-control" placeholder="Enter your full name" />
+                            <ValidationMessage For="@(() => profileModel.FullName)" class="validation-message" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-envelope"></i> Email Address
+                            </label>
+                            <InputText @bind-value="profileModel.Email" 
+                                      @onblur="ValidateEmailFormat" 
+                                      class="@GetEmailCssClass()" 
+                                      placeholder="Enter your email address" />
+                            <ValidationMessage For="@(() => profileModel.Email)" class="validation-message" />
+                            @if (!string.IsNullOrEmpty(EmailValidationMessage))
+                            {
+                                <small class="text-danger">@EmailValidationMessage</small>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-phone"></i> Phone Number
+                            </label>
+                            <InputText @bind-value="profileModel.PhoneNumber" 
+                                      @onblur="CheckPhoneDuplicate" 
+                                      class="@GetPhoneCssClass()" 
+                                      placeholder="Enter your phone number" />
+                            <ValidationMessage For="@(() => profileModel.PhoneNumber)" class="validation-message" />
+                            @if (!string.IsNullOrEmpty(PhoneValidationMessage))
+                            {
+                                <small class="text-danger">@PhoneValidationMessage</small>
+                            }
+                            @if (isCheckingPhone)
+                            {
+                                <small class="text-info">
+                                    <i class="fas fa-spinner fa-spin"></i> Checking phone availability...
+                                </small>
+                            }
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-calendar"></i> Date of Birth
+                            </label>
+                            <InputDate @bind-value="profileModel.DateOfBirth" class="form-control" />
+                            <ValidationMessage For="@(() => profileModel.DateOfBirth)" class="validation-message" />
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" disabled="@(isProfileLoading || !IsProfileFormValid())">
+                            @if (isProfileLoading)
+                            {
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <span>Updating...</span>
+                            }
+                            else
+                            {
+                                <i class="fas fa-save"></i>
+                                <span>Update Profile</span>
+                            }
+                        </button>
+                        <a href="/" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i>
+                            Back to Home
+                        </a>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+
+        <!-- 🔥 FORM 2: Change Password -->
+        <div class="profile-card password-card">
+            <div class="card-header">
+                <div class="card-icon password-icon">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <div class="card-title">
+                    <h2>Change Password</h2>
+                    <p>Update your password for security</p>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <EditForm Model="@passwordModel" OnValidSubmit="@UpdatePassword" class="password-form">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-key"></i> Current Password
+                            </label>
+                            <InputText @bind-value="passwordModel.CurrentPassword" 
+                                      type="password" 
+                                      class="form-control" 
+                                      placeholder="Enter your current password" />
+                            <ValidationMessage For="@(() => passwordModel.CurrentPassword)" class="validation-message" />
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-lock"></i> New Password
+                            </label>
+                            <InputText @bind-value="passwordModel.NewPassword" 
+                                      @onblur="ValidatePasswordStrength"
+                                      type="password" 
+                                      class="@GetPasswordCssClass()" 
+                                      placeholder="Enter new password" />
+                            <ValidationMessage For="@(() => passwordModel.NewPassword)" class="validation-message" />
+                            
+                            @if (!string.IsNullOrEmpty(passwordModel.NewPassword))
+                            {
+                                <div class="password-strength-indicator">
+                                    <small class="password-requirements">
+                                        Password must contain:
+                                        <ul>
+                                            <li class="@(HasMinLength ? "requirement-met" : "requirement-unmet")">
+                                                <i class="fas @(HasMinLength ? "fa-check" : "fa-times")"></i>
+                                                At least 8 characters
+                                            </li>
+                                            <li class="@(HasUppercase ? "requirement-met" : "requirement-unmet")">
+                                                <i class="fas @(HasUppercase ? "fa-check" : "fa-times")"></i>
+                                                At least one uppercase letter (A-Z)
+                                            </li>
+                                            <li class="@(HasLowercase ? "requirement-met" : "requirement-unmet")">
+                                                <i class="fas @(HasLowercase ? "fa-check" : "fa-times")"></i>
+                                                At least one lowercase letter (a-z)
+                                            </li>
+                                            <li class="@(HasNumber ? "requirement-met" : "requirement-unmet")">
+                                                <i class="fas @(HasNumber ? "fa-check" : "fa-times")"></i>
+                                                At least one number (0-9)
+                                            </li>
+                                            <li class="@(HasSpecialChar ? "requirement-met" : "requirement-unmet")">
+                                                <i class="fas @(HasSpecialChar ? "fa-check" : "fa-times")"></i>
+                                                At least one special character (!@@#$%^&*)
+                                            </li>
+                                        </ul>
+                                    </small>
+                                    <div class="strength-bar">
+                                        <div class="strength-fill @GetPasswordStrengthClass()" style="width: @(PasswordStrengthPercent)%"></div>
+                                    </div>
+                                    <small class="strength-text @GetPasswordStrengthClass()">
+                                        Password Strength: @GetPasswordStrengthText()
+                                    </small>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-lock"></i> Confirm Password
+                            </label>
+                            <InputText @bind-value="passwordModel.ConfirmPassword" type="password" class="form-control" placeholder="Confirm your new password" />
+                            <ValidationMessage For="@(() => passwordModel.ConfirmPassword)" class="validation-message" />
+                            @if (!string.IsNullOrEmpty(passwordModel.NewPassword) && !string.IsNullOrEmpty(passwordModel.ConfirmPassword) && passwordModel.NewPassword != passwordModel.ConfirmPassword)
+                            {
+                                <small class="text-danger">
+                                    <i class="fas fa-exclamation-triangle"></i> Passwords do not match
+                                </small>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-warning" disabled="@(isPasswordLoading || !IsPasswordFormValid())">
+                            @if (isPasswordLoading)
+                            {
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <span>Changing...</span>
+                            }
+                            else
+                            {
+                                <i class="fas fa-key"></i>
+                                <span>Change Password</span>
+                            }
+                        </button>
+                        <button type="button" class="btn btn-ghost" @onclick="ResetPasswordForm">
+                            <i class="fas fa-times"></i>
+                            Clear
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .profile-page {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        padding: 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        color: white;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+
+    .user-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: 700;
+        border: 3px solid rgba(255,255,255,0.3);
+    }
+
+    .profile-content {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .profile-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+        transition: transform 0.3s ease;
+    }
+
+    .profile-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .password-card {
+        border: 2px solid #fbbf24;
+        box-shadow: 0 10px 30px rgba(251, 191, 36, 0.2);
+    }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        padding: 2rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+
+    .password-card .card-header {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    }
+
+    .card-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 15px;
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .password-icon {
+        background: linear-gradient(45deg, #f59e0b, #d97706);
+        box-shadow: 0 5px 15px rgba(245, 158, 11, 0.3);
+    }
+
+    .card-icon i {
+        color: white;
+        font-size: 1.2rem;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .form-label i {
+        margin-right: 0.5rem;
+        color: #6b7280;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-control.is-valid {
+        border-color: #10b981;
+        background-color: #f0fdf4;
+    }
+
+    .form-control.is-invalid {
+        border-color: #ef4444;
+        background-color: #fef2f2;
+    }
+
+    /* Password strength indicator */
+    .password-strength-indicator {
+        margin-top: 0.5rem;
+    }
+
+    .password-requirements ul {
+        list-style: none;
+        padding: 0;
+        margin: 0.5rem 0;
+    }
+
+    .password-requirements li {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .requirement-met {
+        color: #10b981;
+    }
+
+    .requirement-unmet {
+        color: #ef4444;
+    }
+
+    .strength-bar {
+        width: 100%;
+        height: 6px;
+        background-color: #e5e7eb;
+        border-radius: 3px;
+        overflow: hidden;
+        margin: 0.5rem 0;
+    }
+
+    .strength-fill {
+        height: 100%;
+        transition: all 0.3s ease;
+    }
+
+    .strength-weak {
+        background-color: #ef4444;
+    }
+
+    .strength-fair {
+        background-color: #f59e0b;
+    }
+
+    .strength-good {
+        background-color: #3b82f6;
+    }
+
+    .strength-strong {
+        background-color: #10b981;
+    }
+
+    .strength-text {
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .btn {
+        padding: 0.875rem 2rem;
+        border: none;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        margin-right: 1rem;
+        transition: all 0.3s ease;
+        font-size: 1rem;
+    }
+
+    .btn i {
+        margin-right: 0.5rem;
+    }
+
+    .btn-primary {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-warning {
+        background: linear-gradient(45deg, #f59e0b, #d97706);
+        color: white;
+        box-shadow: 0 5px 15px rgba(245, 158, 11, 0.3);
+    }
+
+    .btn-warning:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+    }
+
+    .btn-ghost {
+        background: transparent;
+        color: #6b7280;
+        border: 2px solid #e5e7eb;
+    }
+
+    .btn-ghost:hover:not(:disabled) {
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+        box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
+    }
+
+    .btn-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4);
+    }
+
+    .alert {
+        display: flex;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        border-radius: 15px;
+        border: none;
+        font-weight: 500;
+        animation: slideDown 0.3s ease;
+    }
+
+    .alert i:first-child {
+        margin-right: 0.8rem;
+        font-size: 1.2rem;
+    }
+
+    .alert-success {
+        background: linear-gradient(45deg, #4ade80, #22c55e);
+        color: white;
+        box-shadow: 0 5px 15px rgba(74, 222, 128, 0.3);
+    }
+
+    .alert-error {
+        background: linear-gradient(45deg, #ef4444, #dc2626);
+        color: white;
+        box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-close {
+        background: none;
+        border: none;
+        color: inherit;
+        margin-left: auto;
+        padding: 0.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-close:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .text-muted {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+
+    .text-danger {
+        color: #ef4444;
+        font-size: 0.875rem;
+    }
+
+    .text-info {
+        color: #3b82f6;
+        font-size: 0.875rem;
+    }
+
+    .validation-message {
+        color: #ef4444;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+    }
+
+    @@skeyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .page-header {
+            flex-direction: column;
+            text-align: center;
+            gap: 1rem;
+        }
+
+        .profile-page {
+            padding: 1rem;
+        }
+    }
+</style>
+
+@code {
+    // 🔥 Profile Model
+    public class ProfileModel
+    {
+        [Required(ErrorMessage = "Full name is required")]
+        public string FullName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Please enter a valid email address")]
+        public string Email { get; set; } = string.Empty;
+
+        [Phone(ErrorMessage = "Please enter a valid phone number")]
+        public string PhoneNumber { get; set; } = string.Empty;
+
+        public DateTime? DateOfBirth { get; set; }
+    }
+
+    // 🔥 Password Model
+    public class PasswordModel
+    {
+        [Required(ErrorMessage = "Current password is required")]
+        public string CurrentPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "New password is required")]
+        [MinLength(8, ErrorMessage = "Password must be at least 8 characters long")]
+        public string NewPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Please confirm your password")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+
+    // 🔥 Form Models
+    private ProfileModel profileModel = new();
+    private PasswordModel passwordModel = new();
+
+    public string UserId { get; set; } = string.Empty;
+    public string AvatarLetter { get; set; } = "U";
+    public string SuccessMessage { get; set; } = string.Empty;
+    public string ErrorMessage { get; set; } = string.Empty;
+
+    // Validation states
+    private string EmailValidationMessage { get; set; } = string.Empty;
+    private string PhoneValidationMessage { get; set; } = string.Empty;
+    private bool isCheckingPhone = false;
+    private bool isPhoneValid = true;
+    private bool isEmailValid = true;
+
+    // Loading states
+    private bool isProfileLoading = false;
+    private bool isPasswordLoading = false;
+    private bool _hasLoadedFromCookies = false;
+
+    // Password strength properties
+    private bool HasMinLength => !string.IsNullOrEmpty(passwordModel.NewPassword) && passwordModel.NewPassword.Length >= 8;
+    private bool HasUppercase => !string.IsNullOrEmpty(passwordModel.NewPassword) && Regex.IsMatch(passwordModel.NewPassword, @"[A-Z]");
+    private bool HasLowercase => !string.IsNullOrEmpty(passwordModel.NewPassword) && Regex.IsMatch(passwordModel.NewPassword, @"[a-z]");
+    private bool HasNumber => !string.IsNullOrEmpty(passwordModel.NewPassword) && Regex.IsMatch(passwordModel.NewPassword, @"[0-9]");
+    private bool HasSpecialChar => !string.IsNullOrEmpty(passwordModel.NewPassword) && Regex.IsMatch(passwordModel.NewPassword, @"[!@#$%^&*(),.?\"":{}|<>]");
+
+    private int PasswordStrengthPercent
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(passwordModel.NewPassword)) return 0;
+            
+            int score = 0;
+            if (HasMinLength) score++;
+            if (HasUppercase) score++;
+            if (HasLowercase) score++;
+            if (HasNumber) score++;
+            if (HasSpecialChar) score++;
+            
+            return score * 20;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInitialUserInfo();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_hasLoadedFromCookies)
+        {
+            await LoadUserInfoFromCookies();
+            _hasLoadedFromCookies = true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadInitialUserInfo()
+    {
+        try
+        {
+            var httpContext = HttpContextAccessor.HttpContext;
+            if (httpContext != null)
+            {
+                UserId = httpContext.Request.Cookies["UserId"] ?? "";
+                profileModel.Email = httpContext.Request.Cookies["UserEmail"] ?? "";
+                profileModel.PhoneNumber = httpContext.Request.Cookies["UserPhone"] ?? "";
+            }
+
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated == true)
+            {
+                var nameFromAuth = authState.User.Identity.Name;
+                var emailFromAuth = authState.User.FindFirst("email")?.Value;
+                var phoneFromAuth = authState.User.FindFirst("phone")?.Value;
+                var userIdFromAuth = authState.User.FindFirst("sub")?.Value ??
+                                   authState.User.FindFirst("nameid")?.Value;
+
+                if (!string.IsNullOrEmpty(emailFromAuth)) profileModel.Email = emailFromAuth;
+                if (!string.IsNullOrEmpty(phoneFromAuth)) profileModel.PhoneNumber = phoneFromAuth;
+                if (!string.IsNullOrEmpty(userIdFromAuth)) UserId = userIdFromAuth;
+                profileModel.FullName = nameFromAuth ?? (!string.IsNullOrEmpty(profileModel.Email) ? profileModel.Email.Split('@')[0] : "User");
+            }
+            else if (!string.IsNullOrEmpty(profileModel.Email))
+            {
+                profileModel.FullName = profileModel.Email.Split('@')[0];
+            }
+
+            AvatarLetter = !string.IsNullOrEmpty(profileModel.FullName) ?
+                profileModel.FullName.Substring(0, 1).ToUpper() :
+                (!string.IsNullOrEmpty(profileModel.Email) ? profileModel.Email.Substring(0, 1).ToUpper() : "U");
+
+            Logger.LogInformation("Initial profile data loaded for user: {Email}, UserId: {UserId}", profileModel.Email, UserId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading initial profile information");
+            ErrorMessage = "Unable to load profile information.";
+        }
+    }
+
+    private async Task LoadUserInfoFromCookies()
+    {
+        try
+        {
+            var cookieUserId = await CookieService.GetCookieAsync("UserId");
+            var cookieEmail = await CookieService.GetCookieAsync("UserEmail");
+            var cookiePhone = await CookieService.GetCookieAsync("UserPhone");
+
+            if (!string.IsNullOrEmpty(cookieUserId) && string.IsNullOrEmpty(UserId))
+            {
+                UserId = cookieUserId;
+            }
+
+            if (!string.IsNullOrEmpty(cookieEmail) && string.IsNullOrEmpty(profileModel.Email))
+            {
+                profileModel.Email = cookieEmail;
+                profileModel.FullName = cookieEmail.Split('@')[0];
+                AvatarLetter = cookieEmail.Substring(0, 1).ToUpper();
+            }
+
+            if (!string.IsNullOrEmpty(cookiePhone) && string.IsNullOrEmpty(profileModel.PhoneNumber))
+            {
+                profileModel.PhoneNumber = cookiePhone;
+            }
+
+            Logger.LogInformation("Cookie-based profile data loaded for user: {Email}, UserId: {UserId}", profileModel.Email, UserId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Could not load user information from cookies - using server-side data");
+        }
+    }
+
+    // 🔥 PROFILE FORM METHODS
+    private async Task UpdateProfile()
+    {
+        if (string.IsNullOrEmpty(UserId))
+        {
+            ErrorMessage = "User not authenticated. Please log in again.";
+            return;
+        }
+
+        if (!isEmailValid || !isPhoneValid)
+        {
+            ErrorMessage = "Please fix validation errors.";
+            return;
+        }
+
+        isProfileLoading = true;
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            // Simulate API call
+            await Task.Delay(1000);
+
+            // Update avatar letter
+            AvatarLetter = !string.IsNullOrEmpty(profileModel.FullName) ?
+                profileModel.FullName.Substring(0, 1).ToUpper() : "U";
+
+            SuccessMessage = "Profile updated successfully!";
+            Logger.LogInformation("Profile updated for user: {Email}", profileModel.Email);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error updating profile for user: {Email}", profileModel.Email);
+            ErrorMessage = "Failed to update profile. Please try again.";
+        }
+        finally
+        {
+            isProfileLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    // 🔥 PASSWORD FORM METHODS
+    private async Task UpdatePassword()
+    {
+        if (string.IsNullOrEmpty(UserId))
+        {
+            ErrorMessage = "User not authenticated. Please log in again.";
+            return;
+        }
+
+        if (passwordModel.NewPassword != passwordModel.ConfirmPassword)
+        {
+            ErrorMessage = "New password and confirm password do not match.";
+            return;
+        }
+
+        if (!(HasMinLength && HasUppercase && HasLowercase && HasNumber && HasSpecialChar))
+        {
+            ErrorMessage = "Password must meet all security requirements.";
+            return;
+        }
+
+        isPasswordLoading = true;
+        ErrorMessage = string.Empty;
+        SuccessMessage = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            // Simulate API call for password verification and update
+            await Task.Delay(1200);
+
+            // Clear password fields after successful update
+            passwordModel.CurrentPassword = string.Empty;
+            passwordModel.NewPassword = string.Empty;
+            passwordModel.ConfirmPassword = string.Empty;
+
+            SuccessMessage = "Password changed successfully!";
+            Logger.LogInformation("Password updated for user: {Email}", profileModel.Email);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error updating password for user: {Email}", profileModel.Email);
+            ErrorMessage = "Failed to change password. Please try again.";
+        }
+        finally
+        {
+            isPasswordLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ResetPasswordForm()
+    {
+        passwordModel.CurrentPassword = string.Empty;
+        passwordModel.NewPassword = string.Empty;
+        passwordModel.ConfirmPassword = string.Empty;
+        StateHasChanged();
+    }
+
+    // Validation methods
+    private async Task ValidateEmailFormat()
+    {
+        EmailValidationMessage = string.Empty;
+        isEmailValid = true;
+
+        if (string.IsNullOrEmpty(profileModel.Email))
+        {
+            return;
+        }
+
+        var emailRegex = new Regex(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");
+        if (!emailRegex.IsMatch(profileModel.Email))
+        {
+            EmailValidationMessage = "Please enter a valid email address format (e.g., user@example.com)";
+            isEmailValid = false;
+            StateHasChanged();
+            return;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task CheckPhoneDuplicate()
+    {
+        PhoneValidationMessage = string.Empty;
+        isPhoneValid = true;
+
+        if (string.IsNullOrEmpty(profileModel.PhoneNumber))
+        {
+            return;
+        }
+
+        isCheckingPhone = true;
+        StateHasChanged();
+
+        try
+        {
+            await Task.Delay(800);
+
+            var existingPhones = new[] { "0123456789", "0987654321", "+84123456789" };
+            if (existingPhones.Contains(profileModel.PhoneNumber))
+            {
+                PhoneValidationMessage = "This phone number is already registered by another user";
+                isPhoneValid = false;
+            }
+            else
+            {
+                PhoneValidationMessage = "";
+                isPhoneValid = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error checking phone duplicate");
+            PhoneValidationMessage = "Unable to verify phone number. Please try again.";
+            isPhoneValid = false;
+        }
+        finally
+        {
+            isCheckingPhone = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ValidatePasswordStrength()
+    {
+        StateHasChanged();
+    }
+
+    // CSS class helpers
+    private string GetEmailCssClass()
+    {
+        if (string.IsNullOrEmpty(profileModel.Email)) return "form-control";
+        return isEmailValid ? "form-control is-valid" : "form-control is-invalid";
+    }
+
+    private string GetPhoneCssClass()
+    {
+        if (string.IsNullOrEmpty(profileModel.PhoneNumber)) return "form-control";
+        if (isCheckingPhone) return "form-control";
+        return isPhoneValid ? "form-control is-valid" : "form-control is-invalid";
+    }
+
+    private string GetPasswordCssClass()
+    {
+        if (string.IsNullOrEmpty(passwordModel.NewPassword)) return "form-control";
+        
+        bool isStrong = HasMinLength && HasUppercase && HasLowercase && HasNumber && HasSpecialChar;
+        return isStrong ? "form-control is-valid" : "form-control";
+    }
+
+    private string GetPasswordStrengthClass()
+    {
+        var score = PasswordStrengthPercent;
+        return score switch
+        {
+            <= 20 => "strength-weak",
+            <= 40 => "strength-fair", 
+            <= 60 => "strength-good",
+            _ => "strength-strong"
+        };
+    }
+
+    private string GetPasswordStrengthText()
+    {
+        var score = PasswordStrengthPercent;
+        return score switch
+        {
+            <= 20 => "Very Weak",
+            <= 40 => "Weak",
+            <= 60 => "Fair", 
+            <= 80 => "Good",
+            _ => "Strong"
+        };
+    }
+
+    // Form validation helpers
+    private bool IsProfileFormValid()
+    {
+        return isEmailValid && isPhoneValid && !string.IsNullOrEmpty(profileModel.FullName);
+    }
+
+    private bool IsPasswordFormValid()
+    {
+        if (string.IsNullOrEmpty(passwordModel.CurrentPassword) || 
+            string.IsNullOrEmpty(passwordModel.NewPassword) || 
+            string.IsNullOrEmpty(passwordModel.ConfirmPassword))
+        {
+            return false;
+        }
+
+        var isPasswordStrong = HasMinLength && HasUppercase && HasLowercase && HasNumber && HasSpecialChar;
+        var passwordsMatch = passwordModel.NewPassword == passwordModel.ConfirmPassword;
+        
+        return isPasswordStrong && passwordsMatch;
+    }
+}

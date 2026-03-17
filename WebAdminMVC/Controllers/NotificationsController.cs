@@ -184,7 +184,7 @@ namespace WebAdminMVC.Controllers
                 {
                     Id = c.Id,
                     TenantName = c.Tenant.FullName,
-                    RoomName = c.Room.RoomCode
+                    RoomName = c.Room.RoomNo
                 })
                 .ToListAsync();
 

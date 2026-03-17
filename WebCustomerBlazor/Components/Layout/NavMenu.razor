@@ -15,16 +15,71 @@
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
+            <NavLink class="nav-link" href="rooms">
+                <span class="bi bi-building-fill-nav-menu" aria-hidden="true"></span> Rooms
             </NavLink>
         </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
+        <AuthorizeView>
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="profile">
+                        <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> Profile
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="contracts">
+                        <span class="bi bi-file-earmark-text-fill-nav-menu" aria-hidden="true"></span> My Contracts
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <button class="nav-link btn btn-link" @onclick="Logout">
+                        <span class="bi bi-box-arrow-right-nav-menu" aria-hidden="true"></span> Logout
+                    </button>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                <div class="nav-item px-3">
+                    <a class="nav-link" href="@_hostUrl/Auth/Login">
+                        <span class="bi bi-box-arrow-in-right-nav-menu" aria-hidden="true"></span> Login
+                    </a>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
     </nav>
 </div>
 
+@code {
+    @inject ICookieService CookieService
+    @inject NavigationManager Nav
+    @inject IConfiguration Configuration
+    @inject AuthenticationStateProvider AuthStateProvider
+
+    private string _hostUrl => Configuration["HostUrl"] ?? "https://localhost:7121";
+
+    private async Task Logout()
+    {
+        try
+        {
+            await CookieService.DeleteCookieAsync("AuthToken");
+            await CookieService.DeleteCookieAsync("RefreshToken");
+            await CookieService.DeleteCookieAsync("UserId");
+            await CookieService.DeleteCookieAsync("UserEmail");
+
+            // Notify authentication state provider
+            if (AuthStateProvider is CookieAuthenticationStateProvider customProvider)
+            {
+                customProvider.NotifyAuthenticationStateChanged();
+            }
+
+            Nav.NavigateTo("/", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during logout: {ex.Message}");
+            Nav.NavigateTo("/", forceLoad: true);
+        }
+    }
+}

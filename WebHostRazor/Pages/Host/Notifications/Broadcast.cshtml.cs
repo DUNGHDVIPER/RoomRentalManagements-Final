@@ -61,18 +61,18 @@ namespace WebHostRazor.Pages.Host.Notifications
       {
           id = c.ContractId,
           tenant = c.Tenant.FullName,
-          room = c.Room.RoomName,
+          room = c.Room.Name,
           blockId = c.Room.Floor.BlockId,
           floorId = c.Room.FloorId
       })
       .ToList();
 
             var blocks = _context.Blocks
-                .Select(b => new { id = b.Id, name = b.BlockName })
+                .Select(b => new { id = b.Id, name = b.Name })
                 .ToList();
 
             var floors = _context.Floors
-                .Select(f => new { id = f.Id, name = f.FloorName, blockId = f.BlockId })
+                .Select(f => new { id = f.Id, name = f.Name, blockId = f.BlockId })
                 .ToList();
 
             ContractsJson = JsonSerializer.Serialize(contracts);
@@ -83,6 +83,7 @@ namespace WebHostRazor.Pages.Host.Notifications
         {
             if (!ModelState.IsValid)
                 return Page();
+
             if (Input.ContractIds == null || !Input.ContractIds.Any())
             {
                 ModelState.AddModelError("", "Vui lòng chọn ít nhất 1 tenant.");

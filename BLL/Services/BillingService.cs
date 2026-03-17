@@ -39,13 +39,12 @@ public class BillingService : IBillingService
         {
             var kw = q.Trim();
             query = query.Where(b =>
-                b.Contract.Room.RoomCode.Contains(kw));
+                b.Contract.Room.RoomNo.Contains(kw) ||
+                (b.Contract.Room.Name != null && b.Contract.Room.Name.Contains(kw)));
         }
 
         if (!string.IsNullOrWhiteSpace(month) && TryParseMonth(month, out var period))
-        {
             query = query.Where(b => b.Period == period);
-        }
 
         if (!string.IsNullOrWhiteSpace(status))
         {
@@ -60,7 +59,7 @@ public class BillingService : IBillingService
 
         return await query
             .OrderByDescending(b => b.Period)
-            .ThenBy(b => b.Contract.Room.RoomCode)
+            .ThenBy(b => b.Contract.Room.RoomNo)
             .Select(b => new BillDto
             {
                 Id = b.Id,
@@ -68,9 +67,9 @@ public class BillingService : IBillingService
                 Period = b.Period,
                 IssuedAt = b.IssuedAt,
                 DueDate = b.DueDate,
-                Status = b.Status.ToString(),
+                Status = (int)b.Status,
                 TotalAmount = b.TotalAmount,
-                RoomName = b.Contract.Room.RoomCode,
+                RoomName = b.Contract.Room.Name ?? b.Contract.Room.RoomNo,
                 Items = new List<BillItemDto>(),
                 Payments = new List<PaymentDto>()
             })
@@ -89,7 +88,7 @@ public class BillingService : IBillingService
 
         var items = await _db.BillItems
             .AsNoTracking()
-            .Where(i => i.BillId == id)
+.Where(i => i.BillId == id)
             .OrderBy(i => i.ExtraFeeId.HasValue)
             .ThenBy(i => i.Name)
             .Select(i => new BillItemDto
@@ -112,7 +111,7 @@ public class BillingService : IBillingService
                 BillId = p.BillId,
                 Amount = p.Amount,
                 Method = p.Method,
-                Status = p.Status.ToString(),
+                Status = (int)p.Status,
                 PaidAt = p.PaidAt,
                 TransactionRef = p.TransactionRef
             })
@@ -125,9 +124,9 @@ public class BillingService : IBillingService
             Period = b.Period,
             IssuedAt = b.IssuedAt,
             DueDate = b.DueDate,
-            Status = b.Status.ToString(),
+            Status = (int)b.Status,
             TotalAmount = b.TotalAmount,
-            RoomName = b.Contract.Room.RoomCode,
+            RoomName = b.Contract.Room.Name ?? b.Contract.Room.RoomNo,
             Items = items,
             Payments = payments
         };
@@ -141,13 +140,13 @@ public class BillingService : IBillingService
             .Include(c => c.Room)
             .Select(c => c.Room)
             .Distinct()
-            .OrderBy(r => r.RoomCode)
+            .OrderBy(r => r.RoomNo)
             .ToListAsync(ct);
 
         return rooms.Select(r => new SelectListItem
         {
-            Value = r.RoomCode,
-            Text = r.RoomCode
+            Value = r.RoomNo,
+            Text = $"{r.RoomNo} - {(r.Name ?? "Room")}"
         }).ToList();
     }
 
@@ -177,14 +176,15 @@ public class BillingService : IBillingService
             .Include(c => c.Room)
             .Where(c => c.Status == "Active")
             .OrderByDescending(c => c.ContractId)
-            .FirstOrDefaultAsync(c => c.Room.RoomCode == roomKey, ct);
+            .FirstOrDefaultAsync(c =>
+                c.Room.RoomNo == roomKey ||
+(c.Room.Name != null && c.Room.Name == roomKey), ct);
 
         if (contract == null)
             return (false, "Không tìm thấy phòng hoặc chưa có hợp đồng active cho phòng này.");
 
         var exists = await _db.Bills
             .AnyAsync(b => b.ContractId == contract.ContractId && b.Period == period, ct);
-
         if (exists)
             return (false, "Bill của phòng này trong tháng này đã tồn tại.");
 
@@ -206,16 +206,6 @@ public class BillingService : IBillingService
         await _db.SaveChangesAsync(ct);
 
         return (true, null);
-    }
-
-    public async Task UpdateBillStatusAsync(int billId, int status, CancellationToken ct = default)
-    {
-        var bill = await _db.Bills.FirstOrDefaultAsync(x => x.Id == billId, ct);
-        if (bill == null) return;
-
-        bill.Status = (BillStatus)status;
-        bill.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync(ct);
     }
 
     public async Task<(bool Ok, string? Error)> UpdateBillAsync(int id, string month, string uiStatus, decimal total, CancellationToken ct)
@@ -245,9 +235,10 @@ public class BillingService : IBillingService
 
         _db.BillItems.RemoveRange(_db.BillItems.Where(x => x.BillId == id));
         _db.Payments.RemoveRange(_db.Payments.Where(x => x.BillId == id));
-        _db.Bills.Remove(bill);
 
+        _db.Bills.Remove(bill);
         await _db.SaveChangesAsync(ct);
+
         return (true, null);
     }
 
@@ -274,10 +265,9 @@ public class BillingService : IBillingService
 
         _db.Payments.Add(payment);
         await _db.SaveChangesAsync(ct);
-
         var totalPaid = await _db.Payments
-            .Where(p => p.BillId == dto.BillId && p.Status == PaymentStatus.Completed)
-            .SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;
+                    .Where(p => p.BillId == dto.BillId && p.Status == PaymentStatus.Completed)
+                    .SumAsync(p => (decimal?)p.Amount, ct) ?? 0m;
 
         if (totalPaid >= bill.TotalAmount)
             bill.Status = BillStatus.Paid;
@@ -329,7 +319,7 @@ public class BillingService : IBillingService
             var allowedRoomIds = await _db.Rooms
                 .AsNoTracking()
                 .Where(r => r.FloorId == req.FloorId.Value)
-                .Select(r => r.RoomId)
+                .Select(r => r.Id)
                 .ToListAsync(ct);
 
             contractRows = contractRows
@@ -342,7 +332,7 @@ public class BillingService : IBillingService
             var allowedRoomIds = await _db.Rooms
                 .AsNoTracking()
                 .Where(r => r.Floor.BlockId == req.BlockId.Value)
-                .Select(r => r.RoomId)
+                .Select(r => r.Id)
                 .ToListAsync(ct);
 
             contractRows = contractRows
@@ -363,7 +353,6 @@ public class BillingService : IBillingService
                 .Where(x => x.IsActive && extraFeeIds.Contains(x.Id))
                 .ToListAsync(ct)
             : new List<ExtraFee>();
-
         var now = DateTime.UtcNow;
         var created = 0;
         var skipped = 0;
@@ -408,24 +397,10 @@ public class BillingService : IBillingService
                     var charges = await _utility.CalculateChargesAsync(c.RoomId, period, ct);
 
                     if (charges.ElectricAmount > 0)
-                    {
-                        _db.BillItems.Add(new BillItem
-                        {
-                            BillId = bill.Id,
-                            Name = "Electric",
-                            Amount = charges.ElectricAmount
-                        });
-                    }
+                        _db.BillItems.Add(new BillItem { BillId = bill.Id, Name = "Electric", Amount = charges.ElectricAmount });
 
                     if (charges.WaterAmount > 0)
-                    {
-                        _db.BillItems.Add(new BillItem
-                        {
-                            BillId = bill.Id,
-                            Name = "Water",
-                            Amount = charges.WaterAmount
-                        });
-                    }
+                        _db.BillItems.Add(new BillItem { BillId = bill.Id, Name = "Water", Amount = charges.WaterAmount });
                 }
                 catch
                 {
@@ -463,12 +438,9 @@ public class BillingService : IBillingService
         period = 0;
         if (string.IsNullOrWhiteSpace(month)) return false;
 
-        if (!DateTime.TryParseExact(
-                month.Trim(),
-                "yyyy-MM",
+        if (!DateTime.TryParseExact(month.Trim(), "yyyy-MM",
                 System.Globalization.CultureInfo.InvariantCulture,
-                System.Globalization.DateTimeStyles.None,
-                out var dt))
+                System.Globalization.DateTimeStyles.None, out var dt))
             return false;
 
         period = dt.Year * 100 + dt.Month;
@@ -484,7 +456,6 @@ public class BillingService : IBillingService
     private static string NormalizeUiStatus(string? ui)
     {
         if (string.IsNullOrWhiteSpace(ui)) return "Unpaid";
-
         var s = ui.Trim();
         if (s.Equals("paid", StringComparison.OrdinalIgnoreCase)) return "Paid";
         if (s.Equals("overdue", StringComparison.OrdinalIgnoreCase)) return "Overdue";

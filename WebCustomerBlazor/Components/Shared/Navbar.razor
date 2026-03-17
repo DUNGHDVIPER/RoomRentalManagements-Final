@@ -1,61 +1,102 @@
-﻿@using BLL.Services
-@using Microsoft.AspNetCore.Components.Authorization
-@using System.Security.Claims
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@inject ICookieService CookieService
 @inject NavigationManager Nav
-@inject TokenAuthenticationStateProvider AuthProvider
+@inject AuthenticationStateProvider AuthStateProvider
 
 <header class="header glass">
     <div class="container">
         <div class="header-inner">
-            <a class="brand" href="/">
-                <div class="brand-badge">R</div>
-                <div>
-                    <div class="brand-title">Roomy <span style="color:var(--blue)">Customer</span></div>
-                    <div class="brand-sub">Modern rental portal • FE-only</div>
-                </div>
-            </a>
+            <div class="header-logo">
+                <a href="/" class="logo">
+                    <span class="logo-text">RoomRental</span>
+                </a>
+            </div>
 
             <nav class="nav">
-                <a class="@(IsActive("/") ? "active" : "")" href="/">Home</a>
-                <a class="@(IsActive("/rooms") ? "active" : "")" href="/rooms">Rooms</a>
-                <a class="@(IsActive("/my-room") ? "active" : "")" href="/my-room">My Room</a>
-                <a class="@(IsActive("/tickets") ? "active" : "")" href="/tickets">Ticket Center</a>
-                <a class="@(IsActive("/profile") ? "active" : "")" href="/profile">Profile</a>
-                <a class="@(IsActive("/notifications") ? "active" : "")" href="/notifications">Thông báo</a>
-
-                <AuthorizeView>
-                    <Authorized>
-                        <span style="font-weight:600;">
-                            @context.User.FindFirst(ClaimTypes.Email)?.Value
-                        </span>
-                        <button class="btn-grad"
-                                style="padding:10px 14px;border:none;cursor:pointer;"
-                                @onclick="Logout">
-                            Logout
-                        </button>
-                    </Authorized>
-                    <NotAuthorized>
-                        <a class="btn-grad" href="/login" style="padding:10px 14px;">Login</a>
-                    </NotAuthorized>
-                </AuthorizeView>
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a href="/" class="nav-link @(IsActive("/") ? "active" : "")">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/rooms" class="nav-link @(IsActive("/rooms") ? "active" : "")">Rooms</a>
+                    </li>
+                    
+                    <AuthorizeView>
+                        <Authorized>
+                            <li class="nav-item">
+                                <a href="/profile" class="nav-link @(IsActive("/profile") ? "active" : "")">Profile</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="/contracts" class="nav-link @(IsActive("/contracts") ? "active" : "")">My Contracts</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <span class="nav-link dropdown-toggle">
+                                    Welcome, @context.User.Identity?.Name
+                                </span>
+                                <ul class="dropdown-menu">
+                                    <li><button class="dropdown-item" @onclick="Logout">Logout</button></li>
+                                </ul>
+                            </li>
+                        </Authorized>
+                        <NotAuthorized>
+                            <li class="nav-item">
+                                <a href="/redirect-to-host-login" class="nav-link">Login</a>
+                            </li>
+                        </NotAuthorized>
+                    </AuthorizeView>
+                </ul>
             </nav>
         </div>
     </div>
 </header>
 
 @code {
-    private bool IsActive(string path)
+    protected override async Task OnInitializedAsync()
     {
-        var p = Nav.ToBaseRelativePath(Nav.Uri);
-        if (string.IsNullOrEmpty(p)) p = "/";
-        if (!path.StartsWith("/")) path = "/" + path;
-        if (p == "" && path == "/") return true;
-        return ("/" + p).StartsWith(path, StringComparison.OrdinalIgnoreCase);
+        // Subscribe to authentication state changes
+        AuthStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+    }
+
+    private async void OnAuthenticationStateChanged(Task<AuthenticationState> authStateTask)
+    {
+        await InvokeAsync(() => StateHasChanged());
     }
 
     private async Task Logout()
     {
-        await AuthProvider.NotifyUserLogoutAsync();
-        Nav.NavigateTo("/login", forceLoad: false);
+        try
+        {
+            await CookieService.DeleteCookieAsync("AuthToken");
+            await CookieService.DeleteCookieAsync("RefreshToken");
+            await CookieService.DeleteCookieAsync("UserId");
+            await CookieService.DeleteCookieAsync("UserEmail");
+
+            // Notify authentication state provider
+            if (AuthStateProvider is CookieAuthenticationStateProvider customProvider)
+            {
+                customProvider.NotifyAuthenticationStateChanged();
+            }
+
+            Nav.NavigateTo("/", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during logout: {ex.Message}");
+            Nav.NavigateTo("/", forceLoad: true);
+        }
+    }
+
+    bool IsActive(string path)
+    {
+        var currentPath = Nav.ToBaseRelativePath(Nav.Uri);
+        if (string.IsNullOrEmpty(currentPath)) currentPath = "/";
+        if (!currentPath.StartsWith("/")) currentPath = "/" + currentPath;
+        
+        return string.Equals(currentPath, path, StringComparison.OrdinalIgnoreCase);
+    }
+
+    public void Dispose()
+    {
+        AuthStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
     }
 }

@@ -29,10 +29,10 @@
                 <tbody>
                     @foreach (var item in Model)
                     {
-                        var room = rooms?.FirstOrDefault(r => r.RoomId == item.RoomId);
+                        var room = rooms?.FirstOrDefault(r => r.Id == item.RoomId);
 
                         <tr>
-                            <td><strong>Room @(room?.RoomCode)</strong></td>
+                            <td><strong>Room @(room?.RoomNo)</strong></td>
                             <td>@item.ElectricKwh</td>
                             <td>@item.WaterM3</td>
                             <td>@item.ElectricAmount.ToString("N0")</td>

@@ -1,0 +1,46 @@
+﻿@page "/login-error"
+<a href="@_hostUrl/Auth/Login" class="btn btn-outline-secondary">Try Login Again</a>
+
+@code {
+    [Inject] private IConfiguration Configuration { get; set; } = default!;
+
+    private string _hostUrl => Configuration["HostUrl"] ?? "https://localhost:7220";
+}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="text-danger mb-3">
+                        <i class="fas fa-exclamation-triangle fa-3x"></i>
+                    </div>
+                    <h4 class="card-title">Login Error</h4>
+                    <p class="card-text text-muted">
+                        There was an error processing your login. Please try again.
+                    </p>
+                    <div class="mt-4">
+                        <a href="/" class="btn btn-primary me-2">Go Home</a>
+                        <a href="https://localhost:7220/Auth/Login" class="btn btn-outline-secondary">Try Login Again</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border: none;
+    }
+
+    .btn {
+        border-radius: 8px;
+        padding: 0.5rem 1.5rem;
+    }
+
+    .fa-3x {
+        font-size: 3rem;
+    }
+</style>

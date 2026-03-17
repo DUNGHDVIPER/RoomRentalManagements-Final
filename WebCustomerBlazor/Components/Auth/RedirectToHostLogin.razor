@@ -1,0 +1,89 @@
+﻿@page "/redirect-to-host-login"
+@inject NavigationManager Nav
+@inject IConfiguration Configuration
+@inject ILogger<RedirectToHostLogin> Logger
+
+<div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div style="background: white; padding: 2rem; border-radius: 15px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+        <div style="margin-bottom: 1rem; font-size: 2rem;">🔐</div>
+        <h3 style="margin-bottom: 1rem; color: #2d3748;">@_status</h3>
+        <p style="color: #718096; margin-bottom: 1.5rem;">@_message</p>
+        @if (!_hasError)
+        {
+            <div style="width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top-color: #667eea; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+        }
+        else
+        {
+            <a href="https://localhost:7121/Auth/Login" class="btn btn-primary" style="display: inline-block; padding: 0.75rem 1.5rem; background: #667eea; color: white; text-decoration: none; border-radius: 8px;">
+                Go to Login Page
+            </a>
+        }
+    </div>
+</div>
+
+<style>
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+@code {
+    [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
+
+    private string _status = "Redirecting to Login...";
+    private string _message = "You will be redirected to the login page.";
+    private bool _hasError = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var returnUrl = ReturnUrl ?? "/";
+
+                // Try multiple possible host URLs
+                var hostUrls = new[]
+                {
+                    Configuration["HostUrl"] ?? "https://localhost:7121",
+                    "https://localhost:7220",
+                    "https://localhost:7121"
+                };
+
+                var fullReturnUrl = $"https://localhost:7292{returnUrl}";
+
+                foreach (var hostUrl in hostUrls)
+                {
+                    var hostLoginUrl = $"{hostUrl}/Auth/Login?ReturnUrl={Uri.EscapeDataString(fullReturnUrl)}";
+
+                    Logger.LogInformation("Attempting redirect to: {HostLoginUrl}", hostLoginUrl);
+
+                    try
+                    {
+                        await Task.Delay(100);
+                        Nav.NavigateTo(hostLoginUrl, forceLoad: true);
+                        return; // Success
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogWarning(ex, "Failed to redirect to {HostUrl}", hostUrl);
+                        continue;
+                    }
+                }
+
+                // If all redirects failed
+                throw new Exception("All redirect attempts failed");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error during redirect");
+                _status = "Redirect Failed";
+                _message = "Please click the button below to login manually.";
+                _hasError = true;
+                StateHasChanged();
+            }
+        }
+    }
+}

@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace DAL.Data.Configurations.Property;
+namespace DAL.Data.Configurations;
 
 public class AmenityConfig : IEntityTypeConfiguration<Amenity>
 {
@@ -11,17 +11,12 @@ public class AmenityConfig : IEntityTypeConfiguration<Amenity>
         b.ToTable("Amenities");
 
         b.HasKey(x => x.Id);
-        b.Property(x => x.Id)
-            .HasColumnName("AmenityId");
+        b.Property(x => x.Id).HasColumnName("AmenityId"); // ✅ map về cột cũ
 
         b.Property(x => x.AmenityName)
-            .IsRequired()
-            .HasMaxLength(100);
+            .HasMaxLength(100)
+            .IsRequired();
 
-        b.HasIndex(x => x.AmenityName)
-            .IsUnique();
-
-        b.Property(x => x.CreatedAt)
-            .HasDefaultValueSql("SYSDATETIME()");
+        b.HasIndex(x => x.AmenityName).IsUnique(false);
     }
 }

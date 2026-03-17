@@ -24,6 +24,7 @@ public class LoginModel(
     private readonly IConfiguration _configuration = configuration;
     private readonly ILogger<LoginModel> _logger = logger;
 
+    // Properties for the view to bind to
     [BindProperty]
     [Required(ErrorMessage = "Email is required")]
     [EmailAddress]
@@ -40,14 +41,12 @@ public class LoginModel(
     public string? Error { get; set; }
     public string? ReturnUrl { get; set; }
 
-    public string CustomerPortalUrl =>
-        $"{(_configuration["CustomerUrl"] ?? "https://localhost:7292").TrimEnd('/')}/login";
-
     public async Task OnGetAsync(string? returnUrl = null, string? error = null)
     {
         ReturnUrl = returnUrl;
-        Error = error;
+        Error = error; // Hiển thị error từ Google nếu có
 
+        // Clear existing external authentication
         await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
     }
 
@@ -71,32 +70,29 @@ public class LoginModel(
 
             var result = await _authService.LoginAsync(loginRequest);
 
-            if (!result.Succeeded)
+            if (result.Succeeded)
             {
-                Error = result.Error ?? "Invalid login attempt.";
-                return Page();
+                var user = await _userManager.FindByEmailAsync(Email);
+                if (user != null)
+                {
+                    var roles = await _userManager.GetRolesAsync(user);
+                    _logger.LogInformation("User {Email} logged in with roles: {Roles}", Email, string.Join(",", roles));
+
+                    return await RedirectBasedOnRole(user);
+                }
+
+                // Default fallback redirect
+                _logger.LogWarning("No user found for email {Email}, using default redirect", Email);
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                {
+                    return LocalRedirect(returnUrl);
+                }
+
+                return RedirectToPage("/Index"); // Default home page
             }
 
-            var user = await _userManager.FindByEmailAsync(Email);
-            if (user == null)
-            {
-                Error = "User not found after login.";
-                return Page();
-            }
-
-            var roles = await _userManager.GetRolesAsync(user);
-            _logger.LogInformation("User {Email} logged in with roles: {Roles}", Email, string.Join(",", roles));
-
-            // Customer/Tenant/User KHÔNG đăng nhập ở Host portal nữa
-            if (roles.Contains("Customer") || roles.Contains("Tenant") || roles.Contains("User"))
-            {
-                await ClearHostAuthenticationAsync();
-
-                Error = "Tài khoản Customer/Tenant vui lòng đăng nhập trực tiếp tại Customer Portal.";
-                return Page();
-            }
-
-            return await RedirectBasedOnRole(user);
+            Error = result.Error ?? "Invalid login attempt.";
+            return Page();
         }
         catch (Exception ex)
         {
@@ -106,15 +102,18 @@ public class LoginModel(
         }
     }
 
+    // GOOGLE LOGIN METHODS
     public async Task<IActionResult> OnPostExternalLoginAsync(string provider, string? returnUrl = null)
     {
+        // Clear existing external authentication first
         await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
 
+        // Redirect về callback sau khi Google authentication thành công
         var redirectUrl = Url.Page("./Login", pageHandler: "ExternalLoginCallback", values: new { returnUrl });
         _logger.LogInformation("Starting external login with {Provider}, callback URL: {RedirectUrl}", provider, redirectUrl);
 
         var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
-        properties.Parameters.Add("prompt", "select_account");
+        properties.Parameters.Add("prompt", "select_account"); // Force account selection
 
         return new ChallengeResult(provider, properties);
     }
@@ -134,19 +133,28 @@ public class LoginModel(
         if (info == null)
         {
             _logger.LogWarning("Failed to load external login information from Google");
+
+            // TRỞ LẠI LOGIN PAGE VỚI ERROR MESSAGE
             return RedirectToPage("./Login", new { error = "Unable to load external login information. Please try again." });
         }
 
+        // DEBUG: Log tất cả claims từ Google
+        _logger.LogInformation("=== GOOGLE CLAIMS DEBUG ===");
+        foreach (var claim in info.Principal.Claims)
+        {
+            _logger.LogInformation("Claim: {Type} = {Value}", claim.Type, claim.Value);
+        }
+        _logger.LogInformation("=== END GOOGLE CLAIMS ===");
+
+        // THỬ CÁC CÁCH KHÁC NHAU ĐỂ LẤY EMAIL
         var email = info.Principal.FindFirst(ClaimTypes.Email)?.Value
                     ?? info.Principal.FindFirst("email")?.Value
                     ?? info.Principal.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")?.Value;
 
         var name = info.Principal.FindFirst(ClaimTypes.Name)?.Value
                    ?? info.Principal.FindFirst("name")?.Value;
-
-        _logger.LogInformation(
-            "External login info received from {Provider} - Email: {Email}, Name: {Name}, ProviderKey: {ProviderKey}",
-            info.LoginProvider, email, name, info.ProviderKey);
+        _logger.LogInformation("External login info received from {Provider} - Email: {Email}, Name: {Name}, ProviderKey: {ProviderKey}",
+                    info.LoginProvider, email, name, info.ProviderKey);
 
         if (string.IsNullOrEmpty(email))
         {
@@ -154,16 +162,27 @@ public class LoginModel(
             return RedirectToPage("./Login", new { error = "Unable to get email from Google. Please ensure your Google account has a public email." });
         }
 
+        // Thử sign in với external provider
         var signInResult = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
 
         if (signInResult.Succeeded)
         {
             _logger.LogInformation("User logged in with {Name} provider.", info.LoginProvider);
 
-            var existingUser = await _userManager.FindByEmailAsync(email);
-            if (existingUser != null)
+            // Tìm user và generate tokens cho Google login
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user != null)
             {
-                return await RedirectBasedOnRole(existingUser);
+                // ✅ GENERATE VÀ SAVE TOKENS CHO GOOGLE LOGIN
+                var roles = await _userManager.GetRolesAsync(user);
+                var jwtToken = await _tokenService.GenerateJwtTokenAsync(user, roles);
+                var refreshToken = _tokenService.GenerateRefreshToken();
+
+                // LƯU REFRESH TOKEN VÀO DATABASE
+                await _tokenService.SaveRefreshTokenAsync(user.Id, refreshToken);
+                _logger.LogInformation("Tokens generated and saved for Google login user: {Email}", email);
+
+                return await RedirectBasedOnRole(user);
             }
 
             return LocalRedirect(returnUrl ?? "/");
@@ -173,53 +192,77 @@ public class LoginModel(
         {
             return RedirectToPage("./Login", new { error = "User account locked out." });
         }
-
-        var user = await _userManager.FindByEmailAsync(email);
-
-        if (user == null)
-        {
-            user = new IdentityUser
-            {
-                UserName = email,
-                Email = email,
-                EmailConfirmed = true
-            };
-
-            var createResult = await _userManager.CreateAsync(user);
-            if (!createResult.Succeeded)
-            {
-                var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
-                _logger.LogError("Failed to create user: {Errors}", errors);
-                return RedirectToPage("./Login", new { error = $"Failed to create account: {errors}" });
-            }
-
-            await _userManager.AddToRoleAsync(user, "Host");
-
-            var addLoginResult = await _userManager.AddLoginAsync(user, info);
-            if (!addLoginResult.Succeeded)
-            {
-                var errors = string.Join(", ", addLoginResult.Errors.Select(e => e.Description));
-                _logger.LogError("Failed to link external login: {Errors}", errors);
-                return RedirectToPage("./Login", new { error = $"Failed to link external login: {errors}" });
-            }
-
-            await _signInManager.SignInAsync(user, isPersistent: false);
-            _logger.LogInformation("User created an account using {Name} provider.", info.LoginProvider);
-
-            return await RedirectBasedOnRole(user);
-        }
         else
         {
-            var linkResult = await _userManager.AddLoginAsync(user, info);
-            if (!linkResult.Succeeded)
+            // Nếu user chưa có account, tạo account mới
+            if (!string.IsNullOrEmpty(email))
             {
-                var errors = string.Join(", ", linkResult.Errors.Select(e => e.Description));
-                _logger.LogError("Failed to link existing external login: {Errors}", errors);
-                return RedirectToPage("./Login", new { error = $"Failed to link external login: {errors}" });
+                var user = await _userManager.FindByEmailAsync(email);
+
+                if (user == null)
+                {
+                    user = new IdentityUser
+                    {
+                        UserName = email,
+                        Email = email,
+                        EmailConfirmed = true
+                    };
+
+                    var result = await _userManager.CreateAsync(user);
+                    if (result.Succeeded)
+                    {
+                        // Thêm role Customer mặc định cho Google user
+                        await _userManager.AddToRoleAsync(user, "Customer");
+
+                        // Link external login
+                        result = await _userManager.AddLoginAsync(user, info);
+                        if (result.Succeeded)
+                        {
+                            await _signInManager.SignInAsync(user, isPersistent: false);
+                            _logger.LogInformation("User created an account using {Name} provider.", info.LoginProvider);
+                            // ✅ GENERATE VÀ SAVE TOKENS CHO USER MỚI TỪ GOOGLE
+                            var roles = await _userManager.GetRolesAsync(user);
+                            var jwtToken = await _tokenService.GenerateJwtTokenAsync(user, roles);
+                            var refreshToken = _tokenService.GenerateRefreshToken();
+
+                            // LƯU REFRESH TOKEN VÀO DATABASE
+                            await _tokenService.SaveRefreshTokenAsync(user.Id, refreshToken);
+                            _logger.LogInformation("Tokens generated and saved for new Google user: {Email}", email);
+
+                            return await RedirectBasedOnRole(user);
+                        }
+                    }
+
+                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                    _logger.LogError("Failed to create user: {Errors}", errors);
+                    return RedirectToPage("./Login", new { error = $"Failed to create account: {errors}" });
+                }
+                else
+                {
+                    // User tồn tại nhưng chưa link với Google
+                    var result = await _userManager.AddLoginAsync(user, info);
+                    if (result.Succeeded)
+                    {
+                        await _signInManager.SignInAsync(user, isPersistent: false);
+
+                        // ✅ GENERATE VÀ SAVE TOKENS CHO USER ĐÃ TỒN TẠI
+                        var roles = await _userManager.GetRolesAsync(user);
+                        var jwtToken = await _tokenService.GenerateJwtTokenAsync(user, roles);
+                        var refreshToken = _tokenService.GenerateRefreshToken();
+
+                        // LƯU REFRESH TOKEN VÀO DATABASE
+                        await _tokenService.SaveRefreshTokenAsync(user.Id, refreshToken);
+                        _logger.LogInformation("Tokens generated and saved for existing user linked to Google: {Email}", email);
+
+                        return await RedirectBasedOnRole(user);
+                    }
+
+                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                    _logger.LogError("Failed to link external login: {Errors}", errors);
+                }
             }
 
-            await _signInManager.SignInAsync(user, isPersistent: false);
-            return await RedirectBasedOnRole(user);
+            return RedirectToPage("./Login", new { error = "Unable to process external login information." });
         }
     }
 
@@ -227,72 +270,55 @@ public class LoginModel(
     {
         var roles = await _userManager.GetRolesAsync(user);
 
+        // GENERATE JWT TOKEN
         var jwtToken = await _tokenService.GenerateJwtTokenAsync(user, roles);
         var refreshToken = _tokenService.GenerateRefreshToken();
 
+        // ✅ LƯU REFRESH TOKEN VÀO DATABASE
         await _tokenService.SaveRefreshTokenAsync(user.Id, refreshToken);
 
-        HttpContext.Session.SetString("JwtToken", jwtToken);
-        HttpContext.Session.SetString("RefreshToken", refreshToken);
-        HttpContext.Session.SetString("UserId", user.Id);
-        HttpContext.Session.SetString("UserEmail", user.Email!);
-
+        // ✅ Điều chỉnh Secure cho development
         var cookieOptions = new CookieOptions
         {
             HttpOnly = true,
-            Secure = true,
+            Secure = HttpContext.Request.IsHttps, // ✅ Chỉ Secure khi là HTTPS
             SameSite = SameSiteMode.Lax,
             Expires = DateTimeOffset.UtcNow.AddHours(24)
         };
 
+        // Save tokens và user info vào cookies
         Response.Cookies.Append("AuthToken", jwtToken, cookieOptions);
         Response.Cookies.Append("RefreshToken", refreshToken, cookieOptions);
+        Response.Cookies.Append("UserId", user.Id, cookieOptions);
+        Response.Cookies.Append("UserEmail", user.Email!, cookieOptions);
 
-        _logger.LogInformation("User {Email} has roles: {Roles}. Tokens saved to database.", user.Email, string.Join(", ", roles));
+        _logger.LogInformation("User {Email} has roles: {Roles}. Tokens saved to cookies and database.",
+            user.Email, string.Join(", ", roles));
 
+        // Redirect logic...
         if (roles.Contains("Admin") || roles.Contains("SuperAdmin"))
         {
-            var adminUrl = _configuration["AdminUrl"] ?? "https://localhost:5220";
-            var simpleToken = GenerateSimpleToken(user.Email!, roles);
-
+            var adminUrl = _configuration["AdminUrl"] ?? "https://localhost:7282";
             _logger.LogInformation("Redirecting admin {Email} to: {AdminUrl}", user.Email, adminUrl);
-            return Redirect($"{adminUrl}/Auth/AdminLogin?token={Uri.EscapeDataString(simpleToken)}");
+            return Redirect($"{adminUrl}/Auth/AdminLogin?token={jwtToken}&userId={user.Id}");
         }
 
-        if (roles.Contains("Customer") || roles.Contains("Tenant") || roles.Contains("User"))
+        if (roles.Contains("User") || roles.Contains("Customer") || roles.Contains("Tenant"))
         {
-            await ClearHostAuthenticationAsync();
-            _logger.LogInformation("Customer/Tenant account detected in Host portal. Redirecting to Customer login page only.");
-            return Redirect(CustomerPortalUrl);
+            var customerUrl = _configuration["CustomerUrl"] ?? "https://localhost:7292";
+            _logger.LogInformation("Redirecting customer {Email} to: {CustomerUrl}", user.Email, customerUrl);
+            return Redirect($"{customerUrl}/token-handler?token={jwtToken}&userId={user.Id}");
         }
 
         if (roles.Contains("Host"))
         {
-            _logger.LogInformation("Redirecting host {Email} to Host profile page", user.Email);
-            return Redirect("/Host/Profile");
+            _logger.LogInformation("Redirecting host {Email} to Host dashboard", user.Email);
+            return RedirectToPage("/Host/Profile/Index");
         }
 
-        _logger.LogWarning("No role match for user {Email}, roles: {Roles}. Redirecting to Index", user.Email, string.Join(", ", roles));
+        _logger.LogWarning("No role match for user {Email}, roles: {Roles}. Redirecting to Index",
+            user.Email, string.Join(", ", roles));
         return RedirectToPage("/Index");
-    }
-
-    private async Task ClearHostAuthenticationAsync()
-    {
-        try
-        {
-            await _signInManager.SignOutAsync();
-            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
-        }
-        catch
-        {
-        }
-
-        HttpContext.Session.Clear();
-
-        Response.Cookies.Delete("AuthToken");
-        Response.Cookies.Delete("RefreshToken");
-        Response.Cookies.Delete(".AspNetCore.Identity.Application");
-        Response.Cookies.Delete(".AspNetCore.Session");
     }
 
     private string GenerateSimpleToken(string email, IList<string> roles)

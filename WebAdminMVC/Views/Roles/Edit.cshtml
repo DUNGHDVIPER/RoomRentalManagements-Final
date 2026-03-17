@@ -4,37 +4,451 @@
     Layout = "_Layout";
 }
 
+<style>
+    /* Enhanced form card styling */
+    .edit-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow);
+        max-width: 700px;
+        margin: 0 auto;
+        overflow: hidden;
+    }
+
+    /* Enhanced header styling */
+    .edit-header {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 32px 28px;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .edit-header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.15"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.15"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            opacity: 0.4;
+        }
+
+    .edit-title {
+        font-size: 2rem;
+        font-weight: 800;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        position: relative;
+        z-index: 1;
+    }
+
+        .edit-title::before {
+            content: "✏️";
+            font-size: 1.8rem;
+        }
+
+    .edit-subtitle {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 16px;
+        font-weight: 500;
+        margin-top: 8px;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Form content styling */
+    .form-content {
+        padding: 40px 28px;
+    }
+
+    .form-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: var(--radius-lg);
+        padding: 32px;
+        margin-bottom: 32px;
+        border-left: 5px solid #f093fb;
+    }
+
+    .section-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+        .section-title::before {
+            content: "📝";
+            font-size: 1.2rem;
+        }
+
+    /* Form group styling */
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 10px;
+        position: relative;
+    }
+
+        .form-label::after {
+            content: " *";
+            color: var(--red);
+            font-weight: 600;
+        }
+
+    .form-control {
+        width: 100%;
+        height: 52px;
+        border-radius: var(--radius-lg);
+        border: 2px solid var(--border);
+        padding: 0 18px;
+        background: #fff;
+        font-size: 16px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        outline: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    }
+
+        .form-control:focus {
+            border-color: #f093fb;
+            box-shadow: 0 0 0 6px rgba(240, 147, 251, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .form-control.is-invalid {
+            border-color: var(--red);
+            background-color: #fef2f2;
+        }
+
+    /* Validation styling */
+    .text-danger {
+        color: var(--red);
+        font-size: 14px;
+        font-weight: 600;
+        margin-top: 8px;
+        display: block;
+    }
+
+    .validation-summary {
+        background: linear-gradient(135deg, #fee2e2 0%, #fca5a5 100%);
+        color: #7f1d1d;
+        border: 2px solid #f87171;
+        padding: 20px 24px;
+        border-radius: var(--radius-lg);
+        margin-bottom: 32px;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(248, 113, 113, 0.2);
+    }
+
+        .validation-summary ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .validation-summary li {
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .validation-summary li::before {
+                content: "⚠️";
+                font-size: 16px;
+            }
+
+    /* System role warning */
+    .system-role-warning {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        color: #856404;
+        border: 2px solid #ffc107;
+        padding: 20px 24px;
+        border-radius: var(--radius-lg);
+        margin-bottom: 24px;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+        .system-role-warning::before {
+            content: "⚡";
+            font-size: 1.5rem;
+        }
+
+    /* Submit button styling */
+    .submit-section {
+        background: white;
+        padding: 32px 28px;
+        border-top: 1px solid var(--border);
+        text-align: center;
+    }
+
+    .btn-update {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 16px 32px;
+        border-radius: var(--radius-lg);
+        font-weight: 700;
+        font-size: 16px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 200px;
+        justify-content: center;
+        box-shadow: 0 6px 20px rgba(240, 147, 251, 0.4);
+    }
+
+        .btn-update:hover {
+            background: linear-gradient(135deg, #f5576c 0%, #e73c68 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(240, 147, 251, 0.5);
+        }
+
+        .btn-update:active {
+            transform: translateY(-1px);
+        }
+
+        .btn-update:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-update i {
+            font-size: 18px;
+        }
+
+        /* Loading state */
+        .btn-update.loading {
+            pointer-events: none;
+        }
+
+            .btn-update.loading i {
+                animation: spin 1s linear infinite;
+            }
+
+    @@keyframes spin {
+        from
+
+    {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+
+    }
+
+    /* Responsive design */
+    @@media (max-width: 768px) {
+        .edit-card
+
+    {
+        margin: 0 16px;
+    }
+
+    .edit-header {
+        padding: 24px 20px;
+    }
+
+    .form-content {
+        padding: 24px 20px;
+    }
+
+    .form-section {
+        padding: 24px 20px;
+    }
+
+    .submit-section {
+        padding: 24px 20px;
+    }
+
+    .edit-title {
+        font-size: 1.6rem;
+    }
+
+    .btn-update {
+        width: 100%;
+        padding: 14px 24px;
+    }
+
+    }
+
+    /* Animation for content */
+    .edit-card {
+        animation: fadeInUp 0.6s ease;
+    }
+
+    @@keyframes fadeInUp {
+        from
+
+    {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    }
+
+    /* Focus visible for accessibility */
+    .btn-update:focus-visible {
+        outline: 3px solid rgba(240, 147, 251, 0.5);
+        outline-offset: 2px;
+    }
+
+    .form-control:focus-visible {
+        outline: 3px solid rgba(240, 147, 251, 0.3);
+        outline-offset: 2px;
+    }
+</style>
+
 <div class="container">
-    <div class="card">
-        <div class="card-head">
-            <div class="card-title">✏️ Edit Role</div>
-            <a asp-action="Index" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back to List
-            </a>
+    <div class="edit-card">
+        <!-- Header Section -->
+        <div class="edit-header">
+            <h1 class="edit-title">Edit Role</h1>
+            <div class="edit-subtitle">
+                Update role information and settings
+            </div>
         </div>
 
-        <form asp-action="Edit" method="post" class="p-4">
-            <input asp-for="Id" type="hidden" />
-            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+        <!-- Form Content -->
+        <div class="form-content">
+            <form asp-action="Edit" method="post" id="editForm">
+                @Html.AntiForgeryToken()
+                <input asp-for="Id" type="hidden" />
 
-            <div class="form-group mb-3">
-                <label asp-for="Name" class="form-label"></label>
-                <input asp-for="Name" class="form-control" />
-                <span asp-validation-for="Name" class="text-danger"></span>
-            </div>
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+                }
 
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Update Role
-                </button>
-                <a asp-action="Index" class="btn btn-secondary">
-                    <i class="fas fa-times"></i> Cancel
-                </a>
-            </div>
-        </form>
+                <!-- Form Section -->
+                <div class="form-section">
+                    <h3 class="section-title">Role Information</h3>
+
+                    @if (new[] { "SuperAdmin", "Admin", "Host", "Tenant" }.Contains(Model.Name))
+                    {
+                        <div class="system-role-warning">
+                            <div>
+                                <strong>System Role Warning:</strong> You are editing a system role.
+                                Changes may affect application functionality and user permissions.
+                            </div>
+                        </div>
+                    }
+
+                    <div class="form-group">
+                        <label asp-for="Name" class="form-label">@Html.DisplayNameFor(m => m.Name)</label>
+                        <input asp-for="Name"
+                               class="form-control @(ViewData.ModelState["Name"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                               placeholder="Enter role name (e.g., Manager, Supervisor)"
+                               autocomplete="off" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <!-- Submit Section -->
+                <div class="submit-section">
+                    <button type="submit" class="btn-update" id="submitBtn">
+                        <i class="fas fa-save"></i>
+                        Update Role
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('editForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const nameInput = document.querySelector('#Name');
+
+            // Auto-focus on name input
+            if (nameInput) {
+                nameInput.focus();
+                nameInput.select();
+            }
+
+            // Form submission handling
+            if (form && submitBtn) {
+                form.addEventListener('submit', function(e) {
+                    // Add loading state
+                    submitBtn.innerHTML = '<i class="fas fa-spinner"></i> Updating...';
+                    submitBtn.classList.add('loading');
+                    submitBtn.disabled = true;
+                });
+            }
+
+            // Real-time validation feedback
+            if (nameInput) {
+                nameInput.addEventListener('input', function() {
+                    const value = this.value.trim();
+                    const errorSpan = this.nextElementSibling;
+
+                    // Clear previous validation state
+                    this.classList.remove('is-invalid');
+
+                    if (value.length === 0) {
+                        this.classList.add('is-invalid');
+                        errorSpan.textContent = 'Role name is required';
+                    } else if (value.length > 50) {
+                        this.classList.add('is-invalid');
+                        errorSpan.textContent = 'Role name cannot exceed 50 characters';
+                    } else {
+                        errorSpan.textContent = '';
+                    }
+                });
+
+                // Add visual feedback on focus/blur
+                nameInput.addEventListener('focus', function() {
+                    this.parentElement.style.transform = 'scale(1.02)';
+                    this.parentElement.style.transition = 'transform 0.2s ease';
+                });
+
+                nameInput.addEventListener('blur', function() {
+                    this.parentElement.style.transform = 'scale(1)';
+                });
+            }
+
+            // Add keyboard shortcut for submit (Ctrl+S)
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    e.preventDefault();
+                    if (submitBtn && !submitBtn.disabled) {
+                        form.submit();
+                    }
+                }
+            });
+        });
+    </script>
 }

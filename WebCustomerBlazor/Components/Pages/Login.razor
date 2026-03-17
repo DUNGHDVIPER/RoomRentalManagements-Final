@@ -1,0 +1,76 @@
+﻿@page "/login"
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@inject NavigationManager Nav
+
+<div class="login-wrap">
+    <div class="login-card card">
+        <div class="brand">
+            <div class="logo">R</div>
+            <div>
+                <div class="brand-title">Roomy<span class="brand-accent">Customer</span></div>
+                <div class="muted">Sign in to continue</div>
+            </div>
+        </div>
+
+        <div class="hint">
+            FE-only demo: <b>customer@demo.com</b> / <b>Customer@123</b>
+        </div>
+
+        <div class="form">
+            <label class="label">Email</label>
+            <input class="input" placeholder="customer@demo.com" @bind="email" />
+
+            <label class="label">Password</label>
+            <input class="input" placeholder="Customer@123" type="password" @bind="password" />
+
+            <div class="row">
+                <label class="muted" style="display:flex;align-items:center;gap:8px;">
+                    <input type="checkbox" @bind="remember" />
+                    Remember me
+                </label>
+                <a class="link" href="/forgot">Forgot?</a>
+            </div>
+
+            <button type="button" class="btn-grad" style="width:100%;" @onclick="DoLogin">
+                Login
+            </button>
+
+            @if (!string.IsNullOrWhiteSpace(error))
+            {
+                <div class="alert">
+                    @error
+                </div>
+            }
+        </div>
+
+        <div class="muted" style="text-align:center;margin-top:10px;">
+            By continuing you agree to our <span class="link">Terms</span>.
+        </div>
+    </div>
+</div>
+
+@code {
+    string email = "customer@demo.com";
+    string password = "Customer@123";
+    bool remember = true;
+    string? error;
+
+    private async Task DoLogin()
+    {
+        var result = await SignInManager.PasswordSignInAsync(
+            email,
+            password,
+            remember,
+            false);
+
+        if (result.Succeeded)
+        {
+            Nav.NavigateTo("/", forceLoad: true); // reload toàn app
+        }
+        else
+        {
+            error = "Login failed";
+        }
+    }
+}

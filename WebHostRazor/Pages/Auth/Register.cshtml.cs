@@ -60,7 +60,7 @@ public class RegisterModel : PageModel
         // Assign Host role
         try
         {
-            await _userManager.AddToRoleAsync(user, "Customer");
+            await _userManager.AddToRoleAsync(user, "User");
         }
         catch (Exception)
         {
@@ -97,6 +97,4 @@ public class RegisterForm
 
     [Required(ErrorMessage = "You must accept the terms")]
     public bool AcceptTerms { get; set; }
-    [Required(ErrorMessage = "Please select user type")]
-    public string UserType { get; set; } = "Customer";
 }

@@ -8,7 +8,7 @@
 
     public decimal Deposit { get; set; }
     public decimal Rent { get; set; }
-    public String Status { get; set; }
+    public int Status { get; set; }
     public bool IsActive { get; set; }
 
     // NEW

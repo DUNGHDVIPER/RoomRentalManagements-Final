@@ -1,12 +1,20 @@
-﻿@using BLL.Common
-@using DAL.Entities.Common
-@model WebAdmin.MVC.Models.Contracts.ContractDetailsVm
+﻿@model WebAdmin.MVC.Models.Contracts.ContractDetailsVm
 @{
     ViewData["Title"] = "Contract Details";
     Layout = "_Layout";
     var c = Model.Contract;
 
-    var statusText = c.Status;
+    string StatusText(int s) => s switch
+    {
+        0 => "Pending",
+        1 => "Active",
+        2 => "Expired",
+        3 => "Terminated",
+        4 => "Renewed",
+        _ => "Unknown"
+    };
+
+    var statusText = StatusText(c.Status);
 }
 
 <div class="d-flex align-items-center gap-2 mb-3">
@@ -96,7 +104,7 @@
                 </div>
             </div>
         </div>
-        @if (c.Status == "Draft")
+        @if (c.Status == 0) // Pending
         {
             <form asp-action="Activate" asp-route-id="@c.Id" method="post" class="d-inline">
                 @Html.AntiForgeryToken()
@@ -129,21 +137,25 @@
             <div class="col-md-3">
                 <div class="text-muted">Status</div>
                 <div class="fw-semibold">
-                    @if (c.IsActive || c.Status == "Active")
+                    @if (c.IsActive || c.Status == 1)
                     {
                         <span class="badge bg-success">Active</span>
                     }
-                    else if (c.Status == "Draft")
+                    else if (c.Status == 0)
                     {
-                        <span class="badge bg-warning text-dark">Draft</span>
+                        <span class="badge bg-warning text-dark">Pending</span>
                     }
-                    else if (c.Status == "Expired")
+                    else if (c.Status == 2)
                     {
                         <span class="badge bg-secondary">Expired</span>
-                    }   
-                    else if (c.Status == "Terminated")
+                    }
+                    else if (c.Status == 3)
                     {
                         <span class="badge bg-danger">Terminated</span>
+                    }
+                    else if (c.Status == 4)
+                    {
+                        <span class="badge bg-info text-dark">Renewed</span>
                     }
                     else
                     {
@@ -182,7 +194,7 @@
                 <div class="text-muted">Deposit Paid Amount</div>
                 <div class="fw-semibold">@((c.DepositPaidAmount.HasValue) ? c.DepositPaidAmount.Value.ToString("N0") : "-")</div>
             </div>
-            @if (c.Status == "Active" && c.EndDate.Date < DateTime.Today)
+            @if (c.Status == 1 && c.EndDate.Date < DateTime.Today)
             {
                 <form asp-action="ForceExpire" asp-route-id="@c.Id" method="post" class="d-inline">
                     @Html.AntiForgeryToken()

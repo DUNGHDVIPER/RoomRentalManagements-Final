@@ -2,7 +2,10 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using WebAdminMVC.Models.Roles;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
+using WebAdminMVC.Models.Roles; // ✅ Thêm using cho models
 
 namespace WebAdminMVC.Controllers;
 
@@ -21,6 +24,13 @@ public class RolesController(
     // GET: /Roles/Index
     public async Task<IActionResult> Index()
     {
+        // ✅ Thêm cookie authentication check
+        var authResult = await EnsureAuthenticatedAsync();
+        if (!authResult.IsAuthenticated)
+        {
+            return authResult.RedirectResult;
+        }
+
         try
         {
             var roles = await _roleManager.Roles.ToListAsync();
@@ -35,9 +45,13 @@ public class RolesController(
                     Id = role.Id,
                     Name = role.Name!,
                     UserCount = usersInRole.Count,
-                    CreatedAt = DateTime.UtcNow 
+                    CreatedAt = DateTime.UtcNow
                 });
             }
+
+            // ✅ Thêm debug info từ cookies
+            ViewData["UserEmail"] = GetUserEmailFromCookies();
+            ViewData["LoginSource"] = GetLoginSourceFromCookies();
 
             return View(roleVms);
         }
@@ -50,8 +64,14 @@ public class RolesController(
     }
 
     // GET: /Roles/Create
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
+        var authResult = await EnsureAuthenticatedAsync();
+        if (!authResult.IsAuthenticated)
+        {
+            return authResult.RedirectResult;
+        }
+
         return View(new RoleCreateVm());
     }
 
@@ -60,6 +80,12 @@ public class RolesController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(RoleCreateVm model)
     {
+        var authResult = await EnsureAuthenticatedAsync();
+        if (!authResult.IsAuthenticated)
+        {
+            return authResult.RedirectResult;
+        }
+
         if (!ModelState.IsValid)
         {
             return View(model);
@@ -79,7 +105,8 @@ public class RolesController(
 
             if (result.Succeeded)
             {
-                _logger.LogInformation("Created role: {RoleName}", model.Name);
+                var cookieEmail = GetUserEmailFromCookies();
+                _logger.LogInformation("Created role: {RoleName} by {CreatedBy}", model.Name, cookieEmail ?? User.Identity?.Name);
                 TempData["Success"] = "Role created successfully";
                 return RedirectToAction(nameof(Index));
             }
@@ -104,6 +131,12 @@ public class RolesController(
         if (string.IsNullOrEmpty(id))
         {
             return NotFound();
+        }
+
+        var authResult = await EnsureAuthenticatedAsync();
+        if (!authResult.IsAuthenticated)
+        {
+            return authResult.RedirectResult;
         }
 
         var role = await _roleManager.FindByIdAsync(id);
@@ -131,6 +164,12 @@ public class RolesController(
             return NotFound();
         }
 
+        var authResult = await EnsureAuthenticatedAsync();
+        if (!authResult.IsAuthenticated)
+        {
+            return authResult.RedirectResult;
+        }
+
         if (!ModelState.IsValid)
         {
             return View(model);
@@ -149,7 +188,8 @@ public class RolesController(
 
             if (result.Succeeded)
             {
-                _logger.LogInformation("Updated role: {RoleName}", model.Name);
+                var cookieEmail = GetUserEmailFromCookies();
+                _logger.LogInformation("Updated role: {RoleName} by {UpdatedBy}", model.Name, cookieEmail ?? User.Identity?.Name);
                 TempData["Success"] = "Role updated successfully";
                 return RedirectToAction(nameof(Index));
             }
@@ -173,6 +213,12 @@ public class RolesController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(string id)
     {
+        var authResult = await EnsureAuthenticatedAsync();
+        if (!authResult.IsAuthenticated)
+        {
+            return authResult.RedirectResult;
+        }
+
         try
         {
             var role = await _roleManager.FindByIdAsync(id);
@@ -186,32 +232,38 @@ public class RolesController(
             var usersInRole = await _userManager.GetUsersInRoleAsync(role.Name!);
             if (usersInRole.Count != 0)
             {
-                TempData["Error"] = "Cannot delete role that is assigned to users";
+                // 🔥 Hiển thị thông báo chi tiết với số lượng users
+                TempData["Error"] = $"❌ Cannot delete role '{role.Name}' because it is currently assigned to {usersInRole.Count} user(s). Please remove all users from this role before deleting it.";
+                _logger.LogWarning("Attempted to delete role {RoleName} but it has {UserCount} users assigned", role.Name, usersInRole.Count);
                 return RedirectToAction(nameof(Index));
             }
 
             // Prevent deleting system roles
             if (SystemRoles.Contains(role.Name))
             {
-                TempData["Error"] = "Cannot delete system roles";
+                TempData["Error"] = $"❌ Cannot delete system role '{role.Name}'. System roles are protected and cannot be removed.";
+                _logger.LogWarning("Attempted to delete protected system role: {RoleName}", role.Name);
                 return RedirectToAction(nameof(Index));
             }
 
             var result = await _roleManager.DeleteAsync(role);
             if (result.Succeeded)
             {
-                _logger.LogInformation("Deleted role: {RoleName}", role.Name);
-                TempData["Success"] = "Role deleted successfully";
+                var cookieEmail = GetUserEmailFromCookies();
+                _logger.LogInformation("Deleted role: {RoleName} by {DeletedBy}", role.Name, cookieEmail ?? User.Identity?.Name);
+                TempData["Success"] = $"✅ Role '{role.Name}' has been successfully deleted.";
             }
             else
             {
-                TempData["Error"] = "Error deleting role: " + string.Join(", ", result.Errors.Select(e => e.Description));
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                TempData["Error"] = $"❌ Error deleting role '{role.Name}': {errors}";
+                _logger.LogError("Failed to delete role {RoleName}: {Errors}", role.Name, errors);
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting role with id: {RoleId}", id);
-            TempData["Error"] = "An error occurred while deleting the role";
+            TempData["Error"] = "❌ An unexpected error occurred while deleting the role. Please try again.";
         }
 
         return RedirectToAction(nameof(Index));
@@ -223,6 +275,12 @@ public class RolesController(
         if (string.IsNullOrEmpty(id))
         {
             return NotFound();
+        }
+
+        var authResult = await EnsureAuthenticatedAsync();
+        if (!authResult.IsAuthenticated)
+        {
+            return authResult.RedirectResult;
         }
 
         var role = await _roleManager.FindByIdAsync(id);
@@ -246,5 +304,91 @@ public class RolesController(
         };
 
         return View(model);
+    }
+
+    // ✅ Cookie Authentication Helper Methods
+    private async Task<(bool IsAuthenticated, IActionResult RedirectResult)> EnsureAuthenticatedAsync()
+    {
+        if (User.Identity.IsAuthenticated)
+        {
+            var userRoles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
+            if (userRoles.Any(r => r == "Admin" || r == "SuperAdmin"))
+            {
+                return (true, null);
+            }
+            else
+            {
+                _logger.LogWarning("User authenticated but doesn't have Admin role: {Roles}", string.Join(",", userRoles));
+                return (false, RedirectToAction("AccessDenied", "Account"));
+            }
+        }
+
+        _logger.LogDebug("User not authenticated, trying cookie auto-login");
+        var cookieLoginResult = await TryAutoLoginFromCookiesAsync();
+
+        if (cookieLoginResult.Success)
+        {
+            _logger.LogInformation("Cookie auto-login successful for roles controller");
+            return (true, null);
+        }
+
+        _logger.LogWarning("Authentication failed, redirecting to login");
+        return (false, RedirectToAction("Login", "Account"));
+    }
+
+    private async Task<(bool Success, string? Email, string? Role)> TryAutoLoginFromCookiesAsync()
+    {
+        try
+        {
+            var authToken = Request.Cookies["AuthToken"];
+            var userEmail = Request.Cookies["UserEmail"];
+            var userId = Request.Cookies["UserId"];
+
+            if (string.IsNullOrEmpty(userEmail) || string.IsNullOrEmpty(userId))
+            {
+                return (false, null, null);
+            }
+
+            var user = await _userManager.FindByEmailAsync(userEmail);
+            if (user == null)
+            {
+                return (false, null, null);
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+            if (!roles.Contains("Admin") && !roles.Contains("SuperAdmin"))
+            {
+                return (false, userEmail, null);
+            }
+
+            // Sign in user using SignInManager
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(new ClaimsIdentity(new[]
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id),
+                    new Claim(ClaimTypes.Name, user.Email),
+                    new Claim(ClaimTypes.Email, user.Email),
+                    new Claim(ClaimTypes.Role, roles.Contains("SuperAdmin") ? "SuperAdmin" : "Admin"),
+                    new Claim("LoginSource", "CookieAutoLogin")
+                }, CookieAuthenticationDefaults.AuthenticationScheme)));
+
+            return (true, userEmail, roles.FirstOrDefault());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during cookie auto-login for roles");
+            return (false, null, null);
+        }
+    }
+
+    private string? GetUserEmailFromCookies()
+    {
+        return Request.Cookies["UserEmail"];
+    }
+
+    private string? GetLoginSourceFromCookies()
+    {
+        return User.Claims.FirstOrDefault(c => c.Type == "LoginSource")?.Value ?? "Unknown";
     }
 }
