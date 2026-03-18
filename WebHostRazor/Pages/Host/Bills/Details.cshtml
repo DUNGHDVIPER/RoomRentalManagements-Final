@@ -1,0 +1,138 @@
+﻿@page "{id:int}"
+@model WebHostRazor.Pages.Host.Bills.DetailsModel
+@{
+    ViewData["Title"] = "Bill Details";
+}
+
+<div class="tenant-page">
+
+    <!-- HEADER -->
+    <div class="tp-header">
+
+        <div>
+            <div class="tp-badge">Billing</div>
+            <h1 class="tp-title">Bill Details</h1>
+            <div class="tp-sub">
+                View full bill information, items and payments.
+            </div>
+        </div>
+
+        <a asp-page="/Host/Bills/Index" class="tp-add-btn">
+            ← Back to Bills
+        </a>
+
+    </div>
+
+    <!-- BILL INFO -->
+    <div class="tp-table-card" style="max-width:700px; margin-bottom:20px;">
+
+        <div class="tp-form-group">
+            <label>Room</label>
+            <div class="tp-input">@Model.Bill.RoomName</div>
+        </div>
+
+        <div class="tp-form-group">
+            <label>Total</label>
+            <div class="tp-input">
+                <strong>@Model.Bill.TotalAmount.ToString("N0") đ</strong>
+            </div>
+        </div>
+
+        <div class="tp-form-group">
+            <label>Status</label>
+
+            @if (Model.Bill.Status == "Paid")
+            {
+                <span class="tp-status active">✔ Paid</span>
+            }
+            else if (Model.Bill.Status == "Overdue")
+            {
+                <span class="tp-status disabled">⚠ Overdue</span>
+            }
+            else
+            {
+                <span class="tp-status" style="background:#fff3cd;color:#856404;">
+                    ⏳ Pending
+                </span>
+            }
+        </div>
+
+        <div class="tp-form-group">
+            <label>Due Date</label>
+            <div class="tp-input">
+                @Model.Bill.DueDate.ToString("dd/MM/yyyy")
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ITEMS -->
+    <div class="tp-table-card" style="margin-bottom:20px;">
+
+        <div class="tp-toolbar">
+            <h3>📦 Bill Items</h3>
+        </div>
+
+        <table class="tp-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var i in Model.Bill.Items)
+                {
+                    <tr>
+                        <td>@i.Name</td>
+                        <td><strong>@i.Amount.ToString("N0") đ</strong></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+    </div>
+
+    <!-- PAYMENTS -->
+    <div class="tp-table-card">
+
+        <div class="tp-toolbar">
+            <h3>💰 Payments</h3>
+        </div>
+
+        <table class="tp-table">
+            <thead>
+                <tr>
+                    <th>Amount</th>
+                    <th>Method</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var p in Model.Bill.Payments)
+                {
+                    <tr>
+                        <td><strong>@p.Amount.ToString("N0") đ</strong></td>
+                        <td>@p.Method</td>
+                        <td>
+                            @if (p.Status == "Completed")
+                            {
+                                <span class="tp-status active">✔ Completed</span>
+                            }
+                            else
+                            {
+                                <span class="tp-status" style="background:#fff3cd;color:#856404;">
+                                    ⏳ Pending
+                                </span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+    </div>
+
+</div>

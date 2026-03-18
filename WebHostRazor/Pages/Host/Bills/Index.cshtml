@@ -1,0 +1,154 @@
+﻿@page
+@model WebHostRazor.Pages.Host.Bills.IndexModel
+@{
+    ViewData["Title"] = "Billing Management";
+}
+
+<div class="tenant-page">
+
+    <!-- HEADER -->
+    <div class="tp-header">
+
+        <div>
+            <div class="tp-badge">Billing</div>
+            <h1 class="tp-title">All Bills</h1>
+            <div class="tp-sub">
+                Manage all bills, payments and statuses.
+            </div>
+        </div>
+
+        <a asp-page="/Host/Bills/Generate" class="tp-add-btn">
+            ⚡ Generate Bills
+        </a>
+
+    </div>
+
+    <!-- STATS -->
+    <div class="tp-stats">
+
+        <div class="stat-card">
+            <div class="stat-icon purple">💰</div>
+            <div>
+                <div class="stat-number">@Model.Bills.Count</div>
+                <div class="stat-label">Total Bills</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon green">✔</div>
+            <div>
+                <div class="stat-number">
+                    @Model.Bills.Count(x => x.Status == "Paid")
+                </div>
+                <div class="stat-label">Paid</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon yellow">⏳</div>
+            <div>
+                <div class="stat-number">
+                    @Model.Bills.Count(x => x.Status == "Pending")
+                </div>
+                <div class="stat-label">Pending</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon red">⚠</div>
+            <div>
+                <div class="stat-number">
+                    @Model.Bills.Count(x => x.Status == "Overdue")
+                </div>
+                <div class="stat-label">Overdue</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- TABLE -->
+    <div class="tp-table-card">
+
+        <div class="tp-toolbar" style="justify-content:flex-end;">
+            <div class="tp-total">
+                @Model.Bills.Count bills
+            </div>
+        </div>
+
+        <table class="tp-table">
+            <thead>
+                <tr>
+                    <th>Room</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th style="width:180px;">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                @foreach (var b in Model.Bills)
+                {
+                    <tr>
+                        <td>
+                            <div class="tp-tenant-cell">
+                                <div class="tp-avatar">
+                                    @b.RoomName.Substring(0, 1)
+                                </div>
+
+                                <div>
+                                    <div class="tp-name">@b.RoomName</div>
+                                    <div class="tp-subtext">
+                                        Bill #@b.Id
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td>
+                            <strong>@b.TotalAmount.ToString("N0") đ</strong>
+                        </td>
+
+                        <td>
+                            @if (b.Status == "Paid")
+                            {
+                                <span class="tp-status active">Paid</span>
+                            }
+                            else if (b.Status == "Overdue")
+                            {
+                                <span class="tp-status disabled">Overdue</span>
+                            }
+                            else
+                            {
+                                <span class="tp-status" style="background:#fff3cd;color:#856404;">
+                                    Pending
+                                </span>
+                            }
+                        </td>
+
+                        <td>
+                            <a asp-page="/Host/Bills/Details"
+                               asp-route-id="@b.Id"
+                               class="tp-icon-btn">👁</a>
+
+                            <a asp-page="/Host/Bills/Edit"
+                               asp-route-id="@b.Id"
+                               class="tp-icon-btn">✏</a>
+
+                            <a asp-page="/Host/Bills/RecordPayment"
+                               asp-route-id="@b.Id"
+                               class="tp-icon-btn">💰</a>
+
+                            <a asp-page="/Host/Bills/Delete"
+                               asp-route-id="@b.Id"
+                               class="tp-icon-btn">🗑</a>
+                        </td>
+                    </tr>
+                }
+
+            </tbody>
+        </table>
+
+    </div>
+
+</div>

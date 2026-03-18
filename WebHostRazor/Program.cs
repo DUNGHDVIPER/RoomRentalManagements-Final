@@ -187,6 +187,7 @@ builder.Services.AddScoped<IStayHistoryService, StayHistoryService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IBillingService, BillingService>();
 builder.Services.AddScoped<IUtilityService, UtilityService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
 builder.Services.AddScoped<ITenantRepository, TenantRepository>();
 
