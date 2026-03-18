@@ -1,0 +1,60 @@
+﻿@page "{id:int}"
+@model WebHostRazor.Pages.Host.Bills.EditModel
+@{
+    ViewData["Title"] = "Edit Bill";
+}
+
+<div class="tenant-page">
+
+    <!-- HEADER -->
+    <div class="tp-header">
+
+        <div>
+            <div class="tp-badge">Billing</div>
+            <h1 class="tp-title">Edit Bill</h1>
+            <div class="tp-sub">
+                Update bill information and status.
+            </div>
+        </div>
+
+        <a asp-page="/Host/Bills/Index" class="tp-add-btn">
+            ← Back to Bills
+        </a>
+
+    </div>
+
+    <!-- FORM -->
+    <div class="tp-table-card" style="max-width:600px;">
+
+        <form method="post">
+
+            <input type="hidden" asp-for="Id" />
+
+            <div class="tp-form-group">
+                <label>Month</label>
+                <input asp-for="Month" class="tp-input" />
+            </div>
+
+            <div class="tp-form-group">
+                <label>Total</label>
+                <input asp-for="Total" class="tp-input" />
+            </div>
+
+            <div class="tp-form-group">
+                <label>Status</label>
+                <select asp-for="Status" class="tp-input">
+                    <option>Unpaid</option>
+                    <option>Paid</option>
+                    <option>Overdue</option>
+                </select>
+            </div>
+
+            <button class="tp-add-btn" style="margin-top:15px;">
+                💾 Save Changes
+            </button>
+
+        </form>
+
+    </div>
+
+</div>

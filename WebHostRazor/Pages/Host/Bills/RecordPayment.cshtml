@@ -1,0 +1,110 @@
+﻿@page "{id:int}"
+@model WebHostRazor.Pages.Host.Bills.RecordPaymentModel
+@{
+    ViewData["Title"] = "Record Payment";
+}
+
+<div class="tenant-page">
+
+    <!-- HEADER -->
+    <div class="tp-header">
+
+        <div>
+            <div class="tp-badge">Billing</div>
+            <h1 class="tp-title">Record Payment</h1>
+            <div class="tp-sub">
+                Log a new payment for this bill.
+            </div>
+        </div>
+
+        <a asp-page="/Host/Bills/Index" class="tp-add-btn">
+            ← Back to Bills
+        </a>
+
+    </div>
+
+    <!-- ERROR -->
+    @if (!ModelState.IsValid)
+    {
+        <div class="tp-error">
+            Có lỗi, kiểm tra lại.
+        </div>
+    }
+
+    <!-- PAYMENT FORM -->
+    <div class="tp-table-card" style="max-width:600px;">
+
+        <form method="post">
+
+            <input type="hidden" asp-for="BillId" />
+
+            <div class="tp-form-group">
+                <label>Total</label>
+                <div class="tp-input" readonly>
+                    @Model.Total.ToString("N0") đ
+                </div>
+            </div>
+
+            <div class="tp-form-group">
+                <label>Paid</label>
+                <div class="tp-input" readonly>
+                    @Model.Paid.ToString("N0") đ
+                </div>
+            </div>
+
+            <div class="tp-form-group">
+                <label>Remaining</label>
+                <div class="tp-input" readonly>
+                    @Model.Remaining.ToString("N0") đ
+                </div>
+            </div>
+
+            <div class="tp-form-group">
+                <label>Amount</label>
+                <input asp-for="Amount"
+                       type="number"
+                       min="0"
+                       max="@Model.Remaining"
+                       class="tp-input" />
+                <button type="button" class="tp-add-btn" style="margin-top:5px;" onclick="payFull()">
+                    💸 Pay Full
+                </button>
+            </div>
+
+            <div class="tp-form-group">
+                <label>Method</label>
+                <select asp-for="Method" class="tp-input">
+                    <option value="Cash">Cash</option>
+                    <option value="Bank">Bank</option>
+                    <option value="Momo">Momo</option>
+                </select>
+            </div>
+
+            <button class="tp-add-btn" style="margin-top:15px; background:#28a745;">
+                💰 Pay
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script>
+    const amountInput = document.querySelector('input[name="Amount"]');
+    const maxAmount = @Model.Remaining;
+
+    function payFull() {
+        if (amountInput) amountInput.value = maxAmount;
+    }
+
+    if (amountInput) {
+        amountInput.value = maxAmount;
+
+        amountInput.addEventListener('input', function () {
+            let value = parseFloat(this.value || 0);
+            if (value > maxAmount) this.value = maxAmount;
+            if (value < 0) this.value = 0;
+        });
+    }
+</script>

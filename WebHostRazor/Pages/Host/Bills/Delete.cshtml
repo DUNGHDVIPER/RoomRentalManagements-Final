@@ -1,0 +1,60 @@
+﻿@page "{id:int}"
+@model WebHostRazor.Pages.Host.Bills.DeleteModel
+@{
+    ViewData["Title"] = "Delete Bill";
+}
+
+<div class="tenant-page">
+
+    <!-- HEADER -->
+    <div class="tp-header">
+
+        <div>
+            <div class="tp-badge">Billing</div>
+            <h1 class="tp-title">Delete Bill</h1>
+            <div class="tp-sub">
+                This action cannot be undone.
+            </div>
+        </div>
+
+        <a asp-page="/Host/Bills/Index" class="tp-add-btn">
+            ← Back to Bills
+        </a>
+
+    </div>
+
+    <!-- CONFIRM CARD -->
+    <div class="tp-table-card" style="max-width:500px; text-align:center;">
+
+        <form method="post">
+
+            <div style="font-size:50px; margin-bottom:10px;">⚠️</div>
+
+            <h3 style="margin-bottom:10px;">
+                Are you sure?
+            </h3>
+
+            <p style="color:#666; margin-bottom:20px;">
+                Bạn chắc chắn muốn xoá bill này? <br />
+                Hành động này không thể hoàn tác.
+            </p>
+
+            <div style="display:flex; justify-content:center; gap:10px;">
+
+                <button class="tp-add-btn" style="background:#dc3545;">
+                    🗑 Delete
+                </button>
+
+                <a asp-page="/Host/Bills/Index"
+                   class="tp-add-btn"
+                   style="background:#6c757d;">
+                    Cancel
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>

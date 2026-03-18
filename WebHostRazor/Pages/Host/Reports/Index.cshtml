@@ -1,0 +1,82 @@
+﻿@page
+@model WebRazor.Pages.Reports.IndexModel
+
+@{
+    Layout = "/Pages/Host/Shared/_HostLayout.cshtml";
+}
+
+<div class="contract-page">
+
+    <div class="contract-hero">
+        <div>
+            <div class="contract-breadcrumb">Host / Reports</div>
+            <h1>Revenue Dashboard</h1>
+            <p>Overview of revenue, issued bills, and debt.</p>
+        </div>
+    </div>
+
+   
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="contract-card h-100">
+                <div class="text-muted small">Total Revenue</div>
+                <div class="fw-bold fs-4">@Model.Vm.TotalRevenue.ToString("N0") đ</div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="contract-card h-100">
+                <div class="text-muted small">Total Issued</div>
+                <div class="fw-bold fs-4">@Model.Vm.TotalIssued.ToString("N0") đ</div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="contract-card h-100">
+                <div class="text-muted small">Total Debt</div>
+                <div class="fw-bold fs-4">@Model.Vm.TotalDebt.ToString("N0") đ</div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="contract-card h-100">
+                <div class="text-muted small">Collection Rate</div>
+                <div class="fw-bold fs-4">@Model.Vm.CollectionRate.ToString("P2")</div>
+            </div>
+        </div>
+    </div>
+
+   
+    <div class="contract-card p-0 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table contract-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Month</th>
+                        <th class="text-end">Issued</th>
+                        <th class="text-end">Collected</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 1; i <= 12; i++)
+                    {
+                        var issued = Model.Vm.IssuedByMonth.ContainsKey(i)
+                        ? Model.Vm.IssuedByMonth[i]
+                        : 0;
+
+                        var revenue = Model.Vm.RevenueByMonth.ContainsKey(i)
+                        ? Model.Vm.RevenueByMonth[i]
+                        : 0;
+
+                        <tr>
+                            <td class="ps-4 fw-semibold">@i</td>
+                            <td class="text-end">@issued.ToString("n0") đ</td>
+                            <td class="text-end">@revenue.ToString("n0") đ</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>

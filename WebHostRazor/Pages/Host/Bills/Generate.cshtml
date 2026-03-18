@@ -1,0 +1,59 @@
+﻿@page
+@model WebHostRazor.Pages.Host.Bills.GenerateModel
+@{
+    ViewData["Title"] = "Generate Bills";
+}
+
+<div class="tenant-page">
+
+    <!-- HEADER -->
+    <div class="tp-header">
+
+        <div>
+            <div class="tp-badge">Billing</div>
+            <h1 class="tp-title">Generate Bills</h1>
+            <div class="tp-sub">
+                Create monthly bills for all rooms.
+            </div>
+        </div>
+
+        <a asp-page="/Host/Bills/Index" class="tp-add-btn">
+            ← Back to Bills
+        </a>
+
+    </div>
+
+    <!-- FORM CARD -->
+    <div class="tp-table-card" style="max-width:600px;">
+
+        <form method="post">
+
+            <div class="tp-form-group">
+                <label>Month (yyyy-MM)</label>
+                <input asp-for="Month" class="tp-input" placeholder="2026-03" />
+            </div>
+
+            <div class="tp-form-group">
+                <label>Due Date</label>
+                <input asp-for="DueDate" type="date" class="tp-input" />
+            </div>
+
+            <div class="tp-form-check">
+                <input asp-for="IncludeRent" />
+                <label>Include Rent</label>
+            </div>
+
+            <div class="tp-form-check">
+                <input asp-for="IncludeUtilities" />
+                <label>Include Utilities</label>
+            </div>
+
+            <button class="tp-add-btn" style="margin-top:15px;">
+                ⚡ Generate Bills
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
