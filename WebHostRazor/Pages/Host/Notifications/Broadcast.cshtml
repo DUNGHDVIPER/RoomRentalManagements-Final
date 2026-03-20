@@ -1,11 +1,11 @@
 ﻿@page
 @model WebHostRazor.Pages.Host.Notifications.BroadcastModel
 @{
-    ViewData["Title"] = "Gửi Thông Báo";
+    ViewData["Title"] = "Create";
 }
 
 <div class="card shadow-lg p-4">
-    <h4 class="mb-4">📢 Gửi Thông Báo</h4>
+    <h4 class="mb-4">📢 Send Notification</h4>
 
     @if (TempData["Success"] != null)
     {
@@ -20,12 +20,12 @@
         <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
         <div class="mb-3">
-            <label>Tiêu đề</label>
+            <label> Title</label>
             <input asp-for="Input.Title" class="form-control" />
         </div>
 
         <div class="mb-3">
-            <label>Nội dung</label>
+            <label>Content</label>
             <textarea asp-for="Input.Content"
                       class="form-control"
                       rows="3"></textarea>
@@ -34,25 +34,25 @@
         <hr />
 
         <div class="mb-3">
-            <label>Loại thông báo</label>
+            <label>Type</label>
             <select asp-for="Input.SourceType"
                     asp-items="Model.SourceTypeList"
                     class="form-select">
             </select>
         </div>
 
-        <h5>Phạm vi gửi</h5>
+        <h5>For</h5>
 
         <select id="receiverType" class="form-select mb-2">
-            <option value="all">Tất cả</option>
-            <option value="block">Theo Block</option>
-            <option value="floor">Theo Floor</option>
+            <option value="all">All</option>
+            <option value="block">Block</option>
+            <option value="floor">Floor</option>
         </select>
 
         <select id="blockSelect" class="form-select mb-2"></select>
         <select id="floorSelect" class="form-select mb-2"></select>
 
-        <label>Danh sách Tenant</label>
+        <label>Tenant</label>
         <select asp-for="Input.ContractIds"
                 id="tenantSelect"
                 class="form-select"
@@ -60,7 +60,7 @@
         </select>
 
         <button type="submit" class="btn btn-primary mt-3" id="submitBtn">
-            🚀 Gửi Thông Báo
+            🚀 Send Notification
         </button>
     </form>
 </div>
@@ -89,7 +89,7 @@
         }
 
         function renderBlocks(){
-            blockSelect.innerHTML = "<option value=''>-- Chọn Block --</option>";
+            blockSelect.innerHTML = "<option value=''>-- Block --</option>";
             blocks.forEach(b => {
                 blockSelect.innerHTML +=
                 `<option value="${b.id}">
@@ -99,7 +99,7 @@
         }
 
         function renderFloors(blockId){
-            floorSelect.innerHTML = "<option value=''>-- Chọn Floor --</option>";
+            floorSelect.innerHTML = "<option value=''>-- Floor --</option>";
             floors
                 .filter(f => f.blockId == blockId)
                 .forEach(f => {
@@ -159,7 +159,7 @@
         // Loading khi submit + chống double click
         form.addEventListener("submit", function(){
             submitBtn.disabled = true;
-            submitBtn.innerHTML = "⏳ Đang gửi...";
+            submitBtn.innerHTML = "⏳ Waiting...";
         });
 
         // Mặc định load tất cả

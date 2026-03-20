@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260312123042_InitNewSchema")]
-    partial class InitNewSchema
+    [Migration("20260320081627_InitClean")]
+    partial class InitClean
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -541,7 +541,6 @@ namespace DAL.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("Category")
-                        .HasMaxLength(50)
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
@@ -1138,6 +1137,12 @@ namespace DAL.Migrations
                     b.Property<string>("Address")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("BlacklistReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("BlacklistedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("CCCD")
                         .HasColumnType("nvarchar(max)");
 
@@ -1163,9 +1168,11 @@ namespace DAL.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("RoomId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -1175,6 +1182,8 @@ namespace DAL.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("RoomId");
 
                     b.HasIndex("UserId")
                         .HasDatabaseName("IX_Tenants_IdentityUserId");
@@ -1430,7 +1439,7 @@ namespace DAL.Migrations
                     b.HasOne("DAL.Entities.Contracts.Contract", "Contract")
                         .WithMany("Bills")
                         .HasForeignKey("ContractId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Contract");
@@ -1441,13 +1450,13 @@ namespace DAL.Migrations
                     b.HasOne("DAL.Entities.Billing.Bill", "Bill")
                         .WithMany("BillItems")
                         .HasForeignKey("BillId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("DAL.Entities.Billing.ExtraFee", "ExtraFee")
                         .WithMany()
                         .HasForeignKey("ExtraFeeId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Bill");
 
@@ -1459,7 +1468,7 @@ namespace DAL.Migrations
                     b.HasOne("DAL.Entities.Billing.Bill", "Bill")
                         .WithMany()
                         .HasForeignKey("BillId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Bill");
@@ -1470,7 +1479,7 @@ namespace DAL.Migrations
                     b.HasOne("DAL.Entities.Billing.Bill", "Bill")
                         .WithMany("Payments")
                         .HasForeignKey("BillId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Bill");
@@ -1481,7 +1490,7 @@ namespace DAL.Migrations
                     b.HasOne("DAL.Entities.Property.Room", "Room")
                         .WithMany()
                         .HasForeignKey("RoomId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Room");
@@ -1491,18 +1500,19 @@ namespace DAL.Migrations
                 {
                     b.HasOne("DAL.Entities.Motel.User", "CreatedByUser")
                         .WithMany()
-                        .HasForeignKey("CreatedByUserId");
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("DAL.Entities.Property.Room", "Room")
                         .WithMany()
                         .HasForeignKey("RoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("DAL.Entities.Tenanting.Tenant", "Tenant")
                         .WithMany("Contracts")
                         .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("CreatedByUser");
@@ -1517,7 +1527,7 @@ namespace DAL.Migrations
                     b.HasOne("DAL.Entities.Contracts.Contract", "Contract")
                         .WithMany("Attachments")
                         .HasForeignKey("ContractId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Contract");
@@ -1528,7 +1538,7 @@ namespace DAL.Migrations
                     b.HasOne("DAL.Entities.Contracts.Contract", "Contract")
                         .WithMany()
                         .HasForeignKey("ContractId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Contract");
@@ -1539,7 +1549,7 @@ namespace DAL.Migrations
                     b.HasOne("DAL.Entities.Contracts.Contract", "Contract")
                         .WithMany()
                         .HasForeignKey("ContractId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Contract");
@@ -1549,12 +1559,13 @@ namespace DAL.Migrations
                 {
                     b.HasOne("DAL.Entities.Motel.User", "ChangedByUser")
                         .WithMany()
-                        .HasForeignKey("ChangedByUserId");
+                        .HasForeignKey("ChangedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("DAL.Entities.Contracts.Contract", "Contract")
                         .WithMany("Versions")
                         .HasForeignKey("ContractId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("ChangedByUser");
@@ -1567,7 +1578,7 @@ namespace DAL.Migrations
                     b.HasOne("DAL.Entities.Contracts.Contract", "Contract")
                         .WithMany("Deposits")
                         .HasForeignKey("ContractId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Contract");
@@ -1578,13 +1589,13 @@ namespace DAL.Migrations
                     b.HasOne("DAL.Entities.Property.Room", "Room")
                         .WithMany()
                         .HasForeignKey("RoomId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("DAL.Entities.Tenanting.Tenant", "Tenant")
                         .WithMany()
                         .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Room");
 
@@ -1596,13 +1607,13 @@ namespace DAL.Migrations
                     b.HasOne("DAL.Entities.Motel.Role", "Role")
                         .WithMany("UserRoles")
                         .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("DAL.Entities.Motel.User", "User")
                         .WithMany("UserRoles")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Role");
@@ -1615,7 +1626,7 @@ namespace DAL.Migrations
                     b.HasOne("DAL.Entities.Property.Block", "Block")
                         .WithMany("Floors")
                         .HasForeignKey("BlockId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Block");
@@ -1626,7 +1637,7 @@ namespace DAL.Migrations
                     b.HasOne("DAL.Entities.Property.Floor", "Floor")
                         .WithMany("Rooms")
                         .HasForeignKey("FloorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Floor");
@@ -1637,13 +1648,13 @@ namespace DAL.Migrations
                     b.HasOne("DAL.Entities.Property.Amenity", "Amenity")
                         .WithMany("RoomAmenities")
                         .HasForeignKey("AmenityId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("DAL.Entities.Property.Room", "Room")
                         .WithMany("RoomAmenities")
                         .HasForeignKey("RoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Amenity");
@@ -1656,7 +1667,7 @@ namespace DAL.Migrations
                     b.HasOne("DAL.Entities.Property.Room", "Room")
                         .WithMany("RoomImages")
                         .HasForeignKey("RoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Room");
@@ -1667,7 +1678,7 @@ namespace DAL.Migrations
                     b.HasOne("DAL.Entities.Property.Room", "Room")
                         .WithMany("RoomPricingHistories")
                         .HasForeignKey("RoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Room");
@@ -1677,11 +1688,13 @@ namespace DAL.Migrations
                 {
                     b.HasOne("DAL.Entities.Contracts.Contract", "Contract")
                         .WithMany()
-                        .HasForeignKey("ContractId");
+                        .HasForeignKey("ContractId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "ReceiverUser")
                         .WithMany()
-                        .HasForeignKey("ReceiverUserId");
+                        .HasForeignKey("ReceiverUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Contract");
 
@@ -1693,7 +1706,7 @@ namespace DAL.Migrations
                     b.HasOne("DAL.Entities.System.Notification", "Notification")
                         .WithMany()
                         .HasForeignKey("NotificationId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Notification");
@@ -1704,13 +1717,13 @@ namespace DAL.Migrations
                     b.HasOne("DAL.Entities.Property.Room", "Room")
                         .WithMany()
                         .HasForeignKey("RoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("DAL.Entities.Tenanting.Tenant", "Tenant")
                         .WithMany()
                         .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Room");
@@ -1723,13 +1736,13 @@ namespace DAL.Migrations
                     b.HasOne("DAL.Entities.Property.Room", "Room")
                         .WithMany()
                         .HasForeignKey("RoomId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("DAL.Entities.Tenanting.Tenant", "Tenant")
                         .WithMany("StayHistories")
                         .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Room");
@@ -1739,11 +1752,19 @@ namespace DAL.Migrations
 
             modelBuilder.Entity("DAL.Entities.Tenanting.Tenant", b =>
                 {
+                    b.HasOne("DAL.Entities.Property.Room", "Room")
+                        .WithMany()
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.Navigation("Room");
 
                     b.Navigation("User");
                 });
@@ -1753,7 +1774,7 @@ namespace DAL.Migrations
                     b.HasOne("DAL.Entities.Tenanting.Tenant", "Tenant")
                         .WithMany("IdDocs")
                         .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Tenant");
@@ -1764,7 +1785,7 @@ namespace DAL.Migrations
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });
 
@@ -1773,7 +1794,7 @@ namespace DAL.Migrations
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });
 
@@ -1782,7 +1803,7 @@ namespace DAL.Migrations
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });
 
@@ -1791,13 +1812,13 @@ namespace DAL.Migrations
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });
 
@@ -1806,7 +1827,7 @@ namespace DAL.Migrations
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });
 

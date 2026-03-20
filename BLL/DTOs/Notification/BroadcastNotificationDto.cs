@@ -1,20 +1,17 @@
-﻿using System.ComponentModel.DataAnnotations;
-using DAL.Entities.Common;
-
-namespace BLL.DTOs.Notification;
+﻿using DAL.Entities.Common;
 
 public class BroadcastNotificationDto
 {
-    [Required(ErrorMessage = "Vui lòng nhập tiêu đề")]
-    public string Title { get; set; } = null!;
+    public string Title { get; set; } = "";
+    public string Content { get; set; } = "";
+    public SourceType SourceType { get; set; }
 
-    [Required(ErrorMessage = "Vui lòng nhập nội dung")]
-    public string Content { get; set; } = null!;
-
-    public List<int> ContractIds { get; set; } = new();
+    // ✅ FIX: thêm đủ field
+    public List<int>? TenantIds { get; set; }
+    public List<int>? ContractIds { get; set; }
 
     public int? BlockId { get; set; }
     public int? FloorId { get; set; }
-    public bool SendToHost { get; set; } = false;
-    public SourceType SourceType { get; set; } = SourceType.Manual;
+
+    public bool SendToHost { get; set; }
 }

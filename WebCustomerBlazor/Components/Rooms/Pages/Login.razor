@@ -5,6 +5,7 @@
 @using Microsoft.AspNetCore.Identity
 @inject ITokenService TokenService
 @inject UserManager<IdentityUser> UserManager
+@inject ITenantService TenantService
 @inject TokenAuthenticationStateProvider AuthProvider
 @inject NavigationManager Nav
 
@@ -96,6 +97,14 @@
             }
 
             var roles = await UserManager.GetRolesAsync(user);
+
+            // Check tenant blacklist
+            var tenant = await TenantService.GetByEmailAsync(normalizedEmail);
+            if (tenant != null && tenant.Status == DAL.Entities.Common.TenantStatus.Blacklisted)
+            {
+                error = "Tài khoản này đã bị chặn (Blacklisted).";
+                return;
+            }
 
             if (!(roles.Contains("Customer") || roles.Contains("Tenant") || roles.Contains("User")))
             {

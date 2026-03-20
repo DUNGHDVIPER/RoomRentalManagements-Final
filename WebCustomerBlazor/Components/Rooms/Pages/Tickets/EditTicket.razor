@@ -60,7 +60,11 @@
     protected override async Task OnInitializedAsync()
     {
         ticket = await _context.Tickets.FindAsync(Id);
-        if (ticket == null) Nav.NavigateTo("/tickets");
+        if (ticket == null || ticket.Status != TicketStatus.Open)
+        {
+            Nav.NavigateTo("/tickets");
+        }
+
     }
 
     private async Task HandleSave()

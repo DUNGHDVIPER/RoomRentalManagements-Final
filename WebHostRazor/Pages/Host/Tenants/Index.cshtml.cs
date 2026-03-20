@@ -1,5 +1,4 @@
-﻿using BLL.Common;
-using BLL.DTOs.Tenant;
+﻿using BLL.DTOs.Tenant;
 using BLL.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -31,6 +30,9 @@ public class IndexModel : PageModel
 
     public int TotalPages { get; set; }
     public int PageSize { get; set; } = 5;
+
+    [TempData]
+    public string? ErrorMessage { get; set; }
 
     public async Task OnGetAsync()
     {
@@ -65,6 +67,19 @@ public class IndexModel : PageModel
             .Take(PageSize)
             .ToList();
     }
+
+    public async Task<IActionResult> OnPostBlacklistAsync(int id)
+    {
+        await _tenantService.BlacklistAsync(id, "Violation");
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostRemoveBlacklistAsync(int id)
+    {
+        await _tenantService.UnBlacklistAsync(id);
+        return RedirectToPage();
+    }
+
     public async Task<IActionResult> OnPostDeleteAsync(int id)
     {
         try
@@ -72,9 +87,10 @@ public class IndexModel : PageModel
             await _tenantService.DeleteAsync(id);
             return RedirectToPage("Index");
         }
-        catch (Exceptions.NotFoundException ex)
+        catch (Exception ex)
         {
-            return NotFound(ex.Message);
+            ErrorMessage = ex.Message;
+            return RedirectToPage();
         }
     }
 }

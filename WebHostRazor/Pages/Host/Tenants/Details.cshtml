@@ -1,5 +1,6 @@
 ﻿@page
 @model WebHostRazor.Pages.Host.Tenants.DetailsModel
+@using DAL.Entities.Common
 
 @{
     ViewData["Title"] = "Tenant Details";
@@ -36,13 +37,17 @@
                     </div>
 
                     <div class="profile-status">
-                        @if (Model.Tenant.Status == "Active")
+                        @if (Model.Tenant.Status == TenantStatus.Active)
                         {
                             <span class="badge success">Active</span>
                         }
+                        else if (Model.Tenant.Status == TenantStatus.Blacklisted)
+                        {
+                            <span class="badge danger">Blacklisted</span>
+                        }
                         else
                         {
-                            <span class="badge danger">Disabled</span>
+                            <span class="badge warning">@Model.Tenant.Status.ToString()</span>
                         }
                     </div>
                 </div>

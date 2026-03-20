@@ -3,21 +3,21 @@
 @using DAL.Entities.System
 @using DAL.Entities.Common
 @{
-    ViewData["Title"] = "Lịch Sử Thông Báo";
+    ViewData["Title"] = "Histories";
 }
 
 <div class="card shadow-lg p-4">
-    <h3 class="mb-4">📜 Lịch Sử Thông Báo</h3>
+    <h3 class="mb-4">📜Histories</h3>
 
     <table class="table table-bordered">
         <thead class="table-light">
             <tr>
-                <th>Tiêu đề</th>
-                <th>Ten</th>
-                <th>Nội dung</th>
-                <th>Loại</th>
-                <th>Ngày tạo</th>
-                <th>Trạng thái</th>
+                <th>Title</th>
+                <th>Name</th>
+                <th>Content</th>
+                <th>Type</th>
+                <th>Create At</th>
+                <th>Status</th>
             </tr>
         </thead>
         <tbody>
@@ -34,11 +34,11 @@
                     <td>
                         @if (item.IsRead)
                         {
-                            <span class="badge bg-success">Đã đọc</span>
+                            <span class="badge bg-success">Read</span>
                         }
                         else
                         {
-                            <span class="badge bg-warning text-dark">Chưa đọc</span>
+                            <span class="badge bg-warning text-dark">Not Yet</span>
                         }
                     </td>
                 </tr>

@@ -42,10 +42,10 @@ namespace WebHostRazor.Pages.Host.Notifications
                     Value = ((int)x).ToString(),
                     Text = x switch
                     {
-                        SourceType.Manual => "📢 Thông báo chung",
-                        SourceType.Maintenance => "🔧 Bảo trì / Sự cố",
-                        SourceType.System => "🚨 Hệ Thống",
-                        SourceType.Billing => "💳 Thanh toán",
+                        SourceType.Manual => "📢 All",
+                        SourceType.Maintenance => "🔧 Maintance",
+                        SourceType.System => "🚨 System",
+                        SourceType.Billing => "💳 Payment",
                         _ => x.ToString()
                     }
                 }).ToList();
@@ -56,7 +56,7 @@ namespace WebHostRazor.Pages.Host.Notifications
       .Include(c => c.Room)
           .ThenInclude(r => r.Floor)
               .ThenInclude(f => f.Block)
-      .Where(c => c.Status == "Active")
+    .Where(c => c.Status == "Active")
       .Select(c => new
       {
           id = c.ContractId,
@@ -68,7 +68,7 @@ namespace WebHostRazor.Pages.Host.Notifications
       .ToList();
 
             var blocks = _context.Blocks
-                .Select(b => new { id = b.Id, name = b.BlockName })
+                .Select(b => new { id = b.Id, name = b.BlockName})
                 .ToList();
 
             var floors = _context.Floors
@@ -83,9 +83,10 @@ namespace WebHostRazor.Pages.Host.Notifications
         {
             if (!ModelState.IsValid)
                 return Page();
+
             if (Input.ContractIds == null || !Input.ContractIds.Any())
             {
-                ModelState.AddModelError("", "Vui lòng chọn ít nhất 1 tenant.");
+                ModelState.AddModelError("", "Please choose least for 1 tenant.");
                 return Page();
             }
 
@@ -114,7 +115,7 @@ namespace WebHostRazor.Pages.Host.Notifications
                         Input.Content);
             }
 
-            TempData["Success"] = "Gửi thông báo thành công!";
+            TempData["Success"] = "Send Notification Sucessful!";
             return RedirectToPage();
         }
     }

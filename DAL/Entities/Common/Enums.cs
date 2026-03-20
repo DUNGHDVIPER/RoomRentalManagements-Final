@@ -59,4 +59,9 @@ public enum SourceType
     Maintenance = 3,
     System = 4
 }
-
+public enum TenantStatus
+{
+    Active = 1,
+    Blacklisted = 2,
+    Disabled = 3
+}

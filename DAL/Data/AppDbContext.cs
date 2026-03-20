@@ -74,6 +74,7 @@ public class AppDbContext : IdentityDbContext<IdentityUser, IdentityRole, string
     // =========================
     public DbSet<DAL.Entities.Maintenance.Ticket> Tickets => Set<DAL.Entities.Maintenance.Ticket>();
 
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -256,7 +257,7 @@ public class AppDbContext : IdentityDbContext<IdentityUser, IdentityRole, string
             e.HasOne(x => x.Role)
                 .WithMany(r => r.UserRoles)
                 .HasForeignKey(x => x.RoleId);
-        });
+        }); ;
 
         // =========================
         // UTILITY READING PRECISION
@@ -280,5 +281,58 @@ public class AppDbContext : IdentityDbContext<IdentityUser, IdentityRole, string
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // =========================
+        // 🔥 FIX CASCADE LOOPS (QUAN TRỌNG NHẤT)
+        // =========================
+
+        // Tenant - Room
+        modelBuilder.Entity<Tenant>()
+            .HasOne(t => t.Room)
+            .WithMany()
+            .HasForeignKey(t => t.RoomId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        // Contract - Tenant
+        modelBuilder.Entity<Contract>()
+            .HasOne(c => c.Tenant)
+            .WithMany(t => t.Contracts)
+            .HasForeignKey(c => c.TenantId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        // Contract - Room
+        modelBuilder.Entity<Contract>()
+            .HasOne(c => c.Room)
+            .WithMany()
+            .HasForeignKey(c => c.RoomId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        // Notification - Contract
+      //  modelBuilder.Entity<Notification>()
+      //.HasOne(n => n.Tenant)
+      //.WithMany()
+      //.HasForeignKey(n => n.TenantId)
+      //.OnDelete(DeleteBehavior.NoAction);
+
+      //  modelBuilder.Entity<Notification>()
+      //      .HasOne(n => n.Room)
+      //      .WithMany()
+      //      .HasForeignKey(n => n.RoomId)
+      //      .OnDelete(DeleteBehavior.NoAction);
+
+        modelBuilder.Entity<Notification>()
+            .HasOne(n => n.Contract)
+            .WithMany()
+            .HasForeignKey(n => n.ContractId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        // 🔥 GLOBAL FIX (chặn hết cascade)
+        foreach (var fk in modelBuilder.Model.GetEntityTypes()
+                 .SelectMany(e => e.GetForeignKeys()))
+        {
+            fk.DeleteBehavior = DeleteBehavior.NoAction;
+        }
+
     }
+
+
 }

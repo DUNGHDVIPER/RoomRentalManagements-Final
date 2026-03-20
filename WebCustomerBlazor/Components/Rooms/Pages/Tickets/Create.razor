@@ -1,92 +1,95 @@
 ﻿@page "/tickets/create"
 
-@using Microsoft.AspNetCore.Components.Forms
-@using DAL.Data
-@using DAL.Entities.Maintenance
 @using DAL.Entities.Common
-@using System.ComponentModel.DataAnnotations
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using BLL.Services.Interfaces
+@using BLL.DTOs.Ticket
 
-@inject AppDbContext _context
+@inject ITicketService TicketService
 @inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
 
-<div class="bg-grad">
-    <div class="container section">
-        <div class="card glass p-22" style="max-width:650px;margin:40px auto;">
+<h3>Create Ticket</h3>
 
-            <div style="margin-bottom:20px;">
-                <div class="kicker">SUPPORT PORTAL</div>
-                <h2 class="h2">New Support Ticket</h2>
-                <div class="muted small">
-                    Describe your issue and our team will get back to you shortly.
-                </div>
-            </div>
+@if (!string.IsNullOrEmpty(error))
+{
+    <div class="alert alert-danger">@error</div>
+}
 
-            <EditForm Model="@ticket" OnValidSubmit="HandleSubmit" class="form">
-                <DataAnnotationsValidator />
-                <ValidationSummary />
-
-                <!-- TITLE -->
-                <div>
-                    <div class="label">TITLE</div>
-                    <InputText class="input"
-                               placeholder="Brief summary..."
-                               @bind-Value="ticket.Title" />
-                </div>
-
-                <!-- DESCRIPTION -->
-                <div>
-                    <div class="label">DESCRIPTION (max 255 chars)</div>
-                    <InputTextArea class="input textarea-big w-100"
-                                   maxlength="255"
-                                   placeholder="Describe the issue..."
-                                   @bind-Value="ticket.Description" />
-                   
-                </div>
-
-                <!-- CATEGORY -->
-                <div>
-                    <div class="label">CATEGORY</div>
-
-                    <InputRadioGroup @bind-Value="ticket.Category" class="form-select">
-                        @foreach (TicketCategory c in Enum.GetValues(typeof(TicketCategory)))
-                        {
-                            <option value="@c">@c</option>
-                        }
-                    </InputRadioGroup>
-                </div>
-
-                <div class="row" style="margin-top:16px;">
-                    <button type="button"
-                            class="btn-ghost"
-                            @onclick='() => Nav.NavigateTo("/tickets")'>
-                        Cancel
-                    </button>
-
-                    <button type="submit" class="btn-grad">
-                        Save Ticket
-                    </button>
-                </div>
-
-            </EditForm>
-
-        </div>
-    </div>
+<div class="mb-3">
+    <label>Title</label>
+    <input class="form-control" @bind="model.Title" />
 </div>
 
-@code {
-    private Ticket ticket = new()
+<div class="mb-3">
+    <label>Description</label>
+    <textarea class="form-control" @bind="model.Description"></textarea>
+</div>
+
+<div class="mb-3">
+    <label>Category</label>
+    <select class="form-control" @bind="model.Category">
+        @foreach (TicketCategory item in Enum.GetValues(typeof(TicketCategory)))
         {
-            Category = TicketCategory.Other
-        };
+            <option value="@item">@item</option>
+        }
+    </select>
+</div>
 
-    private async Task HandleSubmit()
+<div class="mb-3">
+    <label>RoomId</label>
+    <input type="number" class="form-control" @bind="model.RoomId" />
+</div>
+
+<button class="btn btn-primary" @onclick="CreateTicket">
+    Create
+</button>
+
+@code {
+    private CreateTicketDto model = new();
+    private string error = "";
+
+    private async Task CreateTicket()
     {
-        ticket.Status = TicketStatus.Open;
-        ticket.CreatedAt = DateTime.Now;
+        if (string.IsNullOrWhiteSpace(model.Title))
+        {
+            error = "Title is required";
+            return;
+        }
 
-        _context.Tickets.Add(ticket);
-        await _context.SaveChangesAsync();
+        if (string.IsNullOrWhiteSpace(model.Description))
+        {
+            error = "Description is required";
+            return;
+        }
 
-        Nav.NavigateTo("/tickets");
+        if (model.RoomId <= 0)
+        {
+            error = "RoomId không hợp lệ";
+            return;
+        }
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        var email = user.FindFirst(ClaimTypes.Email)?.Value;
+
+        if (string.IsNullOrEmpty(email))
+        {
+            error = "Không lấy được email user";
+            return;
+        }
+
+        var success = await TicketService.CreateAsync(model, email);
+
+        if (success)
+        {
+            Nav.NavigateTo("/tickets");
+        }
+        else
+        {
+            error = "Tạo ticket thất bại!";
+        }
     }
 }

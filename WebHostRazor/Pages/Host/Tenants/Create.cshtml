@@ -20,22 +20,32 @@
 
         <div class="tenant-body">
 
+            <!-- CUSTOMER -->
+            <div class="section">
+                <div class="section-title">Customer</div>
+
+                <div class="grid-2">
+
+                    <div class="form-group col-2">
+                        <label>Select Customer *</label>
+                        <select asp-for="Input.UserId"
+                                asp-items="Model.Customers"
+                                id="customerSelect">
+                            <option value="">Select customer...</option>
+                        </select>
+                    </div>
+
+                </div>
+            </div>
+
             <!-- PERSONAL -->
             <div class="section">
                 <div class="section-title">Personal</div>
 
                 <div class="grid-3">
 
-                    <div class="form-group col-2">
-                        <label>Full Name *</label>
-                        <div class="input-icon">
-                            <span>👤</span>
-                            <input asp-for="Input.FullName" />
-                        </div>
-                    </div>
-
                     <div class="form-group">
-                        <label>Gender *</label>
+                        <label>Gender</label>
                         <select asp-for="Input.Gender">
                             <option value="">Select...</option>
                             <option>Male</option>
@@ -69,10 +79,7 @@
                         <label>Phone</label>
                         <div class="input-icon">
                             <span>📞</span>
-                            <input asp-for="Input.Phone"
-                                   pattern="0[0-9]{9}"
-                                   maxlength="10"
-                                   inputmode="numeric" />
+                            <input id="phoneField" readonly />
                         </div>
                     </div>
 
@@ -80,7 +87,7 @@
                         <label>Email</label>
                         <div class="input-icon">
                             <span>✉️</span>
-                            <input asp-for="Input.Email" />
+                            <input id="emailField" readonly />
                         </div>
                     </div>
 
@@ -137,15 +144,38 @@
     </form>
 </div>
 
-<!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 @section Scripts {
+
     <script>
+
+        const customerSelect = document.getElementById("customerSelect");
+        const emailField = document.getElementById("emailField");
+        const phoneField = document.getElementById("phoneField");
+
+        customerSelect.addEventListener("change", async function(){
+
+            const userId = this.value;
+
+            if(!userId){
+                emailField.value = "";
+                phoneField.value = "";
+                return;
+            }
+
+            const response = await fetch(`?handler=CustomerInfo&userId=${userId}`);
+            const data = await response.json();
+
+            emailField.value = data.email ?? "";
+            phoneField.value = data.phone ?? "";
+        });
+
         const form = document.getElementById("createForm");
         const submitBtn = document.getElementById("submitBtn");
 
         form.addEventListener("submit", async function (e) {
+
             e.preventDefault();
 
             submitBtn.disabled = true;
@@ -155,6 +185,7 @@
             const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
 
             try {
+
                 const response = await fetch("", {
                     method: "POST",
                     headers: {
@@ -166,34 +197,44 @@
                 const result = await response.json();
 
                 if (result.success) {
+
                     Swal.fire({
                         icon: 'success',
                         title: 'Success',
-                        text: result.message,
-                        confirmButtonColor: '#28a745'
+                        text: result.message
                     }).then(() => {
                         window.location.href = "Index";
                     });
+
                 } else {
+
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: result.message,
-                        confirmButtonColor: '#d33'
+                        text: result.message
                     });
+
                 }
+
             }
-            catch (error) {
+            catch {
+
                 Swal.fire({
                     icon: 'error',
                     title: 'Server Error',
-                    text: 'Something went wrong!',
+                    text: 'Something went wrong!'
                 });
+
             }
             finally {
+
                 submitBtn.disabled = false;
                 submitBtn.innerText = "Create Tenant";
+
             }
+
         });
+
     </script>
+
 }

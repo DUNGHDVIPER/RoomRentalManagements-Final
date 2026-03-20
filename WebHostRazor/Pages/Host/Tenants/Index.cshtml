@@ -134,12 +134,16 @@
 
                         <td>@t.Phone</td>
                         <td>@t.Email</td>
-                        
+
 
                         <td>
                             @if (t.Status == "Active")
                             {
                                 <span class="tp-status active">Active</span>
+                            }
+                            else if (t.Status == "Blacklisted")
+                            {
+                                <span class="tp-status disabled">Blacklisted</span>
                             }
                             else
                             {
@@ -148,6 +152,7 @@
                         </td>
 
                         <td>
+
                             <a asp-page="Details"
                                asp-route-id="@t.Id"
                                class="tp-icon-btn">👁</a>
@@ -155,6 +160,33 @@
                             <a asp-page="Edit"
                                asp-route-id="@t.Id"
                                class="tp-icon-btn">✏</a>
+
+                            @if (t.Status != "Blacklisted")
+                            {
+                                <form method="post"
+                                      asp-page-handler="Blacklist"
+                                      asp-route-id="@t.Id"
+                                      style="display:inline;">
+                                    <button type="submit"
+                                            class="tp-icon-btn"
+                                            onclick="return confirm('Blacklist this tenant?')">
+                                        🚫
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form method="post"
+                                      asp-page-handler="RemoveBlacklist"
+                                      asp-route-id="@t.Id"
+                                      style="display:inline;">
+                                    <button type="submit"
+                                            class="tp-icon-btn"
+                                            onclick="return confirm('Remove blacklist?')">
+                                        🔓
+                                    </button>
+                                </form>
+                            }
 
                             <form method="post"
                                   asp-page-handler="Delete"
@@ -166,6 +198,7 @@
                                     🗑
                                 </button>
                             </form>
+
                         </td>
                     </tr>
                 }

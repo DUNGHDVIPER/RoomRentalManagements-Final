@@ -1,34 +1,109 @@
 ﻿@page "/notifications"
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
-@inject INotificationService NotificationService
-@inject AuthenticationStateProvider AuthProvider
 @using BLL.Services.Interfaces
 @using BLL.DTOs.Notification
 @using BLL.DTOs.Common
+
+@inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthProvider
 @inject IContractService ContractService
 
-<h3>Thông báo của tôi</h3>
+<div class="container mt-4">
 
-@if (!notifications.Any())
-{
-    <p>Không có thông báo</p>
-}
-else
-{
-    <ul class="list-group">
-        @foreach (var item in notifications)
-        {
-            <li class="list-group-item @(item.IsRead ? "" : "fw-bold")">
-                <div class="d-flex justify-content-between">
-                    <span>@item.Title</span>
-                    <small>@item.CreatedAt.ToLocalTime()</small>
+    <h3 class="mb-4 fw-bold">
+        🔔 My Notifications
+    </h3>
+
+    @if (!notifications.Any())
+    {
+        <div class="empty-box">
+            Không có thông báo
+        </div>
+    }
+    else
+    {
+        <div class="notification-list">
+
+            @foreach (var item in notifications)
+            {
+                <div class="notification-card @(item.IsRead ? "" : "unread")">
+
+                    <div class="d-flex justify-content-between align-items-center">
+
+                        <div class="title">
+                            @item.Title
+                        </div>
+
+                        <div class="time">
+                            @item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                        </div>
+
+                    </div>
+
+                    <div class="content">
+                        @item.Content
+                    </div>
+
                 </div>
-                <div>@item.Content</div>
-            </li>
+            }
+
+        </div>
+    }
+
+</div>
+
+
+<style>
+
+    .notification-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .notification-card {
+        background: white;
+        border-radius: 10px;
+        padding: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.2s ease;
+    }
+
+        .notification-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(0,0,0,0.12);
         }
-    </ul>
-}
+
+        .notification-card.unread {
+            border-left: 4px solid #4f46e5;
+            background: #f8f9ff;
+        }
+
+    .title {
+        font-weight: 600;
+        font-size: 16px;
+    }
+
+    .content {
+        margin-top: 6px;
+        color: #555;
+    }
+
+    .time {
+        font-size: 12px;
+        color: #888;
+    }
+
+    .empty-box {
+        padding: 40px;
+        text-align: center;
+        background: #fafafa;
+        border-radius: 10px;
+        color: #888;
+    }
+
+</style>
 
 @code {
 
@@ -53,9 +128,11 @@ else
 
         notifications = result.Items;
     }
+
     private async Task<int> GetContractIdOfCurrentUser()
     {
         var authState = await AuthProvider.GetAuthenticationStateAsync();
+
         var userId = authState.User
             .FindFirst(ClaimTypes.NameIdentifier)?.Value;
 

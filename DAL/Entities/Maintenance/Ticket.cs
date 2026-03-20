@@ -8,12 +8,12 @@ namespace DAL.Entities.Maintenance;
 public class Ticket : AuditableEntity<int>
 {
     [Required, MaxLength(200)]
-    public string Title { get; set; } = null!;
+    public string Title { get; set; } = string.Empty;
 
     [Required, MaxLength(255)]
-    public string Description { get; set; } = null!;
+    public string Description { get; set; } = string.Empty;
 
-    [Required, MaxLength(50)]
+    //[Required, MaxLength(50)]
     public TicketCategory Category { get; set; }
 
     public TicketStatus Status { get; set; } = TicketStatus.Open;
@@ -23,4 +23,4 @@ public class Ticket : AuditableEntity<int>
 
     public Room? Room { get; set; }
     public Tenant? Tenant { get; set; }
-}   
+}

@@ -1,22 +1,11 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 
-namespace WebHostRazor.Hubs
+namespace WebHostRazor.Hubs;
+
+public class NotificationHub : Hub
 {
-    public class NotificationHub : Hub
+    public async Task JoinTenantGroup(int tenantId)
     {
-        public override async Task OnConnectedAsync()
-        {
-            var contractId = Context.GetHttpContext()
-                ?.Request.Query["contractId"];
-
-            if (!string.IsNullOrEmpty(contractId))
-            {
-                await Groups.AddToGroupAsync(
-                    Context.ConnectionId,
-                    $"Contract_{contractId}");
-            }
-
-            await base.OnConnectedAsync();
-        }
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"Tenant_{tenantId}");
     }
 }

@@ -1,9 +1,12 @@
-﻿namespace BLL.DTOs.Ticket;
+﻿using DAL.Entities.Common;
 
 public class CreateTicketDto
 {
+    public string Title { get; set; }
+    public string Description { get; set; }
+    public TicketCategory Category { get; set; }
     public int RoomId { get; set; }
-    public int? TenantId { get; set; }
-    public string Title { get; set; } = null!;
-    public string? Description { get; set; }
+
+    // ❌ XÓA CÁI NÀY
+    // public int TenantId { get; set; }
 }

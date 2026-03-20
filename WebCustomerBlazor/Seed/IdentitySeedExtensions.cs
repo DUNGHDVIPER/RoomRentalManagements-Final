@@ -1,4 +1,4 @@
-﻿/*using DAL.Data;
+﻿using DAL.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -43,4 +43,3 @@ public static class IdentitySeedExtensions
             await userMgr.AddToRoleAsync(u, role);
     }
 }
-*/

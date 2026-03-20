@@ -5,6 +5,7 @@
 @inject NavigationManager Nav
 @using DAL.Entities.Common
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Routing
 
 <div class="bg-grad">
     <div class="container section">
@@ -16,7 +17,7 @@
                     <div class="muted small">Support Management System</div>
                 </div>
             </div>
-            <a class="btn-grad" href="/tickets/create" style="text-decoration: none;">+ New Ticket</a>
+            <NavLink class="btn-grad" href="/tickets/create">+ New Ticket</NavLink>
         </div>
 
         <div class="td-stats-grid">
@@ -62,14 +63,26 @@
 
                                 @* FIX Ở ĐÂY: Nếu là 0 thì hiện chữ "Open", còn lại hiện đúng tên Enum *@
                                 <span class="badge @statusColor">
-                                    @(ticket.Status == 0 ? "Open" : ticket.Status.ToString())
+                                    @(ticket.Status == TicketStatus.Open ? "Open" : ticket.Status.ToString())
                                 </span>
                             </div>
                         </div>
 
                         <div style="display: flex; gap: 8px;">
-                            <a href="/tickets/edit/@ticket.Id" class="btn-ghost" style="padding: 8px; width: 36px; height: 36px; display: grid; place-items: center; text-decoration: none;">✏️</a>
-                            <button class="btn-ghost" @onclick="() => OpenDelete(ticket)" style="padding: 8px; width: 36px; height: 36px; display: grid; place-items: center;">🗑</button>
+                            @if (ticket.Status == TicketStatus.Open)
+                            {
+                                <a href="/tickets/edit/@ticket.Id"
+                                   class="btn-ghost"
+                                   style="padding: 8px; width: 36px; height: 36px; display: grid; place-items: center; text-decoration: none;">
+                                    ✏️
+                                </a>
+                            }
+
+                            <button class="btn-ghost"
+                                    @onclick="() => OpenDelete(ticket)"
+                                    style="padding: 8px; width: 36px; height: 36px; display: grid; place-items: center;">
+                                🗑
+                            </button>
                         </div>
                     </div>
                 </div>

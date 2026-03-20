@@ -19,14 +19,12 @@ public class NotificationService : INotificationService
     // GỬI THÔNG BÁO
     // ===============================
     public async Task BroadcastAsync(
-     BroadcastNotificationDto dto,
-     CancellationToken ct = default)
+        BroadcastNotificationDto dto,
+        CancellationToken ct = default)
     {
         var contractIds = new List<int>();
 
-        // =========================
-        // LẤY CONTRACT ID ĐÚNG
-        // =========================
+        // ===== LẤY CONTRACT =====
         if (dto.ContractIds != null && dto.ContractIds.Any())
         {
             contractIds = await _context.Contracts
@@ -38,7 +36,7 @@ public class NotificationService : INotificationService
         {
             contractIds = await _context.Contracts
                 .Include(c => c.Room)
-                    .ThenInclude(r => r.Floor)
+                .ThenInclude(r => r.Floor)
                 .Where(c => c.Room.Floor.BlockId == dto.BlockId.Value)
                 .Select(c => c.Id)
                 .ToListAsync(ct);
@@ -106,7 +104,7 @@ public class NotificationService : INotificationService
     }
 
     // ===============================
-    // LẤY DANH SÁCH CỦA TENANT
+    // LẤY NOTIFICATION THEO CONTRACT
     // ===============================
     public async Task<PagedResultDto<NotificationDto>> GetUserNotificationsAsync(
         int contractId,
@@ -114,7 +112,7 @@ public class NotificationService : INotificationService
         CancellationToken ct = default)
     {
         var query = _context.Notifications
-            .Where(x => x.ContractId ==  contractId)
+            .Where(x => x.ContractId == contractId)
             .OrderByDescending(x => x.CreatedAt);
 
         var total = await query.CountAsync(ct);
@@ -142,13 +140,13 @@ public class NotificationService : INotificationService
     }
 
     // ===============================
-    // MARK AS READ
+    // MARK READ
     // ===============================
     public async Task MarkReadAsync(
-      int notificationId,
-    int? contractId,
-    string? userId,
-    CancellationToken ct = default)
+        int notificationId,
+        int? contractId,
+        string? userId,
+        CancellationToken ct = default)
     {
         var entity = await _context.Notifications
             .FirstOrDefaultAsync(x =>
@@ -165,24 +163,28 @@ public class NotificationService : INotificationService
         if (!entity.IsRead)
         {
             entity.IsRead = true;
+            entity.ReadAt = DateTime.UtcNow;
             await _context.SaveChangesAsync(ct);
         }
     }
 
     // ===============================
-    // ĐẾM CHƯA ĐỌC
+    // ĐẾM CHƯA ĐỌC (FIX CHUẨN)
     // ===============================
     public async Task<int> GetUnreadCountAsync(
-        int tenantId,
+        int contractId,
         CancellationToken ct = default)
     {
         return await _context.Notifications
-            .CountAsync(x => x.ContractId == tenantId && !x.IsRead, ct);
+            .CountAsync(x => x.ContractId == contractId && !x.IsRead, ct);
     }
 
+    // ===============================
+    // HOST NOTIFICATION
+    // ===============================
     public async Task<List<NotificationDto>> GetHostNotificationsAsync(
-    string userId,
-    CancellationToken ct = default)
+        string userId,
+        CancellationToken ct = default)
     {
         return await _context.Notifications
             .Where(x => x.ReceiverUserId == userId)
@@ -198,11 +200,15 @@ public class NotificationService : INotificationService
             .ToListAsync(ct);
     }
 
+    // ===============================
+    // LẤY CONTRACT CỦA USER (FIX)
+    // ===============================
     public async Task<int?> GetActiveContractIdByUserIdAsync(string userId)
     {
         return await _context.Contracts
+            .Include(c => c.Tenant)
             .Where(c => c.Tenant.UserId == userId && c.Status == "Active")
-            .Select(c => (int?)c.ContractId)
+            .Select(c => (int?)c.Id) // ✅ FIX
             .FirstOrDefaultAsync();
     }
 }
